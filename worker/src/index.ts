@@ -203,6 +203,8 @@ async function handleCorpusUploadRequest(request: Request, serviceManager: Servi
 
     // 获取可选参数
     const speakerId = formData.get('speakerId') as string;
+    const userId = formData.get('userId') as string;           // 用户ID
+    const sessionId = formData.get('sessionId') as string;     // 会话ID
     const metadataStr = formData.get('metadata') as string;
     
     const metadata = metadataStr ? JSON.parse(metadataStr) : undefined;
@@ -213,6 +215,8 @@ async function handleCorpusUploadRequest(request: Request, serviceManager: Servi
       audio: audioBuffer,
       transcript,
       speakerId: speakerId || undefined,
+      userId: userId || undefined,           // 用户ID
+      sessionId: sessionId || undefined,     // 会话ID
       metadata,
     };
 
@@ -262,6 +266,71 @@ async function handleCorpusBatchUploadRequest(request: Request, serviceManager: 
       error instanceof Error ? error.message : '批量语料上传失败'
     ));
   }
+}
+
+/**
+ * 处理语料查询请求
+ */
+async function handleCorpusQueryRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method === 'GET') {
+    try {
+      const url = new URL(request.url);
+      const query: CorpusQuery = {
+        userId: url.searchParams.get('userId') || undefined,
+        sessionId: url.searchParams.get('sessionId') || undefined,
+        speakerId: url.searchParams.get('speakerId') || undefined,
+        startTime: url.searchParams.get('startTime') || undefined,
+        endTime: url.searchParams.get('endTime') || undefined,
+        limit: url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : undefined,
+        offset: url.searchParams.get('offset') ? parseInt(url.searchParams.get('offset')!) : undefined,
+      };
+
+      const corpusService = serviceManager.getCorpusService();
+      const results = await corpusService.query(query);
+      
+      return createCorsResponse(createSuccessResponse({
+        query,
+        results,
+        count: results.length,
+      }));
+    } catch (error) {
+      return createCorsResponse(createErrorResponse(
+        error instanceof Error ? error.message : '语料查询失败'
+      ));
+    }
+  }
+  
+  return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+}
+
+/**
+ * 处理用户语料统计请求
+ */
+async function handleUserCorpusStatsRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method === 'GET') {
+    try {
+      const url = new URL(request.url);
+      const userId = url.searchParams.get('userId');
+      
+      if (!userId) {
+        return createCorsResponse(createErrorResponse('缺少用户ID参数'));
+      }
+
+      const corpusService = serviceManager.getCorpusService();
+      const stats = await corpusService.getUserStats(userId);
+      
+      return createCorsResponse(createSuccessResponse({
+        userId,
+        stats,
+      }));
+    } catch (error) {
+      return createCorsResponse(createErrorResponse(
+        error instanceof Error ? error.message : '用户语料统计获取失败'
+      ));
+    }
+  }
+  
+  return createCorsResponse(createErrorResponse('Method not allowed'), 405);
 }
 
 /**
