@@ -18,6 +18,15 @@ export interface Env {
   // 存储配置
   RESONANCE_KV?: KVNamespace;
   
+  // Minio 对象存储配置（用于语料收集）
+  MINIO_ENDPOINT?: string;
+  MINIO_PORT?: string;
+  MINIO_USE_SSL?: string;
+  MINIO_ACCESS_KEY: string;
+  MINIO_SECRET_KEY: string;
+  MINIO_BUCKET_NAME: string;
+  MINIO_REGION?: string;
+  
   // 静态资源
   ASSETS: Fetcher;
 }
@@ -170,6 +179,110 @@ async function handleHealthCheck(request: Request, serviceManager: ServiceManage
 }
 
 /**
+ * 处理语料上传请求
+ */
+async function handleCorpusUploadRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method !== 'POST') {
+    return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+  }
+
+  try {
+    const formData = await request.formData();
+    
+    // 获取音频文件
+    const audioFile = formData.get('audio') as File;
+    if (!audioFile) {
+      return createCorsResponse(createErrorResponse('缺少音频文件'));
+    }
+
+    // 获取转录文本
+    const transcript = formData.get('transcript') as string;
+    if (!transcript) {
+      return createCorsResponse(createErrorResponse('缺少转录文本'));
+    }
+
+    // 获取可选参数
+    const speakerId = formData.get('speakerId') as string;
+    const metadataStr = formData.get('metadata') as string;
+    
+    const metadata = metadataStr ? JSON.parse(metadataStr) : undefined;
+    
+    const audioBuffer = await audioFile.arrayBuffer();
+    
+    const corpusData = {
+      audio: audioBuffer,
+      transcript,
+      speakerId: speakerId || undefined,
+      metadata,
+    };
+
+    const corpusService = serviceManager.getCorpusService();
+    await corpusService.upload(corpusData);
+
+    return createCorsResponse(createSuccessResponse({ 
+      message: '语料上传成功',
+      audioSize: audioBuffer.byteLength,
+      transcriptLength: transcript.length,
+    }));
+    
+  } catch (error) {
+    return createCorsResponse(createErrorResponse(
+      error instanceof Error ? error.message : '语料上传失败'
+    ));
+  }
+}
+
+/**
+ * 处理语料批量上传请求
+ */
+async function handleCorpusBatchUploadRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method !== 'POST') {
+    return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+  }
+
+  try {
+    const body = await request.json();
+    
+    if (!Array.isArray(body.corpusData)) {
+      return createCorsResponse(createErrorResponse('请求格式错误，需要 corpusData 数组'));
+    }
+
+    const corpusService = serviceManager.getCorpusService();
+    
+    // 批量上传语料
+    const results = await corpusService.uploadBatch(body.corpusData);
+    
+    return createCorsResponse(createSuccessResponse({
+      message: '批量语料上传完成',
+      results,
+    }));
+    
+  } catch (error) {
+    return createCorsResponse(createErrorResponse(
+      error instanceof Error ? error.message : '批量语料上传失败'
+    ));
+  }
+}
+
+/**
+ * 处理语料统计请求
+ */
+async function handleCorpusStatsRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method === 'GET') {
+    try {
+      const corpusService = serviceManager.getCorpusService();
+      const stats = await corpusService.getStats();
+      
+      return createCorsResponse(createSuccessResponse(stats));
+    } catch (error) {
+      return createCorsResponse(createErrorResponse('语料统计获取失败'));
+    }
+  }
+  
+  return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+}
+
+/**
  * 处理服务统计请求
  */
 async function handleStatsRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
@@ -214,6 +327,18 @@ export default {
       
       if (path === '/api/health') {
         return await handleHealthCheck(request, serviceManager);
+      }
+      
+      if (path === '/api/corpus/upload') {
+        return await handleCorpusUploadRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/corpus/batch-upload') {
+        return await handleCorpusBatchUploadRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/corpus/stats') {
+        return await handleCorpusStatsRequest(request, serviceManager);
       }
       
       if (path === '/api/stats') {

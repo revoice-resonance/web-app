@@ -45,6 +45,8 @@ export interface CorpusData {
   audio: ArrayBuffer;
   transcript: string;
   speakerId?: string;
+  userId?: string;           // 用户ID，用于用户系统对接
+  sessionId?: string;        // 会话ID，用于跟踪会话
   metadata?: Record<string, any>;
 }
 

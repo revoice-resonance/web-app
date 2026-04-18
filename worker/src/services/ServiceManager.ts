@@ -1,7 +1,8 @@
-import { ASRService, TTSService, LoggingService } from '../types';
+import { ASRService, TTSService, LoggingService, CorpusService } from '../types';
 import { ASRServiceImpl } from './ASRService';
 import { TTSServiceImpl } from './TTSService';
 import { LoggingServiceImpl } from './LoggingService';
+import { CorpusServiceImpl } from './CorpusService';
 import { StorageManager } from '../storage';
 
 interface Env {
@@ -10,6 +11,10 @@ interface Env {
   GEMINI_ASR_URL?: string;
   GEMINI_ASR_KEY?: string;
   RESONANCE_KV?: KVNamespace;
+  MINIO_ENDPOINT?: string;
+  MINIO_ACCESS_KEY?: string;
+  MINIO_SECRET_KEY?: string;
+  MINIO_BUCKET_NAME?: string;
 }
 
 /**
@@ -20,6 +25,7 @@ export class ServiceManager {
   private asrService: ASRService;
   private ttsService: TTSService;
   private loggingService: LoggingService;
+  private corpusService: CorpusService;
   private storageManager: StorageManager;
 
   constructor(private env: Env) {
@@ -30,6 +36,7 @@ export class ServiceManager {
     this.asrService = new ASRServiceImpl(env);
     this.ttsService = new TTSServiceImpl(env);
     this.loggingService = new LoggingServiceImpl(this.storageManager);
+    this.corpusService = new CorpusServiceImpl(env);
   }
 
   // 获取 ASR 服务
@@ -47,6 +54,11 @@ export class ServiceManager {
     return this.loggingService;
   }
 
+  // 获取语料服务
+  getCorpusService(): CorpusService {
+    return this.corpusService;
+  }
+
   // 获取存储管理器
   getStorageManager(): StorageManager {
     return this.storageManager;
@@ -56,17 +68,20 @@ export class ServiceManager {
   async healthCheck(): Promise<{
     asr: { whisper: boolean; gemini: boolean };
     tts: boolean;
+    corpus: boolean;
     storage: string;
     timestamp: string;
   }> {
-    const [asrHealth, ttsHealth] = await Promise.all([
+    const [asrHealth, ttsHealth, corpusHealth] = await Promise.all([
       this.asrService.healthCheck ? this.asrService.healthCheck() : { whisper: false, gemini: false },
       this.ttsService.healthCheck ? this.ttsService.healthCheck() : false,
+      this.corpusService.healthCheck ? this.corpusService.healthCheck() : false,
     ]);
 
     return {
       asr: asrHealth,
       tts: ttsHealth,
+      corpus: corpusHealth,
       storage: this.storageManager.getStorageType(),
       timestamp: new Date().toISOString(),
     };
@@ -77,6 +92,7 @@ export class ServiceManager {
     storageType: string;
     asrEngines: string[];
     ttsAvailable: boolean;
+    corpusAvailable: boolean;
     logStats: any;
   }> {
     const asrEngines = [];
@@ -90,6 +106,7 @@ export class ServiceManager {
       storageType: this.storageManager.getStorageType(),
       asrEngines,
       ttsAvailable: !!this.env.COSYVOICE_VPC,
+      corpusAvailable: !!(this.env.MINIO_ENDPOINT && this.env.MINIO_ACCESS_KEY && this.env.MINIO_SECRET_KEY && this.env.MINIO_BUCKET_NAME),
       logStats,
     };
   }
