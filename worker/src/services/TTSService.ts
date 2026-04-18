@@ -14,7 +14,7 @@ export class TTSServiceImpl implements TTSService {
   private jobService: JobService;
   private storageManager: StorageManager;
 
-  constructor(private env: Env) {
+  constructor(private env: any) {
     this.jobService = new JobService(env);
     this.storageManager = new StorageManager(env);
   }
@@ -58,7 +58,7 @@ export class TTSServiceImpl implements TTSService {
     
     // 保存参考音频标识符到任务元数据
     await this.jobService.updateTTSJob(job.jobId, {
-      request: { ...request, referenceAudioKey }
+      request: { ...request, referenceAudioKey } as any
     });
 
     // 这里应该触发GPU机器处理任务
@@ -67,6 +67,78 @@ export class TTSServiceImpl implements TTSService {
     }, 100);
 
     return job;
+  }
+
+  /**
+   * 处理TTS任务（GPU机器调用）
+   */
+  private async processTTSJob(jobId: string): Promise<void> {
+    try {
+      const job = await this.jobService.getTTSJob(jobId);
+      if (!job) return;
+
+      // 更新任务状态为处理中
+      await this.jobService.updateTTSJob(jobId, { status: 'processing' });
+
+      // 执行语音合成（这里应该调用GPU机器）
+      const audio = await this.performSynthesis(job.request);
+      
+      // 保存合成音频到S3
+      const audioKey = `tts/audio/${jobId}.wav`;
+      await this.storageManager.saveAudio(audioKey, audio);
+
+      // 更新任务状态为完成
+      await this.jobService.updateTTSJob(jobId, { 
+        status: 'completed', 
+        audioKey 
+      });
+
+    } catch (error) {
+      // 更新任务状态为失败
+      await this.jobService.updateTTSJob(jobId, { 
+        status: 'failed', 
+        error: error instanceof Error ? error.message : '未知错误'
+      });
+    }
+  }
+
+  /**
+   * 处理语音克隆任务（GPU机器调用）
+   */
+  private async processVoiceCloneJob(jobId: string): Promise<void> {
+    try {
+      const job = await this.jobService.getTTSJob(jobId);
+      if (!job) return;
+
+      // 更新任务状态为处理中
+      await this.jobService.updateTTSJob(jobId, { status: 'processing' });
+
+      // 从S3获取参考音频
+      const referenceAudio = await this.storageManager.getAudio((job.request as any).referenceAudioKey);
+      if (!referenceAudio) {
+        throw new Error('参考音频文件获取失败');
+      }
+
+      // 执行语音克隆（这里应该调用GPU机器）
+      const audio = await this.performVoiceCloning(referenceAudio, job.request.text);
+      
+      // 保存合成音频到S3
+      const audioKey = `tts/cloned/${jobId}.wav`;
+      await this.storageManager.saveAudio(audioKey, audio);
+
+      // 更新任务状态为完成
+      await this.jobService.updateTTSJob(jobId, { 
+        status: 'completed', 
+        audioKey 
+      });
+
+    } catch (error) {
+      // 更新任务状态为失败
+      await this.jobService.updateTTSJob(jobId, { 
+        status: 'failed', 
+        error: error instanceof Error ? error.message : '未知错误'
+      });
+    }
   }
 
   async getJobStatus(jobId: string): Promise<TTSJob> {
@@ -91,7 +163,9 @@ export class TTSServiceImpl implements TTSService {
   private async performSynthesis(request: TTSRequest): Promise<ArrayBuffer> {
     // 这里应该是GPU机器的实现
     // 简化实现：返回模拟音频
-    return new TextEncoder().encode('模拟音频数据').buffer;
+    const encoder = new TextEncoder();
+    const data = encoder.encode('模拟音频数据');
+    return data.buffer as ArrayBuffer;
   }
 
   /**
@@ -100,7 +174,9 @@ export class TTSServiceImpl implements TTSService {
   private async performVoiceCloning(referenceAudio: ArrayBuffer, text: string): Promise<ArrayBuffer> {
     // 这里应该是GPU机器的实现
     // 简化实现：返回模拟音频
-    return new TextEncoder().encode('模拟克隆音频数据').buffer;
+    const encoder = new TextEncoder();
+    const data = encoder.encode('模拟克隆音频数据');
+    return data.buffer as ArrayBuffer;
   }
 
   private estimateAudioDuration(audio: ArrayBuffer, sampleRate = 24000): number {
@@ -137,7 +213,7 @@ export class TTSServiceImpl implements TTSService {
       const response = await this.env.COSYVOICE_VPC.fetch('http://127.0.0.1/v1/voices');
       if (response.ok) {
         const data = await response.json();
-        return data.voices || ['default'];
+        return (data as any).voices || ['default'];
       }
     } catch (error) {
       console.warn('Failed to get voice list:', error);

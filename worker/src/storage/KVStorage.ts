@@ -72,6 +72,11 @@ export class KVStorage implements StorageService {
     }
   }
 
+  async deleteTranscription(key: string): Promise<void> {
+    const storageKey = this.getTranscriptionKey(key);
+    await this.env.RESONANCE_KV.delete(storageKey);
+  }
+
   async saveLogs(logs: LogEntry[]): Promise<void> {
     if (logs.length === 0) return;
     
@@ -96,6 +101,44 @@ export class KVStorage implements StorageService {
     } catch {
       return [];
     }
+  }
+
+  // 通用对象管理
+  async putObject(key: string, data: ArrayBuffer | string, contentType?: string): Promise<{ url: string; key: string }> {
+    const storageKey = `object:${key}`;
+    const dataToStore = typeof data === 'string' ? data : this.arrayBufferToBase64(data);
+    
+    await this.env.RESONANCE_KV.put(storageKey, dataToStore, {
+      expirationTtl: 24 * 60 * 60, // 24小时过期
+    });
+    
+    return {
+      url: `kv://${storageKey}`,
+      key: storageKey
+    };
+  }
+
+  async getObject(key: string): Promise<ArrayBuffer | null> {
+    const storageKey = `object:${key}`;
+    const data = await this.env.RESONANCE_KV.get(storageKey);
+    
+    if (!data) return null;
+    
+    try {
+      // 尝试解析为base64，如果是字符串则直接返回
+      const buffer = this.base64ToArrayBuffer(data);
+      return buffer.slice(0);
+    } catch {
+      // 如果是纯文本，直接返回
+      const encoder = new TextEncoder();
+      const encoded = encoder.encode(data);
+      return encoded.buffer as ArrayBuffer;
+    }
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    const storageKey = `object:${key}`;
+    await this.env.RESONANCE_KV.delete(storageKey);
   }
 
   // 工具函数：ArrayBuffer 转 Base64

@@ -18,7 +18,7 @@ interface Env {
 export function createStorageService(env: Env): StorageService {
   // 优先使用 Minio 存储
   if (env.MINIO_ENDPOINT && env.MINIO_ACCESS_KEY && env.MINIO_SECRET_KEY && env.MINIO_BUCKET_NAME) {
-    return new MinioStorage(env);
+    return new MinioStorage(env as any);
   }
   
   // 其次使用 KV 存储

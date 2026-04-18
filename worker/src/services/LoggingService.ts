@@ -22,7 +22,7 @@ export class LoggingServiceImpl implements LoggingService {
   }
 
   private async log(level: 'info' | 'warn' | 'error', message: string, metadata?: Record<string, any>): Promise<void> {
-    const logEntry: LogEntry = {
+    const logEntry: any = {
       id: generateId('log'),
       timestamp: getCurrentTimestamp(),
       level,
@@ -133,7 +133,7 @@ export class LoggingServiceImpl implements LoggingService {
     try {
       // 为每个日志条目添加ID和时间戳（如果缺失）
       const processedLogs = logs.map(log => ({
-        id: log.id || generateId('client-log'),
+        id: (log as any).id || generateId('client-log'),
         timestamp: log.timestamp || getCurrentTimestamp(),
         level: log.level,
         message: log.message.slice(0, 1000),

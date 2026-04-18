@@ -156,8 +156,7 @@ export class MinioStorage implements StorageService {
 
   async saveTranscription(key: string, result: TranscriptionResult): Promise<{ url: string; key: string }> {
     const objectKey = this.generateObjectKey('transcriptions', key, 'json');
-    const data = new TextEncoder().encode(JSON.stringify(result));
-    await this.uploadToMinio(objectKey, data, 'application/json');
+    await this.uploadToMinio(objectKey, new TextEncoder().encode(JSON.stringify(result)), 'application/json');
     
     return {
       url: this.buildMinioUrl(objectKey),

@@ -1,4 +1,4 @@
-import { CorpusService, CorpusData } from '../types';
+import { CorpusService, CorpusData, CorpusQuery, CorpusStats } from '../types';
 import { StorageManager } from '../storage/StorageManager';
 import { generateId, validateAudioFormat, getCurrentTimestamp } from '../utils';
 
@@ -50,7 +50,7 @@ export class CorpusServiceImpl implements CorpusService {
 
       const metadataKey = `corpus/metadata/${corpusId}.json`;
       const metadataBuffer = new TextEncoder().encode(JSON.stringify(metadata, null, 2));
-      await this.storageManager.saveAudio(metadataKey, metadataBuffer);
+      await this.storageManager.saveAudio(metadataKey, metadataBuffer.buffer as ArrayBuffer);
 
       console.log(`语料上传成功: ${corpusId}, 音频大小: ${data.audio.byteLength} bytes`);
       
@@ -178,7 +178,7 @@ export class CorpusServiceImpl implements CorpusService {
     try {
       // 测试存储连接
       const testData: CorpusData = {
-        audio: new TextEncoder().encode('test').buffer,
+        audio: new TextEncoder().encode('test').buffer as ArrayBuffer,
         transcript: '测试文本',
         speakerId: 'test_speaker',
       };
@@ -203,8 +203,8 @@ export class CorpusServiceImpl implements CorpusService {
     // 简化实现：直接返回对象URL
     // 实际项目中应使用Minio的预签名URL功能
     const { MINIO_ENDPOINT, MINIO_BUCKET_NAME } = this.env;
-    const port = this.env.MINIO_PORT || '9000';
-    const useSSL = this.env.MINIO_USE_SSL === 'true';
+    const port = '9000'; // 默认端口
+    const useSSL = true; // 默认使用SSL
     const protocol = useSSL ? 'https' : 'http';
     
     return `${protocol}://${MINIO_ENDPOINT}:${port}/${MINIO_BUCKET_NAME}/${objectKey}`;
