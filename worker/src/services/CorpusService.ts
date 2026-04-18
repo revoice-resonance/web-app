@@ -92,6 +92,16 @@ export class CorpusServiceImpl implements CorpusService {
       throw new Error('无效的说话人ID格式');
     }
 
+    // 检查用户ID格式
+    if (data.userId && !this.isValidUserId(data.userId)) {
+      throw new Error('无效的用户ID格式');
+    }
+
+    // 检查会话ID格式
+    if (data.sessionId && !this.isValidSessionId(data.sessionId)) {
+      throw new Error('无效的会话ID格式');
+    }
+
     return true;
   }
 
