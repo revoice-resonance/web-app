@@ -69,9 +69,7 @@ function browserSpeechFallback(): Promise<string | null> {
 
 /**
  * Call Gemini ASR via Worker proxy as fallback when Whisper is offline.
- * IMPORTANT: All API traffic must go through our Worker (same origin) — never
- * call Supabase / Google directly from the browser. China network conditions
- * make direct *.supabase.co calls unreliable.
+ * IMPORTANT: All API traffic must go through our Worker (same origin).
  */
 async function geminiASRFallback(audioBlob: Blob): Promise<string | null> {
   const apiBase = import.meta.env.VITE_WORKER_API_URL || '';
