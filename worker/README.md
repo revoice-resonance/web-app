@@ -1,16 +1,19 @@
 # Project Resonance Worker
 
-Cloudflare Worker 作为 API 网关，提供语音识别和语音合成服务。
+Cloudflare Worker 作为 API 网关，提供语音识别、语音合成和语料收集等服务。
 
 ## 功能特性
 
 - ✅ Whisper 语音识别（通过 VPC 绑定）
 - ✅ Gemini ASR 备用引擎
-- ✅ CosyVoice 语音合成
-- ✅ 语料收集代理
-- ✅ 客户端日志收集
+- ✅ CosyVoice 语音合成与语音克隆
+- ✅ 语料收集与管理
+- ✅ 客户端日志收集与查询
+- ✅ 音频上传与管理
+- ✅ 任务队列管理（ASR/TTS）
 - ✅ CORS 支持
 - ✅ 错误处理和降级策略
+- ✅ 健康检查与统计监控
 
 ## 部署配置
 
@@ -22,6 +25,15 @@ Cloudflare Worker 作为 API 网关，提供语音识别和语音合成服务。
 # 设置 Gemini ASR 备用服务（可选）
 wrangler secret put GEMINI_ASR_URL
 wrangler secret put GEMINI_ASR_KEY
+
+# 设置 MinIO 对象存储配置
+wrangler secret put MINIO_ACCESS_KEY
+wrangler secret put MINIO_SECRET_KEY
+wrangler secret put MINIO_ENDPOINT
+wrangler secret put MINIO_PORT
+wrangler secret put MINIO_BUCKET_NAME
+wrangler secret put MINIO_USE_SSL
+wrangler secret put MINIO_REGION
 ```
 
 ### VPC 绑定配置
@@ -40,20 +52,58 @@ wrangler secret put GEMINI_ASR_KEY
       "binding": "WHISPER_VPC", 
       "service_id": "019d8636-cd3c-78f1-aa3e-1995010552df",
       "remote": true
+    },
+    {
+      "binding": "MINIO_VPC",
+      "service_id": "019da135-5b1e-7c41-a592-bf81ada13ac9",
+      "remote": true
     }
-  ]
+  ],
+
 }
 ```
 
 ## API 端点
 
-| 端点 | 方法 | 功能 | 参数 |
-|------|------|------|------|
-| `/api/whisper-asr` | POST | 语音识别 | `multipart/form-data` 音频文件 |
-| `/api/gemini-asr` | POST | Gemini ASR | `multipart/form-data` 音频文件 |
-| `/api/cosyvoice-tts` | POST | 语音合成 | `multipart/form-data` 文本和参考音频 |
-| `/api/corpus` | POST | 语料收集 | `multipart/form-data` 语料数据 |
-| `/api/client-logs` | POST | 日志收集 | `application/json` 日志数据 |
+### 音频处理
+| 端点 | 方法 | 功能 | 请求体 |
+|------|------|------|--------|
+| `/api/audio/upload` | POST | 音频上传 | `multipart/form-data` 音频文件 |
+
+### 语音识别 (ASR)
+| 端点 | 方法 | 功能 | 请求体 |
+|------|------|------|--------|
+| `/api/asr/jobs` | POST | 提交ASR识别任务 | `{ audioKey: string, language?: string, prefer?: string }` |
+| `/api/asr/jobs/status` | GET | 查询ASR任务状态 | `?jobId={jobId}` |
+
+### 语音合成 (TTS)
+| 端点 | 方法 | 功能 | 请求体 |
+|------|------|------|--------|
+| `/api/tts/jobs` | POST | 提交TTS合成任务 | `{ text: string, voice?: string, speed?: number, pitch?: number }` |
+| `/api/tts/voice-clone` | POST | 提交语音克隆任务 | `{ referenceAudioKey: string, text: string }` |
+| `/api/tts/jobs/status` | GET | 查询TTS任务状态 | `?jobId={jobId}` |
+
+### 语料管理
+| 端点 | 方法 | 功能 | 请求体 |
+|------|------|------|--------|
+| `/api/corpus/upload` | POST | 语料上传 | `multipart/form-data` 包含音频、转录文本等 |
+| `/api/corpus/batch-upload` | POST | 批量语料上传 | `{ corpusData: Array }` |
+| `/api/corpus/query` | GET | 查询语料 | `?corpusId={}&speakerId={}&startTime={}&endTime={}&limit={}&offset={}` |
+| `/api/corpus/stats` | GET | 语料统计 | - |
+
+### 日志管理
+| 端点 | 方法 | 功能 | 请求体 |
+|------|------|------|--------|
+| `/api/client-logs` | POST | 客户端日志上传 | `{ logs: Array }` |
+| `/api/logs/client-upload` | POST | 客户端日志上传 | `{ logs: Array }` |
+| `/api/logs/query` | GET | 查询日志 | `?startTime={}&endTime={}&level={}&limit={}` |
+| `/api/logs/stats` | GET | 日志统计 | - |
+
+### 系统管理
+| 端点 | 方法 | 功能 | 请求体 |
+|------|------|------|--------|
+| `/api/health` | GET | 健康检查 | - |
+| `/api/stats` | GET | 服务统计 | - |
 
 ## 开发
 
@@ -93,10 +143,17 @@ Worker 采用统一的错误处理策略：
 
 ## 架构说明
 
+Worker 采用分层架构设计：
+- **API 层**：处理 HTTP 请求和响应
+- **服务层**：ASR、TTS、语料、日志等服务管理
+- **存储层**：MinIO/S3对象存储（生产环境首选）
+
+注意：所有数据应使用S3/MinIO存储，不依赖KV存储。
+
 ```
 浏览器/移动端 → Cloudflare Worker → 私有 GPU 服务
     ↓              ↓                    ↓
-前端应用      API 网关 + CORS      Whisper/CosyVoice
+前端应用      API 网关 + 任务队列      Whisper/CosyVoice
 ```
 
 所有 AI 服务调用都通过 Worker 代理，确保：
