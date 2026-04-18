@@ -1,16 +1,14 @@
 /**
  * Gemini ASR proxy — forwards audio FormData to a configured Gemini ASR
- * endpoint (typically a Supabase Edge Function), so the browser never has
- * to talk to it directly.
+ * endpoint, so the browser never has to talk to it directly.
  *
  * Why route through the Worker:
- *   - In China, direct calls to *.supabase.co are flaky / blocked.
  *   - All API traffic must funnel through our same-origin Worker domain
- *     so it inherits the project's ICP-filed domain and stable connectivity.
+ *     for stable connectivity and security.
  *
  * Configure via:
- *   wrangler secret put GEMINI_ASR_URL   # full URL of upstream gemini-asr fn
- *   wrangler secret put GEMINI_ASR_KEY   # bearer token (anon key)
+ *   wrangler secret put GEMINI_ASR_URL   # full URL of upstream gemini-asr endpoint
+ *   wrangler secret put GEMINI_ASR_KEY   # bearer token (if required)
  */
 
 import type { Env } from './index';

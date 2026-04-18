@@ -5,7 +5,6 @@ import { useWhisperASR } from '../useWhisperASR';
 describe('useWhisperASR', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.stubGlobal('import', { meta: { env: { VITE_SUPABASE_URL: 'https://test.supabase.co', VITE_SUPABASE_PUBLISHABLE_KEY: 'test-key' } } });
   });
 
   it('initial state is correct', () => {
