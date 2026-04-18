@@ -1,5 +1,5 @@
-import { ASRJob, TTSJob, ASRService, TTSService } from '../types';
-import { StorageManager } from '../storage';
+import { ASRJob, TTSJob, TranscriptionResult } from '../types';
+import { StorageManager } from '../storage/StorageManager';
 import { generateId, getCurrentTimestamp } from '../utils';
 
 interface Env {

@@ -1,5 +1,5 @@
 import { CorpusService, CorpusData } from '../types';
-import { StorageManager } from '../storage';
+import { StorageManager } from '../storage/StorageManager';
 import { generateId, validateAudioFormat, getCurrentTimestamp } from '../utils';
 
 interface Env {

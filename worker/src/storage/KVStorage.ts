@@ -23,11 +23,15 @@ export class KVStorage implements StorageService {
     return 'logs';
   }
 
-  async saveAudio(key: string, audio: ArrayBuffer): Promise<void> {
+  async saveAudio(key: string, audio: ArrayBuffer, metadata?: Record<string, any>): Promise<{ url: string; key: string }> {
     const storageKey = this.getAudioKey(key);
     await this.env.RESONANCE_KV.put(storageKey, this.arrayBufferToBase64(audio), {
       expirationTtl: 24 * 60 * 60, // 24小时过期
     });
+    return {
+      url: `kv://${storageKey}`,
+      key: storageKey
+    };
   }
 
   async getAudio(key: string): Promise<ArrayBuffer | null> {
@@ -44,11 +48,15 @@ export class KVStorage implements StorageService {
     await this.env.RESONANCE_KV.delete(storageKey);
   }
 
-  async saveTranscription(key: string, result: TranscriptionResult): Promise<void> {
+  async saveTranscription(key: string, result: TranscriptionResult): Promise<{ url: string; key: string }> {
     const storageKey = this.getTranscriptionKey(key);
     await this.env.RESONANCE_KV.put(storageKey, JSON.stringify(result), {
       expirationTtl: 7 * 24 * 60 * 60, // 7天过期
     });
+    return {
+      url: `kv://${storageKey}`,
+      key: storageKey
+    };
   }
 
   async getTranscription(key: string): Promise<TranscriptionResult | null> {

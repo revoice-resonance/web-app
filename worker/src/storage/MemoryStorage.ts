@@ -10,8 +10,12 @@ export class MemoryStorage implements StorageService {
   private logStorage: LogEntry[] = [];
   private maxLogEntries = 1000;
 
-  async saveAudio(key: string, audio: ArrayBuffer): Promise<void> {
+  async saveAudio(key: string, audio: ArrayBuffer, metadata?: Record<string, any>): Promise<{ url: string; key: string }> {
     this.audioStorage.set(key, audio);
+    return {
+      url: `memory://${key}`,
+      key
+    };
   }
 
   async getAudio(key: string): Promise<ArrayBuffer | null> {
@@ -22,8 +26,12 @@ export class MemoryStorage implements StorageService {
     this.audioStorage.delete(key);
   }
 
-  async saveTranscription(key: string, result: TranscriptionResult): Promise<void> {
+  async saveTranscription(key: string, result: TranscriptionResult): Promise<{ url: string; key: string }> {
     this.transcriptionStorage.set(key, result);
+    return {
+      url: `memory://${key}`,
+      key
+    };
   }
 
   async getTranscription(key: string): Promise<TranscriptionResult | null> {

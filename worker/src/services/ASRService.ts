@@ -1,5 +1,7 @@
 import { ASRService, TranscriptionResult } from '../types';
 import { validateAudioFormat, calculateAudioDuration } from '../utils';
+import { JobService } from './JobService';
+import { StorageManager } from '../storage/StorageManager';
 
 interface Env {
   WHISPER_VPC?: Fetcher;

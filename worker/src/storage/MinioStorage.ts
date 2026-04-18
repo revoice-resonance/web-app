@@ -64,7 +64,7 @@ export class MinioStorage implements StorageService {
   /**
    * 上传文件到Minio
    */
-  private async uploadToMinio(objectKey: string, data: ArrayBuffer, contentType?: string, metadata?: Record<string, any>): Promise<void> {
+  private async uploadToMinio(objectKey: string, data: ArrayBuffer | Uint8Array, contentType?: string, metadata?: Record<string, any>): Promise<void> {
     const url = this.buildMinioUrl(objectKey);
     
     const headers: Record<string, string> = {

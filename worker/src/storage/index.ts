@@ -1,6 +1,6 @@
 import { StorageService } from '../types';
-import { MemoryStorage } from './MemoryStorage';
 import { KVStorage } from './KVStorage';
+import { MemoryStorage } from './MemoryStorage';
 import { MinioStorage } from './MinioStorage';
 
 interface Env {
@@ -12,21 +12,21 @@ interface Env {
 }
 
 /**
- * 存储服务工厂
- * 根据环境自动选择合适的存储实现
+ * 存储管理器工厂
+ * 根据环境变量选择合适的存储服务
  */
 export function createStorageService(env: Env): StorageService {
-  // 优先使用 Minio 存储（如果配置了Minio环境变量）
+  // 优先使用 Minio 存储
   if (env.MINIO_ENDPOINT && env.MINIO_ACCESS_KEY && env.MINIO_SECRET_KEY && env.MINIO_BUCKET_NAME) {
-    return new MinioStorage(env as any);
+    return new MinioStorage(env);
   }
   
   // 其次使用 KV 存储
   if (env.RESONANCE_KV) {
-    return new KVStorage(env);
+    return new KVStorage(env as any);
   }
   
-  // 否则使用内存存储（开发环境）
+  // 最后使用内存存储（仅用于开发）
   return new MemoryStorage();
 }
 

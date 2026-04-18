@@ -1,5 +1,6 @@
 import { LoggingService, LogEntry } from '../types';
 import { getCurrentTimestamp, generateId } from '../utils';
+import { StorageManager } from '../storage/StorageManager';
 
 /**
  * S3日志服务
