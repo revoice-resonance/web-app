@@ -15,7 +15,8 @@ const mockClearTranscript = vi.fn();
 let mockIsRecording = false;
 let mockRecError: string | null = null;
 let mockFinalText = '';
-let mockAsrError: string | null = null;
+import type { ASRError } from '@/types/asrError';
+let mockAsrError: ASRError | null = null;
 let mockWxTranscript = '';
 
 vi.mock('@/hooks/useAudioRecorder', () => ({
@@ -143,9 +144,21 @@ describe('UsagePage', () => {
   });
 
   it('shows ASR error', () => {
-    mockAsrError = '识别服务不可用';
+    mockAsrError = {
+      code: 'ALL_FAILED',
+      userMessage: '识别暂不可用',
+      userAction: '请稍后重试或联系管理员',
+      retryable: true,
+      fallbackActive: false,
+      diagnostics: {
+        status: null,
+        attempts: 3,
+        totalDurationMs: 25000,
+        timestamp: new Date().toISOString(),
+      },
+    };
     const { getByText } = render(<UsagePage {...defaultProps} />);
-    expect(getByText('识别服务不可用')).toBeInTheDocument();
+    expect(getByText('识别暂不可用')).toBeInTheDocument();
   });
 
   it('error has role="alert"', () => {

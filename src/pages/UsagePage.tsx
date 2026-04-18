@@ -6,11 +6,9 @@ import { useWhisperASR } from '@/hooks/useWhisperASR';
 import { useWechatBridge, getWechatDebugInfo } from '@/hooks/useWechatBridge';
 import AudioRecorderButton from '@/components/AudioRecorderButton';
 import ASRStreamingResult from '@/components/ASRStreamingResult';
-import ASREngineIndicator from '@/components/ASREngineIndicator';
-import { useASREnginePreference } from '@/hooks/useASREnginePreference';
+import { ASRErrorBanner } from '@/components/ASRErrorBanner';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAccessibility } from '@/hooks/useAccessibility';
-import { useCorpusCollection } from '@/hooks/useCorpusCollection';
 import { toast } from 'sonner';
 
 interface UsagePageProps {
@@ -47,12 +45,7 @@ export default function UsagePage({
     error: asrError,
     transcribe,
     reset: resetASR,
-    engine: asrEngine,
-    engineStage: asrEngineStage,
   } = useWhisperASR();
-
-  const { collect: collectCorpus } = useCorpusCollection();
-  const { preference: enginePref, setPreference: setEnginePref } = useASREnginePreference();
 
   // Handle transcript received from WeChat native recording
   useEffect(() => {
@@ -91,27 +84,25 @@ export default function UsagePage({
       return;
     }
 
-    const { webmBlob, wavBlob } = result;
+    const { webmBlob, blob: wavBlob } = result;
 
-    // Save real WAV only for voice prompt; never masquerade webm as wav
+    // Save WAV for potential voice cloning later
     lastWavBlobRef.current = wavBlob;
 
-    const text = await transcribe(webmBlob, { prefer: enginePref });
+    const text = await transcribe(webmBlob);
 
     if (text) {
       setLastTranscript(text);
-      // Auto-collect corpus in background
-      collectCorpus(webmBlob, text, result.duration || 0);
     }
 
     // Go straight to result — no auto-speak
     setFlowState('result');
-  }, [stopRecording, transcribe, collectCorpus, enginePref]);
+  }, [stopRecording, transcribe]);
 
   const handleSaveVoice = useCallback(() => {
     const wav = lastWavBlobRef.current;
     if (!wav) {
-      toast.error('当前录音未能转换为标准 WAV，请重新录制后再存为音色');
+      toast.error('没有可用的录音，请重新录制');
       return;
     }
     onSetPromptAudio(wav, lastTranscript || undefined);
@@ -128,6 +119,13 @@ export default function UsagePage({
     setLastTranscript('');
     lastWavBlobRef.current = null;
     resetASR();
+  }, [resetASR]);
+
+  // 错误横幅一键重试：沿用 last WAV 对应的 webmBlob 不好保留，
+  // 最稳妥的自助动作是引导用户再录一次 → 回到 idle 并清错误
+  const handleErrorRetry = useCallback(() => {
+    resetASR();
+    setFlowState('idle');
   }, [resetASR]);
 
   const handleCopy = useCallback((text: string) => {
@@ -235,12 +233,12 @@ export default function UsagePage({
         </motion.div>
       </div>
 
-      {/* Engine selection moved to Settings page — keep recording UI minimal */}
+      {/* Keyboard hint */}
       {flowState === 'idle' && (
         <motion.div
           initial={isMotionReduced ? {} : { opacity: 0 }}
           animate={isMotionReduced ? {} : { opacity: 1 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0.2 }}
           className="flex items-center justify-center gap-2 text-xs text-muted-foreground"
         >
           <span>按</span>
@@ -290,15 +288,13 @@ export default function UsagePage({
             <div className="absolute inset-0 rounded-full border-[3px] border-primary border-t-transparent animate-spin" aria-hidden="true" />
           </div>
           <p className="relative text-foreground font-semibold">正在识别语音...</p>
-          <ASREngineIndicator engine={asrEngine} stage={asrEngineStage} className="relative" />
+          <p className="relative text-xs text-muted-foreground animate-pulse">正在上传压缩音频</p>
         </motion.div>
       )}
 
       {/* Results — user chooses action */}
       {flowState === 'result' && (
         <>
-          {/* Always show the engine chain so users see which layer succeeded */}
-          <ASREngineIndicator engine={asrEngine} stage={asrEngineStage} />
           {displayText ? (
             <ASRStreamingResult
               partialText=""
@@ -338,14 +334,27 @@ export default function UsagePage({
         </>
       )}
 
-      {(recError || asrError || ttsError) && (
+      {asrError && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <ASRErrorBanner
+            error={asrError}
+            onRetry={handleErrorRetry}
+            onDismiss={resetASR}
+          />
+        </motion.div>
+      )}
+
+      {(recError || ttsError) && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="rounded-xl bg-destructive/10 border border-destructive/20 p-3.5 text-sm text-destructive"
           role="alert"
         >
-          {recError || asrError || ttsError}
+          {recError || ttsError}
         </motion.div>
       )}
 

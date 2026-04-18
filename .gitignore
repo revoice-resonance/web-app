@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Environment — commit .env.example and .env.test (CI uses dummy values)
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.test
+
+# Lockfiles from alt package managers (minc uses pnpm)
+bun.lock
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +32,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+Thumbs.db
+
+# Temporary files
+tmp/
+
+# Local data artifacts (not for VCS)
+MEMORY/
+model/
+录音/
