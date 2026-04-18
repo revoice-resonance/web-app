@@ -203,8 +203,6 @@ async function handleCorpusUploadRequest(request: Request, serviceManager: Servi
 
     // 获取可选参数
     const speakerId = formData.get('speakerId') as string;
-    const userId = formData.get('userId') as string;           // 用户ID
-    const sessionId = formData.get('sessionId') as string;     // 会话ID
     const metadataStr = formData.get('metadata') as string;
     
     const metadata = metadataStr ? JSON.parse(metadataStr) : undefined;
@@ -215,16 +213,15 @@ async function handleCorpusUploadRequest(request: Request, serviceManager: Servi
       audio: audioBuffer,
       transcript,
       speakerId: speakerId || undefined,
-      userId: userId || undefined,           // 用户ID
-      sessionId: sessionId || undefined,     // 会话ID
       metadata,
     };
 
     const corpusService = serviceManager.getCorpusService();
-    await corpusService.upload(corpusData);
+    const result = await corpusService.upload(corpusData);
 
     return createCorsResponse(createSuccessResponse({ 
       message: '语料上传成功',
+      corpusId: result.corpusId,
       audioSize: audioBuffer.byteLength,
       transcriptLength: transcript.length,
     }));
@@ -276,8 +273,7 @@ async function handleCorpusQueryRequest(request: Request, serviceManager: Servic
     try {
       const url = new URL(request.url);
       const query: CorpusQuery = {
-        userId: url.searchParams.get('userId') || undefined,
-        sessionId: url.searchParams.get('sessionId') || undefined,
+        corpusId: url.searchParams.get('corpusId') || undefined,
         speakerId: url.searchParams.get('speakerId') || undefined,
         startTime: url.searchParams.get('startTime') || undefined,
         endTime: url.searchParams.get('endTime') || undefined,
@@ -304,29 +300,84 @@ async function handleCorpusQueryRequest(request: Request, serviceManager: Servic
 }
 
 /**
- * 处理用户语料统计请求
+ * 处理客户端日志上传请求
  */
-async function handleUserCorpusStatsRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+async function handleClientLogsUploadRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method !== 'POST') {
+    return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+  }
+
+  try {
+    const body = await request.json();
+    
+    if (!Array.isArray(body.logs)) {
+      return createCorsResponse(createErrorResponse('请求格式错误，需要 logs 数组'));
+    }
+
+    const loggingService = serviceManager.getLoggingService();
+    await loggingService.saveClientLogs(body.logs);
+    
+    return createCorsResponse(createSuccessResponse({
+      message: '客户端日志上传成功',
+      count: body.logs.length,
+    }));
+    
+  } catch (error) {
+    return createCorsResponse(createErrorResponse(
+      error instanceof Error ? error.message : '客户端日志上传失败'
+    ));
+  }
+}
+
+/**
+ * 处理日志查询请求
+ */
+async function handleLogsQueryRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
   if (request.method === 'GET') {
     try {
       const url = new URL(request.url);
-      const userId = url.searchParams.get('userId');
-      
-      if (!userId) {
-        return createCorsResponse(createErrorResponse('缺少用户ID参数'));
-      }
+      const startTime = url.searchParams.get('startTime') || undefined;
+      const endTime = url.searchParams.get('endTime') || undefined;
+      const level = url.searchParams.get('level') || undefined;
+      const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : 100;
 
-      const corpusService = serviceManager.getCorpusService();
-      const stats = await corpusService.getUserStats(userId);
+      const loggingService = serviceManager.getLoggingService();
+      
+      // 查询日志
+      const logs = await loggingService.queryLogs(startTime, endTime, level);
+      
+      // 应用分页
+      const paginatedLogs = logs.slice(0, limit);
       
       return createCorsResponse(createSuccessResponse({
-        userId,
-        stats,
+        logs: paginatedLogs,
+        total: logs.length,
+        returned: paginatedLogs.length,
+        query: { startTime, endTime, level, limit }
       }));
+      
     } catch (error) {
       return createCorsResponse(createErrorResponse(
-        error instanceof Error ? error.message : '用户语料统计获取失败'
+        error instanceof Error ? error.message : '日志查询失败'
       ));
+    }
+  }
+  
+  return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+}
+
+/**
+ * 处理日志统计请求
+ */
+async function handleLogsStatsRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method === 'GET') {
+    try {
+      const loggingService = serviceManager.getLoggingService();
+      const stats = await loggingService.getLogStats();
+      
+      return createCorsResponse(createSuccessResponse(stats));
+    } catch (error) {
+      return createCorsResponse(createErrorResponse('日志统计获取失败'));
     }
   }
   
@@ -406,8 +457,24 @@ export default {
         return await handleCorpusBatchUploadRequest(request, serviceManager);
       }
       
+      if (path === '/api/corpus/query') {
+        return await handleCorpusQueryRequest(request, serviceManager);
+      }
+      
       if (path === '/api/corpus/stats') {
         return await handleCorpusStatsRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/logs/client-upload') {
+        return await handleClientLogsUploadRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/logs/query') {
+        return await handleLogsQueryRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/logs/stats') {
+        return await handleLogsStatsRequest(request, serviceManager);
       }
       
       if (path === '/api/stats') {

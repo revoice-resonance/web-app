@@ -45,8 +45,6 @@ export interface CorpusData {
   audio: ArrayBuffer;
   transcript: string;
   speakerId?: string;
-  userId?: string;           // 用户ID，用于用户系统对接
-  sessionId?: string;        // 会话ID，用于跟踪会话
   metadata?: Record<string, any>;
 }
 
@@ -81,11 +79,12 @@ export interface LoggingService {
   warn(message: string, metadata?: Record<string, any>): Promise<void>;
   error(message: string, metadata?: Record<string, any>): Promise<void>;
   getRecentLogs(limit?: number): Promise<LogEntry[]>;
+  saveClientLogs(logs: LogEntry[]): Promise<void>;
+  queryLogs(startTime?: string, endTime?: string, level?: string): Promise<LogEntry[]>;
 }
 
 export interface CorpusQuery {
-  userId?: string;
-  sessionId?: string;
+  corpusId?: string;
   speakerId?: string;
   startTime?: string;
   endTime?: string;
@@ -97,20 +96,12 @@ export interface CorpusStats {
   totalCorpus: number;
   totalAudioSize: number;
   uniqueSpeakers: number;
-  uniqueUsers: number;
-  uniqueSessions: number;
   lastUpload: string | null;
 }
 
 export interface CorpusService {
-  upload(data: CorpusData): Promise<void>;
+  upload(data: CorpusData): Promise<{ corpusId: string }>;
   validate(data: CorpusData): Promise<boolean>;
   query(query: CorpusQuery): Promise<CorpusData[]>;
   getStats(): Promise<CorpusStats>;
-  getUserStats(userId: string): Promise<{
-    totalCorpus: number;
-    totalAudioSize: number;
-    uniqueSessions: number;
-    lastUpload: string | null;
-  }>;
 }

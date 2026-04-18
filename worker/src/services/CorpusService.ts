@@ -23,7 +23,7 @@ export class CorpusServiceImpl implements CorpusService {
   /**
    * 上传语料数据
    */
-  async upload(data: CorpusData): Promise<void> {
+  async upload(data: CorpusData): Promise<{ corpusId: string }> {
     // 验证语料数据
     if (!await this.validate(data)) {
       throw new Error('语料数据验证失败');
@@ -42,8 +42,6 @@ export class CorpusServiceImpl implements CorpusService {
         id: corpusId,
         transcript: data.transcript,
         speakerId: data.speakerId,
-        userId: data.userId,           // 用户ID
-        sessionId: data.sessionId,     // 会话ID
         timestamp,
         audioSize: data.audio.byteLength,
         audioFormat: this.detectAudioFormat(data.audio),
@@ -55,6 +53,8 @@ export class CorpusServiceImpl implements CorpusService {
       await this.storageManager.saveAudio(metadataKey, metadataBuffer);
 
       console.log(`语料上传成功: ${corpusId}, 音频大小: ${data.audio.byteLength} bytes`);
+      
+      return { corpusId };
       
     } catch (error) {
       console.error('语料上传失败:', error);
@@ -92,16 +92,6 @@ export class CorpusServiceImpl implements CorpusService {
     // 检查说话人ID格式
     if (data.speakerId && !this.isValidSpeakerId(data.speakerId)) {
       throw new Error('无效的说话人ID格式');
-    }
-
-    // 检查用户ID格式
-    if (data.userId && !this.isValidUserId(data.userId)) {
-      throw new Error('无效的用户ID格式');
-    }
-
-    // 检查会话ID格式
-    if (data.sessionId && !this.isValidSessionId(data.sessionId)) {
-      throw new Error('无效的会话ID格式');
     }
 
     return true;
@@ -149,31 +139,6 @@ export class CorpusServiceImpl implements CorpusService {
       totalCorpus: 0,
       totalAudioSize: 0,
       uniqueSpeakers: 0,
-      uniqueUsers: 0,
-      uniqueSessions: 0,
-      lastUpload: null,
-    };
-  }
-
-  /**
-   * 获取用户统计信息
-   */
-  async getUserStats(userId: string): Promise<{
-    totalCorpus: number;
-    totalAudioSize: number;
-    uniqueSessions: number;
-    lastUpload: string | null;
-  }> {
-    // 验证用户ID格式
-    if (!this.isValidUserId(userId)) {
-      throw new Error('无效的用户ID格式');
-    }
-
-    // Minio存储无法直接统计，这里返回基础信息
-    return {
-      totalCorpus: 0,
-      totalAudioSize: 0,
-      uniqueSessions: 0,
       lastUpload: null,
     };
   }
@@ -204,24 +169,6 @@ export class CorpusServiceImpl implements CorpusService {
   private isValidSpeakerId(speakerId: string): boolean {
     // 简单的格式验证：字母数字和短横线，长度2-50字符
     return /^[a-zA-Z0-9-]{2,50}$/.test(speakerId);
-  }
-
-  /**
-   * 验证用户ID格式
-   */
-  private isValidUserId(userId: string): boolean {
-    // 用户ID格式验证：字母数字和下划线，长度1-100字符
-    // 支持UUID、数字ID、用户名等格式
-    return /^[a-zA-Z0-9_-]{1,100}$/.test(userId);
-  }
-
-  /**
-   * 验证会话ID格式
-   */
-  private isValidSessionId(sessionId: string): boolean {
-    // 会话ID格式验证：字母数字和下划线，长度1-64字符
-    // 支持UUID、时间戳+随机数等格式
-    return /^[a-zA-Z0-9_-]{1,64}$/.test(sessionId);
   }
 
   /**
