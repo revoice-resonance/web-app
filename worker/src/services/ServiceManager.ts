@@ -1,9 +1,9 @@
-import { ASRService, TTSService, LoggingService, CorpusService } from '../types';
+import { ASRService, TTSService, LoggingService, StorageService, CorpusService } from '../types';
 import { ASRServiceImpl } from './ASRService';
 import { TTSServiceImpl } from './TTSService';
 import { LoggingServiceImpl } from './LoggingService';
+import { StorageManager } from '../storage/StorageManager';
 import { CorpusServiceImpl } from './CorpusService';
-import { StorageManager } from '../storage';
 
 interface Env {
   WHISPER_VPC?: Fetcher;
@@ -72,17 +72,11 @@ export class ServiceManager {
     storage: string;
     timestamp: string;
   }> {
-    const [asrHealth, ttsHealth, corpusHealth] = await Promise.all([
-      this.asrService.healthCheck ? this.asrService.healthCheck() : { whisper: false, gemini: false },
-      this.ttsService.healthCheck ? this.ttsService.healthCheck() : false,
-      this.corpusService.healthCheck ? this.corpusService.healthCheck() : false,
-    ]);
-
     return {
-      asr: asrHealth,
-      tts: ttsHealth,
-      corpus: corpusHealth,
-      storage: this.storageManager.getStorageType(),
+      asr: { whisper: !!this.env.WHISPER_VPC, gemini: !!this.env.GEMINI_ASR_URL },
+      tts: !!this.env.COSYVOICE_VPC,
+      corpus: !!(this.env.MINIO_ENDPOINT && this.env.MINIO_ACCESS_KEY && this.env.MINIO_SECRET_KEY && this.env.MINIO_BUCKET_NAME),
+      storage: 'minio',
       timestamp: new Date().toISOString(),
     };
   }

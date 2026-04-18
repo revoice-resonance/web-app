@@ -53,13 +53,11 @@ export interface StorageService {
   // 音频文件管理
   saveAudio(key: string, audio: ArrayBuffer, metadata?: Record<string, any>): Promise<{ url: string; key: string }>;
   getAudio(key: string): Promise<ArrayBuffer | null>;
-  getAudioUrl(key: string, expiresIn?: number): Promise<string>;
   deleteAudio(key: string): Promise<void>;
   
   // 转录结果管理
   saveTranscription(key: string, result: TranscriptionResult): Promise<{ url: string; key: string }>;
   getTranscription(key: string): Promise<TranscriptionResult | null>;
-  getTranscriptionUrl(key: string, expiresIn?: number): Promise<string>;
   
   // 日志管理
   saveLogs(logs: LogEntry[]): Promise<void>;
@@ -68,12 +66,7 @@ export interface StorageService {
   // 通用对象管理
   putObject(key: string, data: ArrayBuffer | string, contentType?: string): Promise<{ url: string; key: string }>;
   getObject(key: string): Promise<ArrayBuffer | null>;
-  getObjectUrl(key: string, expiresIn?: number): Promise<string>;
   deleteObject(key: string): Promise<void>;
-  
-  // 元数据管理
-  getObjectMetadata(key: string): Promise<Record<string, any> | null>;
-  listObjects(prefix?: string, limit?: number): Promise<{ key: string; size: number; lastModified: string }[]>;
 }
 
 // 业务服务接口
