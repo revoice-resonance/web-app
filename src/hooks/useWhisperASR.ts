@@ -1,30 +1,57 @@
 import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
-
-export type ASREngine = 'whisper' | 'gemini' | 'browser';
-export type ASREngineStage =
-  | 'idle'
-  | 'whisper-trying'
-  | 'gemini-trying'
-  | 'browser-trying'
-  | 'success'
-  | 'failed';
-
-interface TranscribeOptions {
-  /** Force a specific engine. When set, no fallback is performed. */
-  prefer?: 'auto' | 'whisper' | 'gemini' | 'browser';
-}
+import {
+  buildASRError,
+  emitTelemetry,
+  statusToErrorCode,
+  type ASRError,
+} from '@/types/asrError';
 
 interface UseWhisperASRReturn {
   finalText: string;
   isProcessing: boolean;
-  error: string | null;
-  transcribe: (audioBlob: Blob, options?: TranscribeOptions) => Promise<string | null>;
+  /** 结构化错误对象（含用户消息 + 运维诊断） */
+  error: ASRError | null;
+  /**
+   * 向后兼容：旧代码读 `error` 当字符串用。
+   * 新代码请用 `error.userMessage` / `error.code`。
+   */
+  errorMessage: string | null;
+  transcribe: (audioBlob: Blob) => Promise<string | null>;
   reset: () => void;
-  /** Which engine produced the final transcript (or is being tried) */
-  engine: ASREngine | null;
-  /** Fine-grained stage for showing progress UI to the user */
-  engineStage: ASREngineStage;
+}
+
+// ====== P0-3 常量 ======
+const TOTAL_DEADLINE_MS = 25000;
+const PER_REQUEST_TIMEOUT_MS = 15000;
+const MAX_RETRIES = 2; // 初始 + 2 次重试 = 共 3 次尝试
+const BASE_DELAY_MS = 300;
+const MAX_DELAY_MS = 5000;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** axios-retry 决策树：仅 5xx / 429 / 网络错误重试，4xx 不重试 */
+function isRetryable(status: number | null): boolean {
+  if (status === null) return true; // 网络 / timeout
+  if (status === 429) return true;
+  if (status >= 500 && status <= 599) return true;
+  return false;
+}
+
+/** AWS Full Jitter（Marc Brooker 2015） */
+function backoffWithJitter(attempt: number): number {
+  const exp = Math.min(MAX_DELAY_MS, BASE_DELAY_MS * 2 ** attempt);
+  return Math.random() * exp;
+}
+
+/** 解析 Retry-After，封顶 60s 防 DoS */
+function parseRetryAfter(header: string | null): number | null {
+  if (!header) return null;
+  const seconds = Number(header);
+  if (!Number.isNaN(seconds)) return Math.min(seconds * 1000, 60000);
+  const date = Date.parse(header);
+  if (!Number.isNaN(date))
+    return Math.min(Math.max(0, date - Date.now()), 60000);
+  return null;
 }
 
 /**
@@ -33,8 +60,12 @@ interface UseWhisperASRReturn {
  */
 function browserSpeechFallback(): Promise<string | null> {
   return new Promise((resolve) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).SpeechRecognition ||
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       resolve(null);
@@ -54,8 +85,10 @@ function browserSpeechFallback(): Promise<string | null> {
       resolve(text);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
-      const transcript = event.results?.[0]?.[0]?.transcript?.trim() || '';
+      const transcript =
+        event.results?.[0]?.[0]?.transcript?.trim() || '';
       finish(transcript || null);
     };
     recognition.onerror = () => finish(null);
@@ -67,179 +100,230 @@ function browserSpeechFallback(): Promise<string | null> {
   });
 }
 
-/**
- * Call Gemini ASR via Worker proxy as fallback when Whisper is offline.
- * IMPORTANT: All API traffic must go through our Worker (same origin).
- */
-async function geminiASRFallback(audioBlob: Blob): Promise<string | null> {
-  const apiBase = import.meta.env.VITE_WORKER_API_URL || '';
-  const formData = new FormData();
-  formData.append('file', audioBlob, 'recording.webm');
-
-  const response = await fetch(`${apiBase}/api/gemini-asr`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  const data = await response.json().catch(() => ({} as { ok?: boolean; text?: string }));
-  if (data.ok && data.text?.trim()) {
-    return data.text.trim();
-  }
-  return null;
-}
-
 export function useWhisperASR(): UseWhisperASRReturn {
   const [finalText, setFinalText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [engine, setEngine] = useState<ASREngine | null>(null);
-  const [engineStage, setEngineStage] = useState<ASREngineStage>('idle');
+  const [error, setError] = useState<ASRError | null>(null);
 
-  const transcribe = useCallback(async (audioBlob: Blob, options?: TranscribeOptions): Promise<string | null> => {
-    const prefer = options?.prefer ?? 'auto';
+  const transcribe = useCallback(
+    async (audioBlob: Blob): Promise<string | null> => {
+      setError(null);
+      setIsProcessing(true);
+      setFinalText('');
 
-    setError(null);
-    setIsProcessing(true);
-    setFinalText('');
-    setEngine(null);
+      const startTime = Date.now();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
-    /** Helper: call Whisper via Worker. Throws on hard failure. */
-    const callWhisper = async (): Promise<{ text: string; source: ASREngine } | null> => {
+      if (!supabaseUrl) {
+        const err = buildASRError('ALL_FAILED', {
+          status: null,
+          attempts: 0,
+          totalDurationMs: 0,
+          originalError: '未配置后端地址 (VITE_SUPABASE_URL)',
+          timestamp: new Date().toISOString(),
+        });
+        emitTelemetry(err);
+        setError(err);
+        setIsProcessing(false);
+        return null;
+      }
+
+      // 提前判断离线，避免无谓重试
+      if (
+        typeof navigator !== 'undefined' &&
+        navigator.onLine === false
+      ) {
+        const err = buildASRError('NETWORK_OFFLINE', {
+          status: null,
+          attempts: 0,
+          totalDurationMs: 0,
+          originalError: 'navigator.onLine === false',
+          timestamp: new Date().toISOString(),
+        });
+        emitTelemetry(err);
+        setError(err);
+        setIsProcessing(false);
+        return null;
+      }
+
+      // FormData 可复用（SO Q35138135），File/Blob 每次新流
       const formData = new FormData();
       formData.append('file', audioBlob, 'recording.webm');
-      const apiBase = import.meta.env.VITE_WORKER_API_URL || '';
-      const response = await fetch(`${apiBase}/api/whisper-asr`, { method: 'POST', body: formData });
-      if (!response.ok) throw new Error(`Worker ${response.status}`);
-      const data = await response.json().catch(() => ({} as any));
-      if (data.ok === false) throw new Error(data.error || 'Whisper failed');
-      const text = (data.text || '').trim();
-      if (!text) return null;
-      // Worker may have internally fallen back to Gemini; respect its source
-      const source: ASREngine = data.source === 'gemini' ? 'gemini' : 'whisper';
-      return { text, source };
-    };
 
-    // === Forced single-engine modes (no fallback) ===
-    if (prefer === 'whisper') {
-      setEngineStage('whisper-trying');
-      try {
-        const result = await callWhisper();
-        if (result?.text) {
-          setEngine(result.source);
-          setEngineStage('success');
-          setFinalText(result.text);
-          setIsProcessing(false);
-          return result.text;
+      const deadline = startTime + TOTAL_DEADLINE_MS;
+      let lastStatus: number | null = null;
+      let lastStatusText: string | undefined;
+      let lastRequestId: string | null = null;
+      let lastRetryAfterMs: number | null = null;
+      let lastError: Error | null = null;
+      let attemptCount = 0;
+
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        attemptCount = attempt + 1;
+        const remaining = deadline - Date.now();
+        if (remaining <= 0) break;
+
+        const controller = new AbortController();
+        const perRequestTimer = setTimeout(
+          () => controller.abort(),
+          Math.min(PER_REQUEST_TIMEOUT_MS, remaining),
+        );
+
+        try {
+          const response = await fetch(
+            `${supabaseUrl}/functions/v1/whisper-asr`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: formData,
+              signal: controller.signal,
+            },
+          );
+
+          lastStatus = response.status;
+          lastStatusText = response.statusText;
+          lastRequestId =
+            response.headers.get('x-request-id') ??
+            response.headers.get('x-supabase-request-id');
+
+          const data = await response.json().catch(() => ({}));
+
+          if (response.ok && data.ok !== false) {
+            const text = (data.text?.trim() || '') || null;
+            if (text) {
+              setFinalText(text);
+            } else {
+              // 后端返回 200 但空文本 — 非错误，设一个告知
+              const err = buildASRError(
+                'BAD_REQUEST',
+                {
+                  status: 200,
+                  attempts: attemptCount,
+                  totalDurationMs: Date.now() - startTime,
+                  requestId: lastRequestId,
+                  originalError: '服务返回空识别结果',
+                  timestamp: new Date().toISOString(),
+                },
+                false,
+              );
+              // 这个不走 emitTelemetry（不是异常），只内部设 state
+              err.userMessage = '未能识别到语音内容';
+              err.userAction = '请重新录音，说话稍大声清楚一些';
+              err.retryable = true;
+              setError(err);
+            }
+            setIsProcessing(false);
+            return text;
+          }
+
+          // 业务错误分支
+          lastError = new Error(
+            data.error || `请求失败 (${response.status})`,
+          );
+
+          if (!isRetryable(response.status)) break;
+
+          const retryAfter = parseRetryAfter(
+            response.headers.get('retry-after'),
+          );
+          lastRetryAfterMs = retryAfter;
+          const delay = retryAfter ?? backoffWithJitter(attempt);
+          const actualDelay = Math.min(delay, deadline - Date.now());
+          if (actualDelay <= 0) break;
+
+          await sleep(actualDelay);
+        } catch (e) {
+          lastError =
+            e instanceof Error ? e : new Error(String(e));
+
+          // abort = timeout, name === 'AbortError'
+          if (attempt < MAX_RETRIES && deadline - Date.now() > 0) {
+            const delay = Math.min(
+              backoffWithJitter(attempt),
+              deadline - Date.now(),
+            );
+            if (delay > 0) await sleep(delay);
+          }
+        } finally {
+          clearTimeout(perRequestTimer);
         }
-        setEngineStage('failed');
-        setError('Whisper 未能识别到语音内容');
-      } catch (err) {
-        console.warn('[ASR] Whisper-only failed:', err);
-        setEngineStage('failed');
-        setError('Whisper 服务不可用，请切换其他引擎或选 auto');
       }
-      setIsProcessing(false);
-      return null;
-    }
 
-    if (prefer === 'gemini') {
-      setEngineStage('gemini-trying');
-      try {
-        const text = await geminiASRFallback(audioBlob);
-        if (text) {
-          setEngine('gemini');
-          setEngineStage('success');
-          setFinalText(text);
-          setIsProcessing(false);
-          return text;
-        }
-        setEngineStage('failed');
-        setError('Gemini 未能识别到语音内容');
-      } catch (err) {
-        console.warn('[ASR] Gemini-only failed:', err);
-        setEngineStage('failed');
-        setError('Gemini 服务不可用，请切换其他引擎');
-      }
-      setIsProcessing(false);
-      return null;
-    }
+      // 所有重试耗尽 → 尝试浏览器降级
+      const fallbackText = await browserSpeechFallback();
+      const totalDurationMs = Date.now() - startTime;
 
-    if (prefer === 'browser') {
-      setEngineStage('browser-trying');
-      const text = await browserSpeechFallback();
-      if (text) {
-        setEngine('browser');
-        setEngineStage('success');
-        setFinalText(text);
+      if (fallbackText) {
+        setFinalText(fallbackText);
+        // 降级成功也要告知用户（FALLBACK_ACTIVE 是告知非错误）
+        const notice = buildASRError(
+          'FALLBACK_ACTIVE',
+          {
+            status: lastStatus,
+            statusText: lastStatusText,
+            attempts: attemptCount,
+            totalDurationMs,
+            requestId: lastRequestId,
+            originalError: lastError?.message,
+            retryAfterMs: lastRetryAfterMs,
+            timestamp: new Date().toISOString(),
+          },
+          true,
+        );
+        emitTelemetry(notice);
+        setError(notice);
         setIsProcessing(false);
-        return text;
+        return fallbackText;
       }
-      setEngineStage('failed');
-      setError('浏览器内置识别不可用或没听清（仅 Chrome/Edge 桌面版支持）');
+
+      // 主 + 降级全挂
+      const isOffline =
+        typeof navigator !== 'undefined' &&
+        navigator.onLine === false;
+      const code = isOffline
+        ? 'NETWORK_OFFLINE'
+        : lastStatus !== null
+          ? statusToErrorCode(lastStatus)
+          : lastError?.name === 'AbortError'
+            ? 'NETWORK_TIMEOUT'
+            : 'ALL_FAILED';
+
+      const err = buildASRError(
+        code,
+        {
+          status: lastStatus,
+          statusText: lastStatusText,
+          attempts: attemptCount,
+          totalDurationMs,
+          requestId: lastRequestId,
+          originalError: lastError?.message,
+          retryAfterMs: lastRetryAfterMs,
+          timestamp: new Date().toISOString(),
+        },
+        false,
+      );
+      emitTelemetry(err);
+      setError(err);
       setIsProcessing(false);
       return null;
-    }
-
-    // === Auto mode: full Whisper → Gemini → Browser fallback chain ===
-    setEngineStage('whisper-trying');
-
-    const tryGeminiThenBrowser = async (): Promise<string | null> => {
-      setEngineStage('gemini-trying');
-      try {
-        const geminiText = await geminiASRFallback(audioBlob);
-        if (geminiText) {
-          setEngine('gemini');
-          setEngineStage('success');
-          setFinalText(geminiText);
-          setIsProcessing(false);
-          return geminiText;
-        }
-      } catch (geminiErr) {
-        console.warn('[ASR] Gemini fallback failed:', geminiErr);
-      }
-
-      setEngineStage('browser-trying');
-      const browserText = await browserSpeechFallback();
-      if (browserText) {
-        setEngine('browser');
-        setEngineStage('success');
-        setFinalText(browserText);
-        setIsProcessing(false);
-        return browserText;
-      }
-
-      setEngineStage('failed');
-      setError('所有语音识别服务均不可用，请稍后重试');
-      setIsProcessing(false);
-      return null;
-    };
-
-    try {
-      const result = await callWhisper();
-      if (result?.text) {
-        setEngine(result.source);
-        setEngineStage('success');
-        setFinalText(result.text);
-        setIsProcessing(false);
-        return result.text;
-      }
-      setEngineStage('failed');
-      setError('未能识别到语音内容');
-      setIsProcessing(false);
-      return null;
-    } catch (err) {
-      console.warn('[ASR] Worker call failed in auto mode, falling back:', err);
-      return await tryGeminiThenBrowser();
-    }
-  }, []);
+    },
+    [],
+  );
 
   const reset = useCallback(() => {
     setFinalText('');
     setIsProcessing(false);
     setError(null);
-    setEngine(null);
-    setEngineStage('idle');
   }, []);
 
-  return { finalText, isProcessing, error, transcribe, reset, engine, engineStage };
+  return {
+    finalText,
+    isProcessing,
+    error,
+    errorMessage: error?.userMessage ?? null,
+    transcribe,
+    reset,
+  };
 }

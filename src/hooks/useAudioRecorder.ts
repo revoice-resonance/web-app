@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface RecordingResult {
   /** Compressed webm blob — small, ideal for ASR upload */
@@ -37,17 +37,26 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const unmountedRef = useRef(false);
 
   const stopLevelMonitoring = useCallback(() => {
     if (animFrameRef.current) {
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
     }
-    setAudioLevel(0);
+    const ctx = audioContextRef.current;
+    if (ctx && ctx.state !== 'closed') {
+      ctx.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    analyserRef.current = null;
+    if (!unmountedRef.current) setAudioLevel(0);
   }, []);
 
   const startLevelMonitoring = useCallback((stream: MediaStream) => {
     const audioContext = new AudioContext();
+    audioContextRef.current = audioContext;
     const source = audioContext.createMediaStreamSource(stream);
     const analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
@@ -56,12 +65,36 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     const updateLevel = () => {
+      if (unmountedRef.current) return;
       analyser.getByteFrequencyData(dataArray);
       const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
       setAudioLevel(avg / 128);
       animFrameRef.current = requestAnimationFrame(updateLevel);
     };
     updateLevel();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      unmountedRef.current = true;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      const ctx = audioContextRef.current;
+      if (ctx && ctx.state !== 'closed') {
+        ctx.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, []);
 
   const startRecording = useCallback(async () => {

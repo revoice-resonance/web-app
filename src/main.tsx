@@ -17,6 +17,11 @@ window.addEventListener('unhandledrejection', (e) => {
   console.error('[Unhandled Promise]', e.reason);
 });
 
+// 部署期 chunk hash 失效时自动重载（Vite 5 原生事件）
+window.addEventListener('vite:preloadError', () => {
+  window.location.reload();
+});
+
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
     <App />
