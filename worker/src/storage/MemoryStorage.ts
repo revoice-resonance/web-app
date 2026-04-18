@@ -8,6 +8,7 @@ export class MemoryStorage implements StorageService {
   private audioStorage: Map<string, ArrayBuffer> = new Map();
   private transcriptionStorage: Map<string, TranscriptionResult> = new Map();
   private logStorage: LogEntry[] = [];
+  private objectStorage: Map<string, ArrayBuffer> = new Map();
   private maxLogEntries = 1000;
 
   async saveAudio(key: string, audio: ArrayBuffer, metadata?: Record<string, any>): Promise<{ url: string; key: string }> {
@@ -49,6 +50,25 @@ export class MemoryStorage implements StorageService {
 
   async getLogs(limit = 100): Promise<LogEntry[]> {
     return this.logStorage.slice(-limit);
+  }
+
+  // 通用对象管理
+  async putObject(key: string, data: ArrayBuffer | string, contentType?: string): Promise<{ url: string; key: string }> {
+    const dataToStore = typeof data === 'string' ? new TextEncoder().encode(data).buffer as ArrayBuffer : data;
+    this.objectStorage.set(key, dataToStore);
+    
+    return {
+      url: `memory://${key}`,
+      key
+    };
+  }
+
+  async getObject(key: string): Promise<ArrayBuffer | null> {
+    return this.objectStorage.get(key) || null;
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    this.objectStorage.delete(key);
   }
 
   // 统计信息

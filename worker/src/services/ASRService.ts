@@ -1,4 +1,4 @@
-import { ASRService, TranscriptionResult } from '../types';
+import { ASRService, TranscriptionResult, ASRJob } from '../types';
 import { validateAudioFormat, calculateAudioDuration } from '../utils';
 import { JobService } from './JobService';
 import { StorageManager } from '../storage/StorageManager';
@@ -17,7 +17,7 @@ export class ASRServiceImpl implements ASRService {
   private jobService: JobService;
   private storageManager: StorageManager;
 
-  constructor(private env: Env) {
+  constructor(private env: any) {
     this.jobService = new JobService(env);
     this.storageManager = new StorageManager(env);
   }
@@ -135,14 +135,14 @@ export class ASRServiceImpl implements ASRService {
 
     const data = await response.json();
     
-    if (!data.text) {
+    if (!(data as any).text) {
       throw new Error('Whisper 识别结果为空');
     }
 
     return {
-      text: data.text.trim(),
-      confidence: data.confidence || 0.8,
-      language: data.language || language,
+      text: (data as any).text.trim(),
+      confidence: (data as any).confidence || 0.8,
+      language: (data as any).language || language,
     };
   }
 
@@ -160,11 +160,17 @@ export class ASRServiceImpl implements ASRService {
       headers['Authorization'] = `Bearer ${this.env.GEMINI_ASR_KEY}`;
     }
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     const response = await fetch(this.env.GEMINI_ASR_URL, {
       method: 'POST',
       headers,
       body: formData,
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Gemini ASR 服务错误: ${response.status}`);
@@ -172,14 +178,14 @@ export class ASRServiceImpl implements ASRService {
 
     const data = await response.json();
     
-    if (!data.text) {
+    if (!(data as any).text) {
       throw new Error('Gemini 识别结果为空');
     }
 
     return {
-      text: data.text.trim(),
-      confidence: data.confidence || 0.7,
-      language: data.language || language,
+      text: (data as any).text.trim(),
+      confidence: (data as any).confidence || 0.7,
+      language: (data as any).language || language,
       duration,
       source: 'gemini',
     };
@@ -222,10 +228,15 @@ export class ASRServiceImpl implements ASRService {
     // 检查 Gemini
     if (this.env.GEMINI_ASR_URL) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
         const response = await fetch(this.env.GEMINI_ASR_URL, { 
           method: 'HEAD',
-          timeout: 5000 
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         results.gemini = response.ok;
       } catch {
         results.gemini = false;

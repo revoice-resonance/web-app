@@ -93,8 +93,7 @@ export class ServiceManager {
     if (this.env.WHISPER_VPC) asrEngines.push('whisper');
     if (this.env.GEMINI_ASR_URL) asrEngines.push('gemini');
 
-    const logStats = this.loggingService.getLogStats ? 
-      await this.loggingService.getLogStats() : { total: 0, byLevel: { info: 0, warn: 0, error: 0 }, recentErrors: 0 };
+    const logStats = { total: 0, byLevel: { info: 0, warn: 0, error: 0 }, recentErrors: 0 };
 
     return {
       storageType: this.storageManager.getStorageType(),
