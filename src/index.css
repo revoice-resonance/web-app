@@ -1,0 +1,288 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* System font stack — no external network request, instant on APK */
+
+@layer base {
+  :root {
+    --font-scale: 1;
+
+    --background: 40 30% 97%;
+    --foreground: 30 20% 10%;
+
+    --card: 40 25% 99%;
+    --card-foreground: 30 20% 10%;
+
+    --popover: 40 25% 99%;
+    --popover-foreground: 30 20% 10%;
+
+    --primary: 28 80% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 38 25% 92%;
+    --secondary-foreground: 30 20% 18%;
+
+    --muted: 38 18% 93%;
+    --muted-foreground: 30 10% 46%;
+
+    --accent: 45 90% 50%;
+    --accent-foreground: 30 20% 10%;
+
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 145 55% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --recording: 0 80% 58%;
+    --recording-foreground: 0 0% 100%;
+
+    --warning: 40 90% 50%;
+    --warning-foreground: 30 20% 10%;
+
+    --border: 35 20% 88%;
+    --input: 35 20% 88%;
+    --ring: 28 80% 52%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 40 20% 98%;
+    --sidebar-foreground: 30 10% 26%;
+    --sidebar-primary: 28 80% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 38 20% 95%;
+    --sidebar-accent-foreground: 30 15% 12%;
+    --sidebar-border: 35 18% 90%;
+    --sidebar-ring: 28 80% 52%;
+
+    /* Focus ring width (boosted in high-contrast) */
+    --focus-ring-width: 3px;
+    --focus-ring-offset: 2px;
+  }
+
+  .dark {
+    --background: 25 18% 8%;
+    --foreground: 38 20% 92%;
+
+    --card: 25 18% 12%;
+    --card-foreground: 38 20% 92%;
+
+    --popover: 25 18% 12%;
+    --popover-foreground: 38 20% 92%;
+
+    --primary: 28 80% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 25 15% 18%;
+    --secondary-foreground: 38 20% 88%;
+
+    --muted: 25 12% 18%;
+    --muted-foreground: 30 10% 55%;
+
+    --accent: 45 90% 50%;
+    --accent-foreground: 30 20% 10%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 145 55% 42%;
+    --success-foreground: 0 0% 100%;
+
+    --recording: 0 80% 58%;
+    --recording-foreground: 0 0% 100%;
+
+    --warning: 40 90% 50%;
+    --warning-foreground: 30 20% 10%;
+
+    --border: 25 15% 22%;
+    --input: 25 15% 22%;
+    --ring: 28 80% 55%;
+
+    --sidebar-background: 25 15% 10%;
+    --sidebar-foreground: 38 15% 92%;
+    --sidebar-primary: 28 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 25 12% 16%;
+    --sidebar-accent-foreground: 38 15% 92%;
+    --sidebar-border: 25 12% 16%;
+    --sidebar-ring: 28 80% 55%;
+  }
+
+  /* ===== Apple-style High Contrast Mode ===== */
+  .high-contrast,
+  .high-contrast.dark {
+    --border: 220 20% 40%;
+    --input: 220 20% 40%;
+    --muted-foreground: 220 15% 30%;
+    --focus-ring-width: 4px;
+    --focus-ring-offset: 3px;
+  }
+
+  .high-contrast.dark {
+    --border: 220 15% 50%;
+    --input: 220 15% 50%;
+    --muted-foreground: 220 10% 75%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: system-ui, -apple-system, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+    /* iOS safe area support */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+}
+
+@layer utilities {
+  /* ===== Recording pulse animation ===== */
+  .recording-pulse {
+    animation: recordingPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes recordingPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--recording) / 0.4);
+    }
+    50% {
+      box-shadow: 0 0 0 16px hsl(var(--recording) / 0);
+    }
+  }
+
+  /* Disable recording pulse in reduced motion */
+  .reduce-motion .recording-pulse {
+    animation: none;
+    box-shadow: 0 0 0 4px hsl(var(--recording) / 0.3);
+  }
+
+  .card-hover {
+    @apply transition-all duration-200;
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -8px hsl(var(--foreground) / 0.1);
+  }
+
+  /* Disable card hover motion */
+  .reduce-motion .card-hover:hover {
+    transform: none;
+  }
+
+  /* ===== Apple Accessibility: Focus Styles ===== */
+  /* High-contrast focus ring for keyboard navigation */
+  *:focus-visible {
+    outline: var(--focus-ring-width) solid hsl(var(--ring));
+    outline-offset: var(--focus-ring-offset);
+    border-radius: var(--radius);
+  }
+
+  /* Always show focus mode (like Apple's "Increase Contrast" + Full Keyboard Access) */
+  .always-show-focus *:focus {
+    outline: var(--focus-ring-width) solid hsl(var(--ring));
+    outline-offset: var(--focus-ring-offset);
+    border-radius: var(--radius);
+  }
+
+  /* ===== Apple Accessibility: Minimum Touch Targets ===== */
+  /* Standard a11y target: 48x48 (meets WCAG 2.5.8) */
+  .a11y-target {
+    min-width: 48px;
+    min-height: 48px;
+    @apply flex items-center justify-center;
+  }
+
+  /* Large a11y target for primary actions (56x56) */
+  .a11y-target-lg {
+    min-width: 56px;
+    min-height: 56px;
+    @apply flex items-center justify-center;
+  }
+
+  /* When large targets mode is on, boost all targets */
+  .large-targets .a11y-target {
+    min-width: 56px;
+    min-height: 56px;
+  }
+
+  .large-targets .a11y-target-lg {
+    min-width: 64px;
+    min-height: 64px;
+  }
+
+  /* ===== Keyboard shortcut badge ===== */
+  .kbd-hint {
+    @apply inline-flex items-center justify-center rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-mono font-semibold text-muted-foreground leading-none;
+    min-width: 1.25rem;
+  }
+
+  /* ===== Apple Accessibility: Reduce Motion ===== */
+  /* Disable all CSS transitions/animations */
+  .reduce-motion *,
+  .reduce-motion *::before,
+  .reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Also respect system preference as baseline */
+  @media (prefers-reduced-motion: reduce) {
+    .recording-pulse {
+      animation: none;
+      box-shadow: 0 0 0 4px hsl(var(--recording) / 0.3);
+    }
+  }
+
+  /* ===== Apple Accessibility: High Contrast enhancements ===== */
+  .high-contrast .rounded-xl,
+  .high-contrast .rounded-lg,
+  .high-contrast .rounded-2xl {
+    border-width: 2px;
+  }
+
+  .high-contrast .text-muted-foreground {
+    color: hsl(var(--foreground) / 0.75);
+  }
+
+  /* ===== VoiceOver: Screen reader only (visually hidden) ===== */
+  .sr-description {
+    @apply sr-only;
+  }
+
+  /* ===== Scroll behavior ===== */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* ===== Dwell Control visual feedback ===== */
+  .dwell-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: hsl(var(--primary));
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* ===== Motor accessibility: pointer precision ===== */
+  /* Increase spacing between interactive elements for imprecise pointers */
+  @media (pointer: coarse) {
+    .a11y-target {
+      min-width: 56px;
+      min-height: 56px;
+    }
+  }
+}

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>共鸣项目 Project Resonance — 说明文档</title>
+    <style>
+      :root {
+        --primary: #6366f1;
+        --primary-light: #818cf8;
+        --bg: #ffffff;
+        --text: #1e293b;
+        --text-secondary: #64748b;
+        --border: #e2e8f0;
+        --card-bg: #f8fafc;
+        --accent: #f59e0b;
+      }
+
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      @page {
+        size: A4;
+        margin: 20mm 18mm 25mm 18mm;
+      }
+
+      body {
+        font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+        color: var(--text);
+        line-height: 1.8;
+        font-size: 14px;
+        background: var(--bg);
+        max-width: 210mm;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      @media print {
+        body { padding: 0; font-size: 11pt; }
+        .no-print { display: none !important; }
+        .page-break { page-break-before: always; }
+        h2 { page-break-after: avoid; }
+        .card { break-inside: avoid; }
+      }
+
+      /* Print bar */
+      .print-bar {
+        position: sticky; top: 0; z-index: 100;
+        background: var(--primary); color: #fff;
+        padding: 12px 24px; text-align: center;
+        border-radius: 0 0 12px 12px;
+        font-size: 14px;
+        box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+      }
+      .print-bar button {
+        background: #fff; color: var(--primary);
+        border: none; padding: 8px 24px; border-radius: 8px;
+        font-weight: 600; cursor: pointer; margin-left: 12px;
+        font-size: 14px;
+      }
+
+      /* Cover */
+      .cover {
+        text-align: center;
+        padding: 60px 0 40px;
+        border-bottom: 3px solid var(--primary);
+        margin-bottom: 40px;
+      }
+      .cover .logo {
+        width: 80px; height: 80px; border-radius: 20px;
+        margin: 0 auto 24px; display: block;
+      }
+      .cover h1 {
+        font-size: 32px; font-weight: 800;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+      }
+      .cover .subtitle { font-size: 18px; color: var(--text-secondary); margin-bottom: 24px; }
+      .cover .meta { font-size: 13px; color: var(--text-secondary); line-height: 2; }
+      .cover .meta strong { color: var(--text); }
+
+      /* Sections */
+      h2 {
+        font-size: 22px; font-weight: 700; color: var(--primary);
+        margin: 40px 0 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--primary);
+        display: flex; align-items: center; gap: 8px;
+      }
+      h2 .num {
+        background: var(--primary); color: #fff;
+        width: 32px; height: 32px; border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 16px; flex-shrink: 0;
+      }
+
+      h3 {
+        font-size: 16px; font-weight: 600; color: var(--text);
+        margin: 24px 0 10px;
+      }
+
+      h4 {
+        font-size: 14px; font-weight: 600; color: var(--text);
+        margin: 16px 0 8px;
+      }
+
+      p { margin-bottom: 12px; }
+
+      ul, ol { padding-left: 24px; margin-bottom: 14px; }
+      li { margin-bottom: 6px; }
+
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 16px 0;
+      }
+
+      .highlight-box {
+        background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(129,140,248,0.05));
+        border-left: 4px solid var(--primary);
+        padding: 16px 20px;
+        border-radius: 0 12px 12px 0;
+        margin: 16px 0;
+      }
+
+      .warning-box {
+        background: rgba(245,158,11,0.08);
+        border-left: 4px solid var(--accent);
+        padding: 16px 20px;
+        border-radius: 0 12px 12px 0;
+        margin: 16px 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 13px;
+      }
+      th, td {
+        border: 1px solid var(--border);
+        padding: 10px 14px;
+        text-align: left;
+      }
+      th {
+        background: var(--primary);
+        color: #fff;
+        font-weight: 600;
+      }
+      tr:nth-child(even) { background: var(--card-bg); }
+
+      .tag {
+        display: inline-block; padding: 2px 10px;
+        border-radius: 12px; font-size: 12px; font-weight: 600;
+        margin-right: 6px;
+      }
+      .tag-tech { background: rgba(99,102,241,0.12); color: var(--primary); }
+      .tag-design { background: rgba(16,185,129,0.12); color: #059669; }
+      .tag-research { background: rgba(245,158,11,0.12); color: #d97706; }
+
+      .flow-diagram {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        margin: 16px 0;
+        font-family: "SF Mono", "Fira Code", monospace;
+        font-size: 13px;
+        line-height: 2;
+        white-space: pre;
+        overflow-x: auto;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .stat-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+      }
+      .stat-card .num { font-size: 28px; font-weight: 800; color: var(--primary); }
+      .stat-card .label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+      .timeline {
+        position: relative;
+        padding-left: 28px;
+        margin: 16px 0;
+      }
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px; top: 0; bottom: 0;
+        width: 2px; background: var(--border);
+      }
+      .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+      }
+      .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -24px; top: 6px;
+        width: 12px; height: 12px;
+        border-radius: 50%;
+        background: var(--primary);
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px var(--primary);
+      }
+      .timeline-item .date {
+        font-size: 12px; color: var(--text-secondary); font-weight: 600;
+      }
+
+      .toc { list-style: none; padding-left: 0; }
+      .toc li { margin-bottom: 8px; }
+      .toc a { color: var(--primary); text-decoration: none; font-weight: 500; }
+      .toc a:hover { text-decoration: underline; }
+
+      .footer {
+        text-align: center;
+        margin-top: 60px;
+        padding-top: 24px;
+        border-top: 2px solid var(--border);
+        color: var(--text-secondary);
+        font-size: 13px;
+      }
+
+      .arch-box {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin: 16px 0;
+      }
+      .arch-layer {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 16px;
+        text-align: center;
+        position: relative;
+      }
+      .arch-layer .layer-name {
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 13px;
+      }
+      .arch-layer .layer-detail {
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+      .arch-arrow {
+        text-align: center;
+        color: var(--primary);
+        font-size: 18px;
+        line-height: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Print Bar -->
+    <div class="print-bar no-print">
+      💡 点击浏览器"打印"或按 Ctrl+P / Cmd+P 导出为 PDF
+      <button onclick="window.print()">导出 PDF</button>
+    </div>
+
+    <!-- ===== 封面 ===== -->
+    <div class="cover">
+      <img src="../app-icon.png" alt="共鸣项目Logo" class="logo" />
+      <h1>共鸣项目 Project Resonance</h1>
+      <p class="subtitle">面向构音障碍患者的个性化语音辅助沟通系统</p>
+      <div class="meta">
+        <strong>文档类型：</strong>说明文档（创作背景 · 创作思路 · 实践过程）<br />
+        <strong>版本：</strong>v1.0 &nbsp;|&nbsp; <strong>日期：</strong>2026年3月<br />
+        <strong>项目类型：</strong>微信小程序 + Web 应用<br />
+        <strong>技术栈：</strong>React · TypeScript · Tailwind CSS · Supabase · 阶跃星辰 API
+      </div>
+    </div>
+
+    <!-- ===== 目录 ===== -->
+    <div class="card">
+      <h3>📑 目录</h3>
+      <ol class="toc">
+        <li><a href="#sec1">创作背景</a></li>
+        <li><a href="#sec2">创作思路</a></li>
+        <li><a href="#sec3">系统架构与技术选型</a></li>
+        <li><a href="#sec4">核心功能设计</a></li>
+        <li><a href="#sec5">实践过程</a></li>
+        <li><a href="#sec6">技术难点与解决方案</a></li>
+        <li><a href="#sec7">研究基础与学术支撑</a></li>
+        <li><a href="#sec8">未来规划</a></li>
+        <li><a href="#sec9">总结与展望</a></li>
+      </ol>
+    </div>
+
+    <!-- ===== 一、创作背景 ===== -->
+    <h2 id="sec1"><span class="num">1</span>创作背景</h2>
+
+    <h3>1.1 社会问题</h3>
+    <p>
+      构音障碍（Dysarthria）是一种因神经肌肉控制异常导致的言语运动障碍，常见于脑瘫、中风、帕金森病、渐冻症（ALS）等患者群体。据世界卫生组织统计，全球约有<strong>1700万</strong>脑瘫患者，中国约有<strong>600万</strong>。这些患者中，约
+      <strong>60-80%</strong> 存在不同程度的构音障碍，导致他们的语音难以被普通人和通用语音识别系统理解。
+    </p>
+
+    <div class="highlight-box">
+      <strong>核心痛点：</strong>现有主流语音识别系统（如讯飞、百度、Google
+      Speech）均基于正常人语音数据训练，对病理性语音的识别准确率极低（通常低于
+      30%），导致这一群体被"数字化沟通"排斥在外。
+    </div>
+
+    <h3>1.2 现有解决方案的不足</h3>
+    <ul>
+      <li><strong>传统 AAC 设备：</strong>价格昂贵（数千至数万元）、操作复杂、缺乏个性化</li>
+      <li><strong>图片沟通板：</strong>表达效率低、缺乏灵活性、无法表达复杂情感</li>
+      <li><strong>通用语音助手：</strong>对非标准发音几乎无法识别，用户体验极差</li>
+      <li><strong>护工/家属翻译：</strong>依赖他人在场，缺乏独立性和隐私</li>
+    </ul>
+
+    <h3>1.3 项目愿景</h3>
+    <div class="card">
+      <p style="font-size: 18px; font-weight: 700; color: var(--primary); text-align: center; margin: 0;">
+        "让每一个声音都被听见"
+      </p>
+      <p style="text-align: center; color: var(--text-secondary); margin-top: 8px; margin-bottom: 0;">
+        通过 AI 语音技术与个性化适配，让构音障碍患者用自己的声音自由沟通。
+      </p>
+    </div>
+
+    <!-- ===== 二、创作思路 ===== -->
+    <div class="page-break"></div>
+    <h2 id="sec2"><span class="num">2</span>创作思路</h2>
+
+    <h3>2.1 设计理念</h3>
+    <p>项目围绕以下三个核心理念展开：</p>
+    <ol>
+      <li>
+        <strong>以用户为中心：</strong
+        >目标用户是运动功能受限的脑瘫患者，因此界面设计必须适应大尺寸触控目标、高对比度配色、语音反馈等无障碍需求
+      </li>
+      <li>
+        <strong>渐进式增强：</strong>从基础的短语匹配出发，逐步引入 LoRA 个性化微调，让系统随着数据积累"越用越懂"用户
+      </li>
+      <li><strong>低门槛、零成本入口：</strong>通过微信小程序 WebView 容器分发，用户扫码即用，无需安装原生应用</li>
+    </ol>
+
+    <h3>2.2 产品定位</h3>
+    <table>
+      <tr>
+        <th>维度</th>
+        <th>定位</th>
+      </tr>
+      <tr>
+        <td>目标用户</td>
+        <td>构音障碍患者（以脑瘫为主）、照护者、康复治疗师</td>
+      </tr>
+      <tr>
+        <td>核心场景</td>
+        <td>日常沟通表达（生理需求、社交寒暄、紧急求助等）</td>
+      </tr>
+      <tr>
+        <td>产品形态</td>
+        <td>微信小程序（WebView 嵌入）+ 独立 Web 应用</td>
+      </tr>
+      <tr>
+        <td>技术差异点</td>
+        <td>个性化语音识别 + 声音克隆复述 + 无障碍优先设计</td>
+      </tr>
+      <tr>
+        <td>商业模式</td>
+        <td>机构付费 + 公益捐赠 + 政府采购（三条线并行）</td>
+      </tr>
+    </table>
+
+    <h3>2.3 三阶段技术路径</h3>
+    <p>我们规划了从 Demo 到商业化的渐进式技术路径：</p>
+
+    <table>
+      <tr>
+        <th>阶段</th>
+        <th>方案</th>
+        <th>准确率</th>
+        <th>成本</th>
+        <th>落地时间</th>
+      </tr>
+      <tr>
+        <td><span class="tag tag-design">当前</span>阶段一</td>
+        <td>短语库 + ASR 模糊匹配</td>
+        <td>~40-60%</td>
+        <td>零额外成本</td>
+        <td>已完成</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-tech">中期</span>阶段二</td>
+        <td>Whisper + LoRA 个性化微调</td>
+        <td>~70-85%</td>
+        <td>¥200-500/月</td>
+        <td>2-4 周</td>
+      </tr>
+      <tr>
+        <td><span class="tag tag-research">远期</span>阶段三</td>
+        <td>Step-Audio 开源大模型 SFT</td>
+        <td>~85-95%</td>
+        <td>¥2000+/月</td>
+        <td>3-6 个月</td>
+      </tr>
+    </table>
+
+    <h3>2.4 核心交互流程</h3>
+    <div class="flow-diagram">
+      用户说话 → 录音采集 → ASR 语音识别（阶跃星辰 / 火山引擎） ↓ ASR 原始文本输出 ↓ 短语库模糊匹配（编辑距离 Top-K） ↓
+      候选意图展示（1-3 条） ↓ 用户确认 → TTS 语音合成复述（支持声音克隆） ↓ 对方听到清晰语音输出
+    </div>
+
+    <!-- ===== 三、系统架构 ===== -->
+    <div class="page-break"></div>
+    <h2 id="sec3"><span class="num">3</span>系统架构与技术选型</h2>
+
+    <h3>3.1 整体架构</h3>
+    <div class="arch-box">
+      <div class="arch-layer">
+        <div class="layer-name">📱 前端展示层</div>
+        <div class="layer-detail">React 18 + TypeScript + Tailwind CSS + Framer Motion | 微信小程序 WebView 容器</div>
+      </div>
+      <div class="arch-arrow">↕</div>
+      <div class="arch-layer">
+        <div class="layer-name">🔗 API 代理层</div>
+        <div class="layer-detail">Supabase Edge Functions（Deno Runtime）— 统一代理 ASR/TTS/声音克隆请求</div>
+      </div>
+      <div class="arch-arrow">↕</div>
+      <div class="arch-layer">
+        <div class="layer-name">🧠 AI 服务层</div>
+        <div class="layer-detail">阶跃星辰 Step-1v-mini ASR · Step-TTS · Step-Voice-Clone · 火山引擎 BigASR</div>
+      </div>
+      <div class="arch-arrow">↕</div>
+      <div class="arch-layer">
+        <div class="layer-name">💾 数据持久层</div>
+        <div class="layer-detail">
+          Supabase PostgreSQL（用户/录音元数据）· Storage（音频文件）· localStorage（本地缓存）
+        </div>
+      </div>
+    </div>
+
+    <h3>3.2 技术选型理由</h3>
+    <table>
+      <tr>
+        <th>技术</th>
+        <th>选择</th>
+        <th>理由</th>
+      </tr>
+      <tr>
+        <td>前端框架</td>
+        <td>React + Vite</td>
+        <td>生态成熟、构建速度快、代码分割友好</td>
+      </tr>
+      <tr>
+        <td>样式方案</td>
+        <td>Tailwind CSS</td>
+        <td>原子化 CSS 适合无障碍主题定制、响应式开发高效</td>
+      </tr>
+      <tr>
+        <td>动画</td>
+        <td>Framer Motion</td>
+        <td>声明式动画 API、支持 reduced-motion 媒体查询</td>
+      </tr>
+      <tr>
+        <td>后端</td>
+        <td>Supabase (Lovable Cloud)</td>
+        <td>一站式 BaaS、免运维、内置认证与存储</td>
+      </tr>
+      <tr>
+        <td>ASR</td>
+        <td>阶跃星辰 Step ASR</td>
+        <td>中文识别质量高、支持流式识别、API 成本可控</td>
+      </tr>
+      <tr>
+        <td>TTS</td>
+        <td>阶跃星辰 Step TTS</td>
+        <td>支持声音克隆、中文自然度高、延迟低</td>
+      </tr>
+      <tr>
+        <td>分发</td>
+        <td>微信小程序 WebView</td>
+        <td>国内用户触达最广、扫码即用、无需安装</td>
+      </tr>
+    </table>
+
+    <!-- ===== 四、核心功能 ===== -->
+    <div class="page-break"></div>
+    <h2 id="sec4"><span class="num">4</span>核心功能设计</h2>
+
+    <h3>4.1 语音识别与意图匹配</h3>
+    <div class="card">
+      <h4>功能描述</h4>
+      <p>
+        用户按住录音按钮说话，系统通过 ASR 将语音转为文本，然后与预设短语库进行编辑距离模糊匹配，输出 Top-K
+        候选意图供用户选择。
+      </p>
+      <h4>技术细节</h4>
+      <ul>
+        <li>支持阶跃星辰和火山引擎双 ASR 引擎切换</li>
+        <li>流式 ASR 实时显示中间识别结果</li>
+        <li>Levenshtein 编辑距离算法匹配短语库</li>
+        <li>可调参数：Top-K 数量、置信度阈值、最大模板数</li>
+      </ul>
+    </div>
+
+    <h3>4.2 TTS 语音合成与声音克隆</h3>
+    <div class="card">
+      <h4>功能描述</h4>
+      <p>
+        用户确认意图后，系统使用 TTS
+        以清晰的语音复述该短语，帮助对方理解。更进一步，支持声音克隆——用患者本人的声音合成语音，保留声音身份认同。
+      </p>
+      <h4>技术细节</h4>
+      <ul>
+        <li>双 TTS 引擎：浏览器原生 Web Speech API（离线）+ 阶跃星辰云端 TTS</li>
+        <li>阶跃星辰 Voice Clone API：上传 10 秒音频即可克隆声音</li>
+        <li>可调参数：语速、音量、音高、语音选择</li>
+      </ul>
+    </div>
+
+    <h3>4.3 个性化短语库管理</h3>
+    <div class="card">
+      <h4>功能描述</h4>
+      <p>
+        预设 9 大类别、近 100
+        条日常沟通短语，涵盖生理需求、照护协助、疼痛不适、社交寒暄、紧急求助等场景。用户可自定义添加、编辑、删除短语，并支持
+        JSON 格式导入导出。
+      </p>
+      <h4>分类体系</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+        <span class="tag tag-tech">生理需求</span>
+        <span class="tag tag-tech">照护协助</span>
+        <span class="tag tag-tech">疼痛不适</span>
+        <span class="tag tag-design">社交寒暄</span>
+        <span class="tag tag-design">家居日常</span>
+        <span class="tag tag-design">出行交通</span>
+        <span class="tag tag-research">紧急求助</span>
+        <span class="tag tag-research">情绪表达</span>
+        <span class="tag tag-research">饮食相关</span>
+      </div>
+    </div>
+
+    <h3>4.4 无障碍设计</h3>
+    <div class="card">
+      <p>作为面向运动功能障碍用户的产品，无障碍设计是核心而非附加：</p>
+      <ul>
+        <li><strong>大触控目标：</strong>所有可交互元素最小 44×44px（WCAG 2.1 AA 标准）</li>
+        <li><strong>高对比度模式：</strong>支持切换高对比度配色方案</li>
+        <li><strong>减弱动效：</strong>尊重 prefers-reduced-motion 系统设置</li>
+        <li><strong>键盘快捷键：</strong>完整的键盘导航支持（空格录音、Tab 切换等）</li>
+        <li><strong>屏幕阅读器：</strong>语义化 HTML + ARIA 标签 + 焦点管理</li>
+        <li><strong>跳过导航链接：</strong>支持 Skip to Content 功能</li>
+      </ul>
+    </div>
+
+    <h3>4.5 语音数据采集</h3>
+    <div class="card">
+      <p>
+        除核心辅助沟通功能外，系统同时承担构音障碍语音数据的大规模采集任务，为后续 LoRA 个性化微调提供训练数据基础：
+      </p>
+      <ul>
+        <li>录音训练模块：引导用户逐条录制短语</li>
+        <li>录音质量监控：时长、电平、信噪比检测</li>
+        <li>数据标注：自动关联 speaker_id、label、category、duration_ms 等元信息</li>
+        <li>云端存储：Supabase Storage 安全存储音频文件</li>
+      </ul>
+    </div>
+
+    <!-- ===== 五、实践过程 ===== -->
+    <div class="page-break"></div>
+    <h2 id="sec5"><span class="num">5</span>实践过程</h2>
+
+    <h3>5.1 开发时间线</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="date">第 1 周 — 需求分析与技术调研</div>
+        <p>
+          深入调研构音障碍用户痛点，研读 44 篇相关学术论文（涵盖 Dysarthric ASR、LoRA/PEFT、数据增强、TTS/Voice
+          Banking、BCI 等领域），确定技术路线和产品方向。
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="date">第 2 周 — 核心功能开发</div>
+        <p>完成基础 UI 框架搭建、录音模块、ASR 识别集成（阶跃星辰 API）、短语库模糊匹配算法实现、TTS 语音合成功能。</p>
+      </div>
+      <div class="timeline-item">
+        <div class="date">第 3 周 — 无障碍与声音克隆</div>
+        <p>
+          实现完整无障碍体系（大触控目标、高对比度、键盘快捷键、屏幕阅读器适配）。集成阶跃星辰声音克隆
+          API，实现"用自己的声音说话"。
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="date">第 4 周 — 后端与数据采集</div>
+        <p>
+          搭建 Supabase 后端（用户认证、录音存储、元数据管理）。设计数据采集标准（参考 MDSC 语料库规范），建立
+          dysarthria_recordings 数据表。
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="date">第 5 周 — 小程序适配与优化</div>
+        <p>
+          微信小程序 WebView 容器开发、跨平台兼容性调试。性能优化（代码分割、Lazy Loading、Legacy 浏览器兼容）。准备 ICP
+          备案和国内服务器部署。
+        </p>
+      </div>
+      <div class="timeline-item">
+        <div class="date">第 6 周 — 测试与文档</div>
+        <p>端到端功能测试、用户体验走查。编写项目文档、数据标准规范、LoRA 微调部署指南。准备竞赛提交材料。</p>
+      </div>
+    </div>
+
+    <h3>5.2 关键数据指标</h3>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="num">44</div>
+        <div class="label">参考论文</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">~100</div>
+        <div class="label">预设短语条目</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">9</div>
+        <div class="label">短语分类</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">6</div>
+        <div class="label">Edge Functions</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">2</div>
+        <div class="label">ASR 引擎</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">3</div>
+        <div class="label">数据库表</div>
+      </div>
+    </div>
+
+    <h3>5.3 项目文件结构</h3>
+    <div class="flow-diagram">
+      project-resonance/ ├── src/ │ ├── components/ # UI 组件（录音按钮、ASR 结果、无障碍设置等） │ ├── hooks/ # 自定义
+      Hooks（ASR、TTS、录音、无障碍等） │ ├── pages/ # 页面组件（使用、训练、词表、设置） │ ├── types/ # TypeScript
+      类型定义 │ ├── data/ # 默认短语库数据 │ └── services/ # 服务层（火山引擎 ASR） ├── supabase/ │ └── functions/ #
+      Edge Functions（ASR 代理、TTS、声音克隆、短信） ├── miniprogram/ # 微信小程序 WebView 容器 ├── public/docs/ #
+      项目文档集（技术路线、论文综述、数据标准等） └── scripts/ # 构建脚本（APK 打包等）
+    </div>
+
+    <!-- ===== 六、技术难点 ===== -->
+    <div class="page-break"></div>
+    <h2 id="sec6"><span class="num">6</span>技术难点与解决方案</h2>
+
+    <div class="card">
+      <h4>难点 1：病理语音 ASR 识别率极低</h4>
+      <p>
+        <strong>问题：</strong>通用 ASR 模型对构音障碍语音的字符错误率（CER）普遍超过 70%，部分重度患者甚至超过 100%。
+      </p>
+      <p>
+        <strong>解决：</strong>采用"ASR + 短语库模糊匹配"两级策略。即使 ASR
+        输出严重错误，通过编辑距离匹配仍可从有限短语库中找到最可能的意图。同时规划 LoRA 微调路径，用每人 50-100
+        条录音训练个性化适配层。
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>难点 2：运动障碍用户的交互设计</h4>
+      <p><strong>问题：</strong>脑瘫患者常伴有精细运动障碍，传统小按钮、复杂手势无法使用。</p>
+      <p>
+        <strong>解决：</strong>所有可点击区域不小于
+        44×44px；录音按钮采用超大尺寸居中布局；支持键盘快捷键操作；提供高对比度和减弱动效模式。
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>难点 3：声音身份保留</h4>
+      <p><strong>问题：</strong>传统 TTS 使用预设声音，患者失去"声音身份"认同感。</p>
+      <p>
+        <strong>解决：</strong>集成阶跃星辰声音克隆 API，只需 10 秒参考音频即可生成患者声音的 TTS
+        模型，让系统"用自己的声音"复述。
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>难点 4：微信小程序生态限制</h4>
+      <p><strong>问题：</strong>小程序原生不支持复杂 Web 应用、WebView 内 API 权限受限。</p>
+      <p>
+        <strong>解决：</strong>采用 WebView 容器方案，Web 应用部署在备案域名下，通过 JSSDK 桥接小程序原生能力。前端做
+        Legacy 浏览器兼容（@vitejs/plugin-legacy）。
+      </p>
+    </div>
+
+    <div class="card">
+      <h4>难点 5：数据安全与隐私保护</h4>
+      <p><strong>问题：</strong>病理语音属于敏感健康数据，涉及患者隐私。</p>
+      <p>
+        <strong>解决：</strong>Supabase RLS（行级安全策略）保护数据访问；本地优先存储减少网络传输；音频文件通过安全
+        Storage Bucket 管理；数据采集前知情同意。
+      </p>
+    </div>
+
+    <!-- ===== 七、研究基础 ===== -->
+    <div class="page-break"></div>
+    <h2 id="sec7"><span class="num">7</span>研究基础与学术支撑</h2>
+
+    <p>项目以系统性文献综述为理论基础，深入研读了 <strong>44 篇</strong>领域相关论文，覆盖以下研究方向：</p>
+
+    <table>
+      <tr>
+        <th>研究方向</th>
+        <th>论文数</th>
+        <th>关键发现</th>
+      </tr>
+      <tr>
+        <td>构音障碍语音识别</td>
+        <td>12 篇</td>
+        <td>说话人自适应可提升 20-30% 准确率；个性化模型效果显著优于通用模型</td>
+      </tr>
+      <tr>
+        <td>LoRA / PEFT 微调</td>
+        <td>8 篇</td>
+        <td>LoRA rank=8-16 即可获得接近全量微调的效果；训练参数量 <1%</td>
+      </tr>
+      <tr>
+        <td>数据增强</td>
+        <td>6 篇</td>
+        <td>Speed perturbation + SpecAugment 在低资源场景下可提升 15-25% 性能</td>
+      </tr>
+      <tr>
+        <td>TTS / 语音银行</td>
+        <td>5 篇</td>
+        <td>声音银行技术可在患者语言能力退化前保存声音身份</td>
+      </tr>
+      <tr>
+        <td>Step-Audio 端到端</td>
+        <td>3 篇</td>
+        <td>端到端架构避免级联误差，适合病理语音的联合优化</td>
+      </tr>
+      <tr>
+        <td>唤醒词检测 (MDSC)</td>
+        <td>4 篇</td>
+        <td>三阶段渐进训练（SIC→SID→SDD），3 分钟注册数据即可显著提升</td>
+      </tr>
+      <tr>
+        <td>多模态 / BCI</td>
+        <td>6 篇</td>
+        <td>质量评分过滤 + 课程学习策略适用于小模型高效训练</td>
+      </tr>
+    </table>
+
+    <div class="highlight-box">
+      <strong>核心学术洞察：</strong
+      >针对构音障碍语音识别，"个性化"是最关键的技术路径。每位患者的发音模式独特，通用模型难以泛化。LoRA
+      微调以极低成本（50-100 条训练数据、30 分钟训练时间、~8MB
+      权重文件）实现了高效的个人化适配，是当前最具性价比的技术方案。
+    </div>
+
+    <!-- ===== 八、未来规划 ===== -->
+    <h2 id="sec8"><span class="num">8</span>未来规划</h2>
+
+    <table>
+      <tr>
+        <th>阶段</th>
+        <th>目标</th>
+        <th>关键任务</th>
+      </tr>
+      <tr>
+        <td>近期（1-2月）</td>
+        <td>LoRA 微调试点</td>
+        <td>采集 3-5 位真实用户数据 → Whisper-small + LoRA 训练 → 部署到 GPU 推理服务器 → 端到端验证</td>
+      </tr>
+      <tr>
+        <td>中期（3-6月）</td>
+        <td>产品化与用户增长</td>
+        <td>联系 3-5 家康复机构试点 → 优化数据采集流程 → 多用户 LoRA 权重管理 → ICP 备案与正式上线</td>
+      </tr>
+      <tr>
+        <td>远期（6-12月）</td>
+        <td>规模化部署</td>
+        <td>Step-Audio 开源模型 SFT → 通用病理语音基座模型 → 机构合作推广 → 探索融资与商业化</td>
+      </tr>
+    </table>
+
+    <!-- ===== 九、总结 ===== -->
+    <div class="page-break"></div>
+    <h2 id="sec9"><span class="num">9</span>总结与展望</h2>
+
+    <p>
+      共鸣项目（Project
+      Resonance）立足于一个被长期忽视的真实社会需求——构音障碍患者的沟通困境。我们通过以下创新点尝试突破现有局限：
+    </p>
+
+    <ol>
+      <li>
+        <strong>技术创新：</strong>提出"通用 ASR + 短语库模糊匹配 + LoRA
+        个性化微调"的三层渐进式识别方案，在有限资源下逐步提升识别准确率
+      </li>
+      <li><strong>交互创新：</strong>以无障碍优先的设计理念，为运动功能障碍用户量身定制操作体验</li>
+      <li><strong>体验创新：</strong>通过声音克隆技术保留患者的声音身份，让"被翻译"变为"用自己的声音说话"</li>
+      <li><strong>落地创新：</strong>基于微信小程序 WebView 容器实现零安装分发，降低使用门槛</li>
+    </ol>
+
+    <div class="highlight-box">
+      <p style="margin:0;">
+        我们相信，AI
+        语音技术不应仅服务于主流用户群体。通过个性化适配和无障碍设计，技术可以成为弥合沟通鸿沟的桥梁，让每一个独特的声音都有机会被世界听见。
+      </p>
+    </div>
+
+    <div class="warning-box">
+      <strong>致谢：</strong>感谢阶跃星辰提供的 ASR/TTS/声音克隆 API 技术支持；感谢 Lovable
+      平台提供的全栈开发与云服务基础设施；感谢所有参与测试的构音障碍用户和他们的家属。
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p><strong>共鸣项目 Project Resonance</strong></p>
+      <p>让每一个声音都被听见 — Let Every Voice Be Heard</p>
+      <p style="margin-top:8px;">v1.0 · 2026年3月</p>
+    </div>
+  </body>
+</html>
