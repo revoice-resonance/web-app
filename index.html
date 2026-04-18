@@ -1,0 +1,77 @@
+<!doctype html>
+  <html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>共鸣 - 构音障碍语音识别训练系统</title>
+    <meta name="description" content="为重度构音障碍者设计的离线语音识别训练系统，通过少量练习录音学会听懂特定用户的固定短语" />
+    <meta name="author" content="Project Resonance" />
+
+    <meta property="og:title" content="共鸣 Project Resonance" />
+    <meta property="og:description" content="为重度构音障碍者设计的离线语音识别训练系统" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/og-image.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@ProjectResonance" />
+    <meta name="twitter:image" content="/og-image.png" />
+  </head>
+
+  <body>
+    <div id="root">
+      <!-- Inline loading shell — shown instantly before JS parses -->
+      <div id="loading-shell" style="display:flex;align-items:center;justify-content:center;height:100vh;background:hsl(35,20%,97%);font-family:system-ui,-apple-system,sans-serif">
+        <div style="text-align:center">
+          <div style="width:36px;height:36px;border:3px solid hsl(175,45%,38%,0.2);border-top-color:hsl(175,45%,38%);border-radius:50%;animation:s .6s linear infinite;margin:0 auto"></div>
+          <p style="margin-top:12px;color:hsl(220,10%,50%);font-size:13px">加载中...</p>
+        </div>
+      </div>
+      <style>@keyframes s{to{transform:rotate(360deg)}}</style>
+    </div>
+
+    <!-- Global error handler — catches JS errors before React loads -->
+    <script>
+      var _errs = [];
+      window.onerror = function(msg, url, line, col) {
+        _errs.push(msg + ' @ ' + (url||'') + ':' + line + ':' + col);
+        var shell = document.getElementById('loading-shell');
+        if (shell) {
+          shell.innerHTML = '<div style="text-align:center;padding:20px">' +
+            '<p style="color:#c0392b;font-size:14px;margin-bottom:8px">页面加载出错</p>' +
+            '<p style="color:#888;font-size:12px;margin-bottom:8px;word-break:break-all">' + msg + '</p>' +
+            '<p style="color:#aaa;font-size:10px;margin-bottom:12px">文件: ' + (url||'').split('/').pop() + ' 行' + line + '</p>' +
+            '<button onclick="location.reload()" style="padding:8px 20px;background:hsl(175,45%,38%);color:#fff;border:none;border-radius:6px;font-size:13px">刷新</button>' +
+            '</div>';
+        }
+      };
+      // Timeout fallback
+      setTimeout(function() {
+        var shell = document.getElementById('loading-shell');
+        if (shell && shell.parentNode && shell.querySelector('#loading-shell > div')) {
+          var detail = _errs.length ? '错误: ' + _errs[0] : '可能是网络问题';
+          shell.innerHTML = '<div style="text-align:center;padding:20px">' +
+            '<p style="color:#e67e22;font-size:14px;margin-bottom:8px">加载超时</p>' +
+            '<p style="color:#888;font-size:12px;margin-bottom:12px;word-break:break-all">' + detail + '</p>' +
+            '<button onclick="location.reload()" style="padding:8px 20px;background:hsl(175,45%,38%);color:#fff;border:none;border-radius:6px;font-size:13px">刷新</button>' +
+            '</div>';
+        }
+      }, 15000);
+    </script>
+
+    <!-- WeChat JSSDK for Mini Program WebView bridge -->
+    <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+
+    <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Fallback for browsers that don't support ES modules -->
+    <noscript>
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui,sans-serif;text-align:center;padding:20px">
+        <div>
+          <p style="font-size:16px;color:#333;margin-bottom:8px">请启用 JavaScript</p>
+          <p style="font-size:13px;color:#888">本应用需要 JavaScript 支持才能运行</p>
+        </div>
+      </div>
+    </noscript>
+  </body>
+</html>

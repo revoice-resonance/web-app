@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共鸣 - 构音障碍沟通辅助工具</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #f97316;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --slide-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--text);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .deck-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 4rem 6rem;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            pointer-events: none;
+            background-image: radial-gradient(#e2e8f0 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: translateX(0);
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        .slide.prev {
+            opacity: 0;
+            transform: translateX(-100px);
+        }
+
+        h1 {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+            line-height: 1.2;
+            font-weight: 800;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary);
+            border-bottom: 4px solid var(--secondary);
+            display: inline-block;
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #475569;
+        }
+
+        p {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            color: #334155;
+        }
+
+        .sub-text {
+            font-size: 1.8rem;
+            color: #64748b;
+            font-weight: 300;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid var(--primary);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            background-color: #f8fafc;
+        }
+
+        .card.orange {
+            border-left-color: var(--secondary);
+        }
+
+        .card h4 {
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reveal-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.5s ease;
+        }
+
+        .card.open .reveal-content,
+        .reveal-wrapper.open .reveal-content {
+            max-height: 500px;
+            opacity: 1;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        .toggle-icon {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            transition: transform 0.3s;
+        }
+        
+        .open .toggle-icon {
+            transform: rotate(180deg);
+            color: var(--primary);
+        }
+
+        .click-hint {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+            font-style: italic;
+            text-align: right;
+        }
+
+        .highlight {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        ul {
+            list-style-position: inside;
+            font-size: 1.3rem;
+            padding-left: 0.5rem;
+        }
+        
+        li {
+            margin-bottom: 0.8rem;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        .btn {
+            background: var(--text);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--primary);
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background: var(--secondary);
+            width: 0%;
+            transition: width 0.3s;
+            z-index: 100;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            font-size: 1.2rem;
+            color: #94a3b8;
+        }
+
+        .comparison {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            font-size: 2rem;
+            margin-top: 3rem;
+            gap: 2rem;
+        }
+        
+        .reveal-wrapper {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            flex: 1;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .reveal-wrapper:hover {
+            transform: translateY(-3px);
+        }
+
+        .arrow {
+            font-size: 3rem;
+            color: #cbd5e1;
+            align-self: center;
+        }
+
+        .slide.demo-slide {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%) !important;
+            background-image: none !important;
+        }
+
+        .demo-slide .demo-card {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 1.5rem;
+            padding: 2.5rem 3rem;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .demo-slide .demo-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--secondary);
+        }
+
+        @keyframes pulse-arrow {
+            0%, 100% { opacity: 1; transform: translateY(0); }
+            50% { opacity: 0.5; transform: translateY(8px); }
+        }
+
+        .demo-slide .pulse-hint {
+            animation: pulse-arrow 2s ease-in-out infinite;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="deck-container">
+        <div class="progress-bar" id="progressBar"></div>
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active" id="slide-1">
+            <div style="text-align: center;">
+                <div style="font-size: 6rem; color: var(--primary); margin-bottom: 1rem;">🎙️</div>
+                <h1>共鸣</h1>
+                <p class="sub-text" style="font-size: 2rem; margin-top: 0.5rem;">Project Resonance</p>
+                <p class="sub-text" style="font-size: 2.2rem; margin-top: 1rem;">构音障碍语音识别训练系统</p>
+                <div style="margin-top: 4rem; color: var(--secondary); font-size: 1.2rem;">按 → 键开始演示</div>
+            </div>
+        </div>
+
+        <!-- Slide 2: What -->
+        <div class="slide" id="slide-2">
+            <h2>1. What: 产品定义</h2>
+            <div class="comparison">
+                <div class="reveal-wrapper" onclick="toggleReveal(this)">
+                    <h3 style="color: #64748b;">专业定义 <span class="toggle-icon">▼</span></h3>
+                    <div class="reveal-content">
+                        <p style="font-size: 1.6rem; margin-top: 2rem; text-align: left;">专为构音障碍人群设计的<br><span class="highlight">个性化语音识别训练系统</span><br>通过少量录音学习用户发音规律<br>建立专属"默契"，还原<span class="highlight">本人声纹</span>的清晰语音</p>
+                    </div>
+                </div>
+                
+                <div class="arrow">➜</div>
+                
+                <div class="reveal-wrapper" onclick="toggleReveal(this)">
+                    <h3 style="color: var(--secondary);">人话（Slogan） <span class="toggle-icon">▼</span></h3>
+                    <div class="reveal-content">
+                        <p style="font-size: 2.2rem; font-weight: bold; color: var(--text); margin-top: 2rem;">精准识音<br>以你之声<br>畅所欲言</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Who -->
+        <div class="slide" id="slide-3">
+            <h2>2. Who: 核心用户痛点</h2>
+            <p><strong>人群画像：</strong>因脑瘫、听障等导致吐字不清、难以被听懂的人群。</p>
+            
+            <div class="grid-2">
+                <div class="card" onclick="toggleReveal(this)">
+                    <h4>🛠️ 功能性需求 <span class="toggle-icon">▼</span></h4>
+                    <div class="click-hint">点击查看详情</div>
+                    <div class="reveal-content">
+                        <ul>
+                            <li><strong>精准识音：</strong> 哪怕发音模糊也能转为准确文字。</li>
+                            <li><strong>声纹克隆：</strong> 用"自己"的声音清晰说话。</li>
+                            <li><strong>词表训练：</strong> 通过录制常用短语训练系统。</li>
+                            <li><strong>社交分享：</strong> 一键复制文字或复述语音。</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card orange" onclick="toggleReveal(this)">
+                    <h4>❤️ 情感性需求 <span class="toggle-icon">▼</span></h4>
+                    <div class="click-hint">点击查看详情</div>
+                    <div class="reveal-content">
+                        <ul>
+                            <li><strong>躲在屏幕后：</strong> 不紧张、不自卑、自在表达。</li>
+                            <li><strong>渴望被倾听：</strong> 像健全人一样被正常对待。</li>
+                            <li><strong>尊严感：</strong> 不怕被打断，有尊严地说话。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 产品演示（过渡页） -->
+        <div class="slide demo-slide" id="slide-4">
+            <div style="text-align: center; color: white;">
+                <div style="font-size: 4rem; margin-bottom: 1.5rem; letter-spacing: 0.5rem;">🎙️ ✨</div>
+                <h1 style="color: white; font-size: 4.5rem; letter-spacing: 0.2rem;">产品演示</h1>
+                <p style="color: #94a3b8; font-size: 1.8rem; margin-top: 0.5rem; font-weight: 300;">Live Demo</p>
+                <div style="width: 120px; height: 4px; background: var(--secondary); margin: 2rem auto;"></div>
+                <div style="margin-top: 2.5rem; display: flex; justify-content: center; gap: 3rem;">
+                    <div class="demo-card">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🗣️</div>
+                        <p style="color: white; font-size: 1.4rem; margin: 0; font-weight: 600;">语音识别</p>
+                        <p style="color: #94a3b8; font-size: 1.1rem; margin: 0.5rem 0 0;">模糊发音 → 精准文字</p>
+                    </div>
+                    <div class="demo-card">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🧬</div>
+                        <p style="color: white; font-size: 1.4rem; margin: 0; font-weight: 600;">声纹复述</p>
+                        <p style="color: #94a3b8; font-size: 1.1rem; margin: 0.5rem 0 0;">克隆音色 → 清晰表达</p>
+                    </div>
+                </div>
+                <p class="pulse-hint" style="color: var(--secondary); font-size: 1.6rem; margin-top: 3.5rem; font-weight: 600;">⬇ 请切换至产品进行现场演示 ⬇</p>
+            </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 未来计划 -->
+        <div class="slide" id="slide-5">
+            <h2>6. Next: 未来规划</h2>
+            <p>让模型持续进化，同时推动科研与产品的双向驱动。</p>
+
+            <div class="grid-2">
+                <div class="card" onclick="toggleReveal(this)">
+                    <h4>📈 用户共建训练 <span class="toggle-icon">▼</span></h4>
+                    <div class="click-hint">点击查看详情</div>
+                    <div class="reveal-content">
+                        <p>用户通过日常使用不断贡献语料，系统自动回灌学习，识别精度越用越高。每次"选择正确短语"都在帮助模型成长。</p>
+                    </div>
+                </div>
+                <div class="card orange" onclick="toggleReveal(this)">
+                    <h4>🔬 科研数据驱动 <span class="toggle-icon">▼</span></h4>
+                    <div class="click-hint">点击查看详情</div>
+                    <div class="reveal-content">
+                        <p>构建大规模构音障碍语音数据库，为病理语音识别模型的微调（Fine-tuning）与语音重建（Speech Reconstruction）提供数据基础。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 结束页 -->
+        <div class="slide" id="slide-6">
+            <div style="text-align: center;">
+                <h1 style="color: var(--secondary);">共鸣</h1>
+                <p class="sub-text" style="font-size: 1.6rem;">Project Resonance</p>
+                <p style="font-size: 2.5rem; margin-top: 1rem;">让沟通无障碍</p>
+                <div style="margin-top: 3rem;">
+                    <button class="btn" onclick="location.reload()" style="font-size: 1.5rem;">重新开始</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-number">
+            <span id="currentSlideNum">1</span> / <span id="totalSlideNum">9</span>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="prevSlide()">❮ 上一页</button>
+            <button class="btn" onclick="nextSlide()">下一页 ❯</button>
+        </div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const currentSlideNum = document.getElementById('currentSlideNum');
+        const totalSlideNum = document.getElementById('totalSlideNum');
+
+        totalSlideNum.textContent = slides.length;
+
+        function toggleReveal(element) {
+            element.classList.toggle('open');
+            const hint = element.querySelector('.click-hint');
+            if(hint) hint.style.display = 'none';
+        }
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.remove('active', 'prev');
+                if (index === currentSlide) {
+                    slide.classList.add('active');
+                } else if (index < currentSlide) {
+                    slide.classList.add('prev');
+                }
+            });
+
+            const progress = ((currentSlide + 1) / slides.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            currentSlideNum.textContent = currentSlide + 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

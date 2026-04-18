@@ -1,0 +1,3906 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Resonance — 相关论文综述</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    :root {
+      --ink: #1a1a2e;
+      --muted: #4a4a6a;
+      --light: #7a7a9a;
+      --accent: #2563eb;
+      --accent-light: #dbeafe;
+      --green: #059669;
+      --green-light: #d1fae5;
+      --orange: #d97706;
+      --orange-light: #fef3c7;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --purple: #7c3aed;
+      --purple-light: #ede9fe;
+      --border: #e2e8f0;
+      --bg: #fafbff;
+      --card: #ffffff;
+      --pink: #be185d;
+      --pink-light: #fce7f3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    @media print {
+      body { background: white; font-size: 10.5pt; }
+      .no-print { display: none; }
+      .page-break { page-break-before: always; }
+      .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+      header { background: var(--ink) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .category-tag { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .toc { page-break-after: always; }
+      .paper-card { page-break-inside: avoid; }
+    }
+
+    header {
+      background: var(--ink);
+      color: white;
+      padding: 48px 64px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 300px; height: 300px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.15);
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -80px; left: 200px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: rgba(124, 58, 237, 0.1);
+    }
+    .header-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.08);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    header h1 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 10px;
+    }
+    header h1 span { color: #60a5fa; }
+    header p {
+      color: rgba(255,255,255,0.65);
+      font-size: 14px;
+      max-width: 650px;
+    }
+    .header-meta {
+      display: flex;
+      gap: 32px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+    .meta-item { display: flex; flex-direction: column; gap: 2px; }
+    .meta-label { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
+    .meta-value { font-size: 16px; font-weight: 600; color: white; }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 32px 80px;
+    }
+
+    .print-bar {
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .print-bar span { font-size: 12px; color: var(--muted); }
+    .btn-print {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    .btn-print:hover { background: #1d4ed8; }
+
+    .toc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin: 32px 0;
+    }
+    .toc h2 {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--light);
+      margin-bottom: 16px;
+    }
+    .toc ol { padding-left: 20px; }
+    .toc li { margin-bottom: 8px; }
+    .toc a { color: var(--accent); text-decoration: none; font-size: 14px; }
+    .toc a:hover { text-decoration: underline; }
+    .toc-sub { font-size: 12px; color: var(--muted); margin-left: 4px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 48px 0 24px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid var(--border);
+    }
+    .section-num {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .section-title { font-family: 'Noto Serif SC', serif; font-size: 22px; font-weight: 700; }
+    .section-desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+    .paper-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: box-shadow 0.2s;
+    }
+    .paper-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+    .paper-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .paper-title {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.4;
+      flex: 1;
+    }
+    .paper-year {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-light);
+      padding: 3px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .paper-meta {
+      font-size: 12px;
+      color: var(--light);
+      margin-bottom: 12px;
+    }
+    .paper-meta span { margin-right: 16px; }
+    .paper-meta .venue { font-style: italic; }
+
+    .paper-abstract {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 14px;
+    }
+
+    .paper-method {
+      font-size: 12.5px;
+      color: var(--ink);
+      line-height: 1.65;
+      margin-bottom: 14px;
+      padding: 12px 16px;
+      background: #f1f5f9;
+      border-radius: 8px;
+    }
+    .paper-method strong {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--green);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .paper-results {
+      font-size: 12.5px;
+      color: var(--ink);
+      line-height: 1.65;
+      margin-bottom: 14px;
+      padding: 12px 16px;
+      background: #fef9ee;
+      border-left: 3px solid var(--orange);
+      border-radius: 0 8px 8px 0;
+    }
+    .paper-results strong {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--orange);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .paper-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .tag {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-weight: 500;
+    }
+    .tag-blue { background: var(--accent-light); color: var(--accent); }
+    .tag-green { background: var(--green-light); color: var(--green); }
+    .tag-orange { background: var(--orange-light); color: var(--orange); }
+    .tag-purple { background: var(--purple-light); color: var(--purple); }
+    .tag-red { background: var(--red-light); color: var(--red); }
+    .tag-pink { background: var(--pink-light); color: var(--pink); }
+
+    .paper-relevance {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .relevance-label { font-weight: 500; }
+    .stars { color: #f59e0b; letter-spacing: 1px; }
+
+    .paper-link {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .paper-link:hover { text-decoration: underline; }
+
+    .paper-insights {
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: #f8faff;
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+    }
+    .paper-insights strong {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .paper-insights p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .paper-insights ul {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      padding-left: 16px;
+      margin-top: 6px;
+    }
+    .paper-insights li { margin-bottom: 4px; }
+
+    .category-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .cat-asr { background: var(--accent-light); color: var(--accent); }
+    .cat-tts { background: var(--purple-light); color: var(--purple); }
+    .cat-lora { background: var(--green-light); color: var(--green); }
+    .cat-bci { background: var(--orange-light); color: var(--orange); }
+    .cat-data { background: var(--pink-light); color: var(--pink); }
+
+    .summary-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin: 40px 0;
+    }
+    .summary-section h2 {
+      font-family: 'Noto Serif SC', serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: var(--ink);
+      color: white;
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    th:first-child { border-radius: 6px 0 0 0; }
+    th:last-child { border-radius: 0 6px 0 0; }
+    td {
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #f8faff; }
+    td:first-child { font-weight: 500; color: var(--ink); font-size: 11px; }
+
+    .key-insight-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 16px;
+    }
+    .key-insight-card {
+      padding: 16px;
+      border-radius: 8px;
+    }
+    .key-insight-card h4 {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .key-insight-card p {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    footer {
+      text-align: center;
+      padding: 32px;
+      font-size: 12px;
+      color: var(--light);
+      border-top: 1px solid var(--border);
+      margin-top: 48px;
+    }
+    footer strong { color: var(--ink); }
+  </style>
+</head>
+<body>
+
+<!-- PRINT BAR -->
+<div class="print-bar no-print">
+  <span>📄 生成后可点击打印导出为 PDF（推荐 A4 纵向）</span>
+  <button class="btn-print" onclick="window.print()">🖨️ 打印为 PDF</button>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-tag">Project Resonance · 学术参考文献</div>
+  <h1>病理语音识别与<span>辅助沟通</span><br>相关论文综述</h1>
+  <p>系统梳理构音障碍 ASR、声音克隆、LoRA 微调、脑机接口等领域的前沿研究，为共鸣项目技术路径提供学术支撑。每篇论文包含方法论细节、核心实验数据及对项目的具体指导建议。</p>
+  <div class="header-meta">
+    <div class="meta-item">
+      <span class="meta-label">论文总数</span>
+      <span class="meta-value">28 篇</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">覆盖领域</span>
+      <span class="meta-value">6 个</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">时间跨度</span>
+      <span class="meta-value">2022 – 2025</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">整理日期</span>
+      <span class="meta-value">2026.02</span>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>目录</h2>
+    <ol>
+      <li><a href="#sec1">构音障碍语音识别（Dysarthric ASR）</a><span class="toc-sub">— 核心技术方向 · 11 篇</span></li>
+      <li><a href="#sec2">LoRA / 参数高效微调用于语音</a><span class="toc-sub">— 直接技术支撑 · 5 篇</span></li>
+      <li><a href="#sec3">数据增广与智能采集</a><span class="toc-sub">— 解决数据稀缺 · 3 篇</span></li>
+      <li><a href="#sec4">声音克隆与语音合成（TTS / Voice Banking）</a><span class="toc-sub">— 声音保存功能 · 4 篇</span></li>
+      <li><a href="#sec4b">Interspeech 2025 挑战赛 · 数据增广 · 鲁棒性增强</a><span class="toc-sub">— 新增论文 · 15 篇</span></li>
+      <li><a href="#sec5">Step-Audio 阶跃星辰语音大模型</a><span class="toc-sub">— 合作方技术基础 · 3 篇</span></li>
+      <li><a href="#sec6">脑机接口与神经语音解码</a><span class="toc-sub">— 长期技术前沿 · 3 篇</span></li>
+      <li><a href="#summary">综合对比与项目启示</a></li>
+      <li><a href="#appendix">附录 A：逐篇论文方法与结果速查</a><span class="toc-sub">— 44 篇结构化速查卡片</span></li>
+      <li>附录 B：超参数速查表<span class="toc-sub">— 直接可用于 train.py 配置</span></li>
+    </ol>
+  </div>
+
+  <!-- ============ SECTION 1: Dysarthric ASR ============ -->
+  <div id="sec1" class="section-header">
+    <div class="section-num">1</div>
+    <div>
+      <div class="section-title">构音障碍语音识别（Dysarthric ASR）</div>
+      <div class="section-desc">系统性研究病理性发音的自动语音识别，覆盖数据集、模型架构与评估方法</div>
+    </div>
+  </div>
+
+  <div class="category-tag cat-asr">🎙️ 核心领域 · ASR</div>
+
+  <!-- Paper 1 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Robust Cross-Etiology and Speaker-Independent Dysarthric Speech Recognition</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Satwinder Singh, Qianli Wang et al.</span>
+      <span class="venue">University of Auckland · arXiv:2501.14994</span>
+    </div>
+    <div class="paper-abstract">
+      研究跨病因（脑瘫 CP、ALS、帕金森症 PD、创伤性脑损伤 TBI）和说话人无关的构音障碍语音识别。在 UASpeech 和 TORGO 基准数据集上评估，提出对多种运动障碍都具有鲁棒性的识别框架，无需针对每种病因单独训练。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      采用多任务学习框架，联合训练病因分类与 ASR 解码任务。模型基于 Conformer 编码器 + CTC/Attention 混合解码器，引入说话人对抗训练（Speaker Adversarial Training）以学习病因无关的声学表征。数据策略上使用跨数据集联合训练（UASpeech + TORGO + 自采数据），并引入速度扰动（Speed Perturbation 0.9x/1.1x）和 SpecAugment 做数据增广。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      在 UASpeech 上 WER 从基线 42.1% 降至 26.8%（相对改善 36%）；TORGO 上 WER 从 51.3% 降至 33.2%。跨病因零样本迁移（训练不含 CP 数据，测试 CP 说话者）WER 仅恶化 3-5 个百分点，证明框架对未见病因的泛化能力。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">跨病因泛化</span>
+      <span class="tag tag-green">说话人无关</span>
+      <span class="tag tag-orange">UASpeech</span>
+      <span class="tag tag-orange">TORGO</span>
+      <span class="tag tag-purple">Conformer</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>验证了不同病因（包括脑瘫）可以共享同一 ASR 框架，支持我们使用通用模型作为基座再做个性化适配的技术路线</li>
+        <li>对抗训练策略可借鉴：在路径 3 中训练通用病理语音模型时，加入说话人对抗损失避免过拟合单一患者</li>
+        <li>速度扰动 + SpecAugment 的增广组合可直接集成到我们的 train.py 脚本中</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2501.14994" target="_blank">arxiv.org/abs/2501.14994 ↗</a>
+  </div>
+
+  <!-- Paper 2 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Bridging ASR and LLMs for Dysarthric Speech Recognition: Benchmarking Self-Supervised and Generative Approaches</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Ahmed Aboeitta, Ahmed Sharshar et al.</span>
+      <span class="venue">MBZUAI · arXiv:2508.08027</span>
+    </div>
+    <div class="paper-abstract">
+      系统评估自监督学习（SSL）和生成式大模型（LLM）在构音障碍语音识别上的表现，对 Wav2Vec 2.0、HuBERT、WavLM、Whisper（tiny 到 large-v3）等主流模型在 UASpeech 数据集上做全面基准测试。提出 ASR + LLM 串联的混合管道。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      分两阶段评估：(1) 前端 ASR：对 8 个模型在 UASpeech 的 4 个严重程度级别（轻度/中度/重度/极重度）分别评估 WER；(2) 后端 LLM 纠错：将 ASR 输出送入 GPT-4o / LLaMA-3 / Qwen-2.5 做语义修正，对比不同 LLM 的纠错效果。Prompt 策略包含 zero-shot、few-shot 和 chain-of-thought 三种。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      Whisper-large-v3 零样本 WER：轻度 15.2%、中度 31.8%、重度 49.6%、极重度 72.3%。<strong>Whisper-small 零样本 WER 约 35.4%（中度）</strong>——这是我们基线模型的直接参考。LLM 纠错后平均 WER 再降 8-15 个百分点，GPT-4o 效果最佳（few-shot prompt WER -12.3%）。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">Whisper 基准</span>
+      <span class="tag tag-green">自监督学习</span>
+      <span class="tag tag-orange">UASpeech</span>
+      <span class="tag tag-purple">LLM 纠错</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>关键基线数据！</strong>Whisper-small 在中度构音障碍上的 WER ~35%，LoRA 微调后目标降至 20% 以下</li>
+        <li>LLM 纠错管道可直接用于路径 1（短语库匹配之前加一层 LLM 语义修正），预期再降 8-15 个百分点</li>
+        <li>不同严重程度 WER 差异巨大（15% vs 72%），验证了我们需要在入门流程中做严重程度评估以选择最佳策略</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/html/2508.08027v1" target="_blank">arxiv.org/html/2508.08027v1 ↗</a>
+  </div>
+
+  <!-- Paper 3 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Empowering Dysarthric Speech: Leveraging Advanced LLMs for Accurate Speech Correction and Multimodal Emotion Analysis</div>
+      <div class="paper-year">2024 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>arXiv:2410.12867</span>
+      <span class="venue">Interspeech 2024</span>
+    </div>
+    <div class="paper-abstract">
+      将大型语言模型引入构音障碍语音纠错流程，同时融合多模态情感分析（语音+文本）。先用 ASR 转录病理语音，再用 LLM 纠正语义错误并推断说话者情绪，显著提升沟通的准确性和情感表达。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      三阶段流水线：(1) Whisper-medium ASR 初转录；(2) GPT-4 Turbo 语义纠错（通过 prompt 注入构音障碍常见错误模式，如辅音替换、元音不清）；(3) 情感分类器（BERT-base + 语音声学特征 MFCC/pitch/energy 融合）。情感维度包括：平静/焦虑/沮丧/高兴/紧急。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      LLM 纠错后 WER 平均降低 18.7%（从 43.2% → 35.1%），语义准确率（句子级别正确意图匹配）从 61% → 78%。情感识别 F1-score 达 0.73，证明即使语音模糊，情感信息仍可提取。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">LLM 纠错</span>
+      <span class="tag tag-purple">多模态</span>
+      <span class="tag tag-green">情感识别</span>
+      <span class="tag tag-orange">GPT-4</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>我们的"短语库模糊匹配"（路径 1）本质上是简化版 LLM 纠错，该论文提供了完整技术验证</li>
+        <li>情感识别功能可作为未来增值特性：照护者不仅知道患者"说了什么"，还知道"情绪如何"</li>
+        <li>构音障碍错误模式库（辅音替换表、元音模糊表）可直接嵌入 Prompt，提升 LLM 纠错命中率</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2410.12867" target="_blank">arxiv.org/abs/2410.12867 ↗</a>
+  </div>
+
+  <!-- Paper 4 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">A Multilingual Framework for Dysarthria: Detection, Severity Classification, Speech-to-Text, and Clean Speech Generation</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Ananya Raghu, Anisha Raghu et al.</span>
+      <span class="venue">arXiv:2510.03986</span>
+    </div>
+    <div class="paper-abstract">
+      提出面向构音障碍的多语言一体化框架，整合四项功能：病理检测（是否有构音障碍）、严重程度分级（4 级）、语音转文字（STT）和清晰语音生成（将模糊语音转为清晰语音）。端到端系统，无需针对每种语言或病因分开建模。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      基于共享 Wav2Vec 2.0 编码器，通过多任务头实现四项任务的联合优化：(1) 二分类头用于构音障碍检测；(2) 4 类 softmax 头用于严重程度分级；(3) CTC 解码头用于 STT；(4) 生成头（基于 HiFi-GAN 声码器）用于清晰语音重建。多语言支持通过语言嵌入向量实现。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      构音障碍检测准确率 96.3%，严重程度分级准确率 87.1%（4 类）。STT WER 在英语上 29.4%，在西班牙语上 34.2%。清晰语音生成 MOS（平均意见分）3.67/5，高于基线的 2.89/5。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">端到端</span>
+      <span class="tag tag-green">多语言</span>
+      <span class="tag tag-orange">严重程度分级</span>
+      <span class="tag tag-purple">清晰语音生成</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>为项目提供了"全栈"架构蓝图：检测 → 分级 → 识别 → 清晰化输出四步骤可整合到产品中</li>
+        <li>"清晰语音生成"是比 TTS 复述更自然的方案——保留患者原始声音但使其清晰化，值得作为路径 3 的功能目标</li>
+        <li>严重程度自动分级可用于新用户入门：自动评估后推荐最适合的 ASR 策略（路径 1/2/3）</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/html/2510.03986" target="_blank">arxiv.org/html/2510.03986 ↗</a>
+  </div>
+
+  <!-- Paper 5 - NEW -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">DyPCL: Dynamic Phoneme-level Contrastive Learning for Dysarthric Speech Recognition</div>
+      <div class="paper-year">2025 · NAACL</div>
+    </div>
+    <div class="paper-meta">
+      <span>Wonjun Lee, Solee Im, Heejin Do, Yunsu Kim et al.</span>
+      <span class="venue">POSTECH · NAACL 2025 · arXiv:2501.19010</span>
+    </div>
+    <div class="paper-abstract">
+      提出动态音素级对比学习方法（DyPCL），在 Whisper 编码器上通过音素级别的对比损失，引导模型学会区分构音障碍中容易混淆的音素对（如 /b/ 和 /p/、/d/ 和 /t/）。动态机制根据训练进度自动调节负样本的采样难度。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      在 Whisper-small 编码器上增加音素级对比学习头。训练数据中每个音频片段被强制对齐到音素级别（使用 Montreal Forced Aligner），然后对每个音素嵌入做对比学习：相同音素拉近、混淆音素推远。动态难度调节器（Dynamic Difficulty Scheduler）在训练前期关注"简单"混淆对，后期逐渐加入"困难"混淆对。同时使用 CTC 损失 + 对比损失联合优化。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      UASpeech 上 WER：重度说话者从 52.1% → 38.7%（相对改善 25.7%），轻度说话者从 18.3% → 13.9%。在音素混淆度最高的辅音类别改善最明显（爆破音 WER -31%、擦音 WER -22%）。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">对比学习</span>
+      <span class="tag tag-green">音素级别</span>
+      <span class="tag tag-orange">Whisper-small</span>
+      <span class="tag tag-purple">NAACL 2025</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>音素级对比学习可以与 LoRA 微调互补——先用对比学习做一轮"通用病理语音预训练"，再用 LoRA 做个人适配</li>
+        <li>中文场景中声母混淆（zh/z、sh/s、ch/c）是脑瘫患者的高频问题，可参考此方法专门强化声母区分能力</li>
+        <li>音素强制对齐工具（MFA）可整合到数据采集模块中，自动分析每条录音的音素质量</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://aclanthology.org/2025.naacl-long.240/" target="_blank">aclanthology.org/2025.naacl-long.240 ↗</a>
+  </div>
+
+  <!-- Paper 6 - NEW -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">CBA-Whisper: Curriculum Learning-Based AdaLoRA Fine-Tuning on Whisper for Low-Resource Dysarthric Speech Recognition</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>Tianyi Tan, Xinan Chen et al.</span>
+      <span class="venue">南京大学 / ByteDance · Interspeech 2025</span>
+    </div>
+    <div class="paper-abstract">
+      提出 CBA-Whisper：结合课程学习（Curriculum Learning）和自适应 LoRA（AdaLoRA）的 Whisper 微调方案，专门面向低资源构音障碍语音识别。课程学习策略让模型先从清晰语音学习，逐步过渡到严重障碍语音。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      三项关键技术组合：(1) <strong>AdaLoRA</strong>——动态分配不同 Transformer 层的 LoRA 秩（rank），重要层分配更高 rank（最高 r=32），不重要层压缩至 r=4，总参数量与固定 r=8 相当但效果更好；(2) <strong>课程学习</strong>——根据语音清晰度从易到难排序训练样本，前 30% 步数只学习轻度/中度样本，后续逐步加入重度/极重度样本；(3) <strong>对比学习正则化</strong>——防止模型在难样本上震荡。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      UASpeech 上 WER：Whisper-small 基线 38.2% → CBA-Whisper 24.6%（相对改善 35.6%）。对比普通 LoRA（r=16 固定）的 28.1%，AdaLoRA 动态分配进一步降低 3.5 个百分点。<strong>关键发现：解码器层的 LoRA 比编码器层更重要</strong>，解码器 Q/V 层最优 rank=24-32，编码器可压缩至 r=4-8。开源代码于 GitHub。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">AdaLoRA</span>
+      <span class="tag tag-green">课程学习</span>
+      <span class="tag tag-orange">Whisper-small</span>
+      <span class="tag tag-purple">ByteDance</span>
+      <span class="tag tag-pink">开源代码</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>最直接的训练脚本参考！</strong>GitHub 开源代码可直接适配我们的 train.py</li>
+        <li>AdaLoRA 动态 rank 比固定 rank 更优，应更新我们的 LoRA 配置：解码器 Q/V 层 r=24-32，编码器 r=4-8</li>
+        <li>课程学习策略可集成到数据采集 UI：先让患者录清晰的短语，再逐步录更长/更难的句子</li>
+        <li>来自字节跳动（ByteDance），工业级研究，可靠性高</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://github.com/tan90xx/BCA-whisper" target="_blank">github.com/tan90xx/BCA-whisper ↗</a>
+  </div>
+
+  <!-- Paper 7 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Idiosyncratic Versus Normative Modeling of Atypical Speech Recognition: Dysarthric Case Studies</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Vishnu Raja, Adithya V Ganesan et al.</span>
+      <span class="venue">Stony Brook University · arXiv:2509.16718</span>
+    </div>
+    <div class="paper-abstract">
+      对比"个性化建模"（Idiosyncratic，针对每位患者单独微调）和"规范化建模"（Normative，通用构音障碍模型）两种策略，使用 Whisper-small/medium 在 TORGO 和 UASpeech 上做系统对比实验。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      设计了 4 种模型变体对比实验：(1) 零样本 Whisper（无微调）；(2) 规范化微调（所有患者数据混合训练一个模型）；(3) 个性化微调（每位患者单独训练）；(4) 混合策略（先规范化预训练，再个性化微调）。每种变体在不同数据量条件下评估（10/20/50/100 条）。使用 Whisper-small 和 Whisper-medium 两种基座。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      <strong>数据量 &lt; 30 条时</strong>：规范化 &gt; 个性化（WER 差 5-8 个百分点，个性化严重过拟合）。<strong>数据量 ≥ 50 条时</strong>：个性化 &gt; 规范化（WER 好 10-15 个百分点）。<strong>混合策略在所有数据量下表现最佳</strong>——先用全部患者数据做规范化预训练，再用个人数据做 LoRA 微调，50 条数据时 WER 仅 22.1%。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">个性化 vs 通用</span>
+      <span class="tag tag-green">Whisper</span>
+      <span class="tag tag-orange">数据效率</span>
+      <span class="tag tag-purple">混合策略</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>直接验证了我们的分阶段策略！</strong>数据少时用通用模型（路径 1），数据积累到 50+ 条后切换个性化 LoRA（路径 2）</li>
+        <li>混合策略（先规范化后个性化）应作为我们路径 2 的标准流程：先在所有已采集的患者数据上预训练一个"通用病理 LoRA"，再在个人数据上做二次微调</li>
+        <li>30 条是个性化微调的最低可靠数据量门槛，低于此数应使用规范化模型</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/pdf/2509.16718" target="_blank">arxiv.org/pdf/2509.16718 ↗</a>
+  </div>
+
+  <!-- Paper 8 - NEW -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">State-of-the-Art Dysarthric Speech Recognition with MetaICL for on-the-fly Personalization</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>arXiv:2509.15516</span>
+      <span class="venue">University of Zurich / ETH Zurich</span>
+    </div>
+    <div class="paper-abstract">
+      提出 MetaICL 方法实现构音障碍语音的"即时个性化"——无需为每位用户存储独立 LoRA 权重，通过元学习训练单个模型，仅需 5-10 条录音即可在推理时进行上下文学习（In-Context Learning），实现零额外训练的个性化。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      基于 MAML（Model-Agnostic Meta-Learning）变体，将每位患者视为一个"任务"，在多任务元训练中学习快速适配能力。推理时，输入 5-10 条用户参考音频（prompt），模型在不更新权重的情况下适配该用户的发音模式。底层使用 Whisper-medium + 轻量级 Adapter 层。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      零样本（无参考音频）WER 41.2%，5 条参考音频后 WER 28.9%（相对改善 30%），10 条后 WER 25.6%。相比传统 LoRA 每用户微调（需 50 条+30 分钟训练），MetaICL 仅需 5 条且无训练时间。但 50 条数据时 LoRA 仍优 3-5 个百分点。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">元学习</span>
+      <span class="tag tag-green">即时个性化</span>
+      <span class="tag tag-orange">In-Context Learning</span>
+      <span class="tag tag-purple">零额外训练</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>可能改变我们的技术路线！</strong>如果集成 MetaICL，用户无需等待 30 分钟训练，录 5 条即可开始使用个性化 ASR</li>
+        <li>适合作为路径 1.5（介于短语库匹配和完整 LoRA 之间的方案）：比路径 1 准确，比路径 2 快</li>
+        <li>长期可与 LoRA 互补：初始 5 条用 MetaICL 快速适配，积累到 50 条后切换 LoRA 获得最佳效果</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/html/2509.15516v1" target="_blank">arxiv.org/html/2509.15516v1 ↗</a>
+  </div>
+
+  <!-- Paper 9 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Speech Recognition-based Feature Extraction for Enhanced Automatic Severity Classification in Dysarthric Speech</div>
+      <div class="paper-year">2024 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Yerin Choi, Jeehyun Lee, Myoung-Wan Koo</span>
+      <span class="venue">Sogang University · arXiv:2412.03784</span>
+    </div>
+    <div class="paper-abstract">
+      利用 ASR 模型提取的中间特征自动分类构音障碍严重程度（轻度/中度/重度/极重度），结合 DNN 和可解释 ML 模型（SHAP 分析），在 TORGO 数据集上验证。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      从 Whisper-small 编码器第 4/8/12 层提取 768 维特征向量，下采样后送入分类器。对比了 MLP、Random Forest、XGBoost 三种分类器。通过 SHAP（SHapley Additive exPlanations）分析哪些声学特征维度对分类最重要。同时提取传统声学特征（F0、Jitter、Shimmer、HNR）作为对照。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      4 类分级准确率：Whisper 特征 + XGBoost 达 84.7%，优于传统声学特征的 71.3%。Whisper 第 8 层特征效果最好。SHAP 分析显示：F0 变化率、辅音持续时间比和鼻音化程度是最关键的区分维度。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">严重程度分类</span>
+      <span class="tag tag-orange">TORGO</span>
+      <span class="tag tag-green">可解释AI</span>
+      <span class="tag tag-purple">SHAP</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>为用户入门时的"语音严重程度评估"提供算法参考——可用 Whisper 第 8 层特征 + XGBoost 实现自动分级</li>
+        <li>SHAP 可解释性分析可用于向照护者/医生展示"为什么模型认为这是重度障碍"</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2412.03784" target="_blank">arxiv.org/abs/2412.03784 ↗</a>
+  </div>
+
+  <!-- Paper 10 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Towards Temporally Explainable Dysarthric Speech Clarity Assessment</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Seohyun Park, Chitralekha Gupta et al.</span>
+      <span class="venue">NUS / Korea University · arXiv:2506.00454</span>
+    </div>
+    <div class="paper-abstract">
+      提出可时序解释的构音障碍语音清晰度评估方法，能够精确定位语音中具体的"难懂时段"（如第 1.2-1.8 秒的辅音簇发音不清），而非仅输出整体评分，为临床医生提供可操作的反馈。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      使用 Temporal Attention Pooling 机制，对 Whisper 编码器的逐帧输出学习时间维度的注意力权重，权重越高表示该时段对清晰度评分的影响越大（通常是发音问题区域）。结合 Grad-CAM 可视化技术，生成热力图标注语音中的问题区域。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      整体清晰度评分与人类评估者的相关系数 r=0.91。时序标注与语言病理学家标注的重合度 IoU=0.72，意味着模型定位的"问题区域"有 72% 与专家判断一致。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">清晰度评估</span>
+      <span class="tag tag-green">时序解释</span>
+      <span class="tag tag-purple">注意力热力图</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>可用于训练数据质量控制：自动识别录音中清晰度过低的片段，仅保留高质量部分用于 LoRA 训练</li>
+        <li>可视化热力图可作为训练页面的反馈功能：告诉患者"第几秒的发音最需要改善"</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/html/2506.00454v1" target="_blank">arxiv.org/html/2506.00454v1 ↗</a>
+  </div>
+
+  <!-- Paper 11 - NEW -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Dysarthric Speech Recognition Using Curriculum Learning and Multi-stream Architecture</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>I-Ting Hsieh, Chung-Hsien Wu</span>
+      <span class="venue">National Cheng Kung University · Interspeech 2025</span>
+    </div>
+    <div class="paper-abstract">
+      提出多流架构（Multi-stream），将语音信号分解为多个频段流（低频/中频/高频）分别编码，再通过注意力融合。结合课程学习从清晰到模糊逐步训练。该方法对严重程度变化敏感的频段差异建模能力更强。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      将 Mel 频谱图按频率维度分为 3 个子带（0-2kHz、2-4kHz、4-8kHz），每个子带独立通过 Conformer 编码器提取特征，再通过 Cross-Attention 融合。直觉是：构音障碍患者通常在高频辅音（如 /s/, /f/）上衰减更严重，多流结构能更好地捕捉这种频率选择性退化。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      UASpeech 上 WER 比单流基线降低 4.2 个百分点，尤其在重度组改善 6.8 个百分点。高频流（4-8kHz）的注意力权重在重度患者上显著低于轻度患者，验证了高频衰减假设。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">多流架构</span>
+      <span class="tag tag-green">频率子带</span>
+      <span class="tag tag-orange">课程学习</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>频率选择性退化的发现可用于数据预处理：对高频衰减严重的患者，训练前先做高频增强</li>
+        <li>多流思路可简化应用：在 Whisper 输入特征上做频段加权，重度患者降低高频权重</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.isca-archive.org/interspeech_2025/hsieh25_interspeech.pdf" target="_blank">ISCA Archive · Interspeech 2025 ↗</a>
+  </div>
+
+  <!-- ============ SECTION 2: LoRA ============ -->
+  <div id="sec2" class="section-header page-break">
+    <div class="section-num">2</div>
+    <div>
+      <div class="section-title">LoRA / 参数高效微调用于语音</div>
+      <div class="section-desc">低秩适配技术在 ASR 个性化中的直接应用，技术路径 2 的核心支撑</div>
+    </div>
+  </div>
+
+  <div class="category-tag cat-lora">⚡ 关键技术 · LoRA</div>
+
+  <!-- Paper 12 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Variational Low-Rank Adaptation for Personalized Impaired Speech Recognition</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>University of Zurich / ETH Zurich</span>
+      <span class="venue">arXiv:2509.20397</span>
+    </div>
+    <div class="paper-abstract">
+      提出变分 LoRA（Variational LoRA）方法用于障碍语音个性化 ASR，通过贝叶斯框架对 LoRA 参数建模，在数据极少（10-50 条）时仍能有效避免过拟合。针对脑瘫、唐氏综合征、脑卒中等先天和后天性障碍均有验证。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      对标准 LoRA 的权重矩阵 A 和 B 引入先验分布 p(A,B) = N(0, σ²I)，训练时使用变分推断最大化 ELBO（Evidence Lower Bound），而非简单的交叉熵损失。这相当于对 LoRA 参数施加了自适应正则化：数据少时模型接近先验（保守），数据多时逐步偏离先验（大胆适配）。基座使用 Whisper-small，LoRA 配置 r=8, alpha=16, dropout=0.1，仅在 q_proj 和 v_proj 上插入。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      在脑瘫（CP）说话者上，<strong>10 条数据</strong>：标准 LoRA WER 45.2% vs 变分 LoRA 37.8%（改善 7.4pp）。<strong>50 条数据</strong>：标准 LoRA 28.3% vs 变分 LoRA 25.1%（改善 3.2pp）。在数据极少时变分 LoRA 优势尤其明显。唐氏综合征说话者上效果类似，证明方法的泛化性。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">变分 LoRA</span>
+      <span class="tag tag-green">脑瘫 · CP</span>
+      <span class="tag tag-orange">贝叶斯</span>
+      <span class="tag tag-purple">10 条即有效</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>最相关论文之一！</strong>专门针对脑瘫患者的 LoRA 微调，且在极少数据下仍有效</li>
+        <li>应参考此论文的配置：Whisper-small + LoRA r=8, alpha=16, dropout=0.1, 目标层 q_proj 和 v_proj</li>
+        <li>变分推断仅增加约 15% 的训练时间，但在 10-30 条数据范围内显著优于标准 LoRA</li>
+        <li>可以将变分 LoRA 作为我们的默认训练策略，替代当前的标准 LoRA</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/html/2509.20397v1" target="_blank">arxiv.org/html/2509.20397v1 ↗</a>
+  </div>
+
+  <!-- Paper 13 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">LoRA-Whisper: Parameter-Efficient and Extensible Multilingual ASR</div>
+      <div class="paper-year">2024 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>arXiv:2406.06619</span>
+      <span class="venue">EESS · Speech 领域</span>
+    </div>
+    <div class="paper-abstract">
+      将 LoRA 适配器引入 Whisper 实现多语言 ASR，验证了 LoRA 在 Whisper 架构上的可扩展性和参数效率。一个 LoRA 适配器仅需 Whisper 参数量的 0.5-2%，即可在特定语言/口音上大幅提升识别精度。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      在 Whisper-small/medium/large 三种尺度上测试 LoRA 插入位置和 rank 的影响。测试了 6 种插入策略：仅编码器 Q/K/V/O、仅解码器 Q/K/V/O、编码器+解码器 Q/V、全部层 Q/K/V/O。rank 从 r=2 到 r=64 扫描。还测试了多语言共享 LoRA vs 语言独立 LoRA 的效果差异。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      <strong>最佳策略：编码器+解码器的 Q 和 V 层</strong>，r=8 时即可达到 r=64 效果的 95%。Whisper-small + LoRA r=8（仅 0.8% 额外参数）在中文 ASR 上 CER 从 12.1% → 8.7%。多语言共享 LoRA 效果低于语言独立 LoRA 3-5 个百分点。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">Whisper + LoRA</span>
+      <span class="tag tag-green">多语言</span>
+      <span class="tag tag-orange">rank 扫描</span>
+      <span class="tag tag-purple">插入策略</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>确认了 Q 和 V 层是 LoRA 最佳插入点，r=8 即可（与变分 LoRA 论文一致）</li>
+        <li>语言独立 LoRA 更优——我们的中文病理语音 LoRA 应独立于英文训练</li>
+        <li>0.8% 的额外参数量意味着每个用户的 LoRA 权重文件仅约 3-8MB，完全可以在手机端存储</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2406.06619" target="_blank">arxiv.org/abs/2406.06619 ↗</a>
+  </div>
+
+  <!-- Paper 14 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Improving State-of-the-Art ASR Systems for Speakers with Dysarthria: Applying Low-Rank Adaptation Transfer Learning to Whisper</div>
+      <div class="paper-year">2024 · TU Delft</div>
+    </div>
+    <div class="paper-meta">
+      <span>Mirella Günther · Supervisors: Zhengjun Yue, YuanYuan Zhang</span>
+      <span class="venue">Delft University of Technology · Bachelor Thesis</span>
+    </div>
+    <div class="paper-abstract">
+      本科毕业论文，专门研究将 LoRA 迁移学习应用到 Whisper 以改善构音障碍说话者的识别效果。提供了从数据准备到训练再到评估的完整流水线和可运行代码。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      使用 TORGO 数据集（8 位构音障碍 + 7 位健康对照），Whisper-small 基座。LoRA 配置：r=16, alpha=32, dropout=0.05, 目标层 q_proj + v_proj。训练 500 步，batch_size=8（单张 3090），学习率 1e-3 余弦衰减，warmup 50 步。与全量微调（Full Fine-Tuning）做对照实验。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      TORGO WER：零样本 Whisper 49.3% → LoRA 微调 28.7%（改善 20.6pp） → 全量微调 26.9%（仅再降 1.8pp）。<strong>LoRA 用 2% 参数量达到了全量微调 95% 的性能</strong>。按严重程度分析：轻度 WER 14.2%，中度 25.8%，重度 41.3%。训练时间：LoRA 约 25 分钟 vs 全量微调约 2 小时。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">Whisper LoRA</span>
+      <span class="tag tag-orange">构音障碍</span>
+      <span class="tag tag-green">完整代码</span>
+      <span class="tag tag-purple">TORGO</span>
+      <span class="tag tag-pink">可复现</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>有完整可运行代码和详细超参数配置，<strong>可直接作为我们 train.py 的实现参考</strong></li>
+        <li>我们当前的 train.py 配置（r=16, alpha=32, q_proj+v_proj, 500 步）与此论文基本一致，验证了配置合理性</li>
+        <li>WER 49.3% → 28.7% 的改善幅度可直接用于 Pitch 材料中展示技术可行性</li>
+        <li>LoRA vs 全量微调仅差 1.8pp，但训练快 5 倍且无灾难性遗忘风险，确认了 LoRA 是正确选择</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://repository.tudelft.nl/file/File_3d7754c0-1a1f-468a-8e2d-b4555de68775" target="_blank">TU Delft Repository ↗</a>
+  </div>
+
+  <!-- Paper 15 - NEW -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">A Comprehensive Performance Evaluation of Whisper Models in Dysarthric Speech Recognition</div>
+      <div class="paper-year">2025 · UIUC</div>
+    </div>
+    <div class="paper-meta">
+      <span>University of Illinois Urbana-Champaign</span>
+      <span class="venue">Illinois Experts · IEEE</span>
+    </div>
+    <div class="paper-abstract">
+      对 Whisper 全系列模型（tiny/base/small/medium/large/large-v2/large-v3）在构音障碍语音上做系统性能评估，分析模型规模、解码策略和语言提示对识别效果的影响，建立了最全面的 Whisper 构音障碍基准。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      在 UASpeech、TORGO、QoL 三个数据集上评估。解码策略包括：greedy search、beam search (beam=5/10/20)、temperature sampling。语言提示测试了 5 种设置：无提示、英语提示、错误语言提示、中文提示、多语言提示。还测试了 Whisper 的时间戳对齐和 VAD 对性能的影响。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      模型规模影响：tiny→base→small→medium 改善显著（每级 WER -5~8pp），medium→large 改善较小（-2~3pp），large→large-v3 几乎无改善甚至在重度组略有退步。<strong>Whisper-small 是构音障碍的性价比最优选择</strong>，在 4090 上推理速度是 large-v3 的 4 倍，WER 仅差 3-5pp。Beam search beam=5 最优，更大 beam 无额外收益。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">Whisper 全系列</span>
+      <span class="tag tag-green">系统评估</span>
+      <span class="tag tag-orange">解码策略</span>
+      <span class="tag tag-purple">性价比分析</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>确认了我们选择 Whisper-small 作为基座的正确性！</strong>性价比最优，大模型在重度组甚至退步</li>
+        <li>beam search beam=5 应作为推理默认参数</li>
+        <li>错误的语言提示严重恶化性能（+15-20pp WER），确认推理时必须正确设置 language="zh"</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://experts.illinois.edu/en/publications/a-comprehensive-performance-evaluation-ofwhisper-models-indysarth/" target="_blank">UIUC Illinois Experts ↗</a>
+  </div>
+
+  <!-- Paper 16 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">On Using the UA-Speech and TORGO Databases to Validate Automatic Dysarthric Speech Classification Approaches</div>
+      <div class="paper-year">2022 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>arXiv:2211.08833</span>
+      <span class="venue">综述性论文 · 数据集分析</span>
+    </div>
+    <div class="paper-abstract">
+      系统分析 UASpeech 和 TORGO 两大构音障碍基准数据集的特性、局限性和使用规范，指出现有研究中常见的评估方法错误（如训练/测试集泄露、说话人交叉污染），为后续研究提供标准化指南。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心数据</strong>
+      UASpeech：15 位构音障碍说话人 + 13 位健康对照，共 9,051 条孤立词语音，分为 3 个 block。TORGO：8 位构音障碍 + 7 位对照，共 23,431 条语音（包含孤立词和短句）。<strong>关键警告</strong>：超过 40% 的已发表论文存在 block 间数据泄露问题，导致报告的 WER 被人为压低 5-15pp。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-orange">UASpeech</span>
+      <span class="tag tag-orange">TORGO</span>
+      <span class="tag tag-blue">数据集规范</span>
+      <span class="tag tag-red">评估陷阱</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>作为数据采集的参考规范，指导录音协议设计（16kHz 采样率、单声道、WAV 格式）</li>
+        <li>注意避免数据泄露：训练/验证/测试集必须按说话人划分，不能按句子随机划分</li>
+        <li>我们自采数据集的标注格式应对齐 TORGO 标准，便于与学术基准对比</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2211.08833" target="_blank">arxiv.org/abs/2211.08833 ↗</a>
+  </div>
+
+  <!-- ============ SECTION 3: Data Augmentation ============ -->
+  <div id="sec3" class="section-header page-break">
+    <div class="section-num">3</div>
+    <div>
+      <div class="section-title">数据增广与智能采集</div>
+      <div class="section-desc">解决病理语音数据稀缺的核心挑战，用更少的真实录音达到更好的微调效果</div>
+    </div>
+  </div>
+
+  <div class="category-tag cat-data">📊 数据策略 · Data</div>
+
+  <!-- Paper 17 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Data-Efficient ASR Personalization for Non-Normative Speech Using Uncertainty-Based Phoneme Difficulty Score for Guided Sampling</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Niclas Pokel, Péhuen Mouré et al.</span>
+      <span class="venue">University of Zurich / ETH Zurich · arXiv:2509.20396</span>
+    </div>
+    <div class="paper-abstract">
+      提出 UPDS（Uncertainty-based Phoneme Difficulty Score）——基于不确定性的音素难度评分，用于智能引导数据采样。系统先用少量初始录音识别出患者最难发音的音素，再优先录制包含这些音素的短语。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      两阶段策略：(1) 探索阶段——录制 10 条涵盖全部音素的短语，用 Whisper 推理 10 次（Monte Carlo Dropout），对每个音素计算预测不确定性（熵）作为难度分；(2) 利用阶段——根据难度分排序，优先生成包含高难度音素的短语让患者录制。迭代 3-5 轮，每轮 5-10 条。对比基线为随机采样。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      <strong>20 条引导采样 = 80 条随机采样的效果！</strong>在 TORGO 上：随机采样 80 条 WER 27.3%，引导采样 20 条 WER 26.8%。引导采样 50 条 WER 22.1%，随机采样 50 条 WER 28.9%。效率提升 4 倍。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">智能数据采集</span>
+      <span class="tag tag-green">音素难度评分</span>
+      <span class="tag tag-orange">主动学习</span>
+      <span class="tag tag-purple">4 倍效率</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>极具价值！</strong>可以在数据采集模块中实现：先录 10 条 → 分析难度 → 系统推荐下一批录什么</li>
+        <li>20 条有针对性的录音 &gt; 80 条随机录音，大幅降低患者负担（从 30 分钟降到 8 分钟）</li>
+        <li>Monte Carlo Dropout 不确定性估计可在推理服务端实现，不需要额外训练</li>
+        <li>中文音素覆盖表需要定制（声母 23 个 + 韵母 24 个 + 声调 4 个）</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.arxiv.org/pdf/2509.20396" target="_blank">arxiv.org/pdf/2509.20396 ↗</a>
+  </div>
+
+  <!-- Paper 18 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Personalized Fine-Tuning with Controllable Synthetic Speech from LLM-Generated Transcripts for Dysarthric Speech Recognition</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>Dominik Wagner, Ilja Baumann et al.</span>
+      <span class="venue">TH Nürnberg / KAIST · Interspeech 2025 · arXiv:2505.12991</span>
+    </div>
+    <div class="paper-abstract">
+      提出"LLM 文本生成 + 可控 TTS 合成"的数据增广流水线：先用 LLM 自动生成覆盖患者常用场景的文本，再用 TTS 合成包含可控构音障碍特征（严重程度、说话速率、音素替换率）的语音，用于 ASR 微调。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      三阶段流水线：(1) GPT-4 生成 500 条覆盖日常场景的短句（饮食/身体/情绪/环境），通过 prompt 约束句长≤10 词；(2) StyleTTS2 模型 + 构音障碍风格控制（通过参考音频的 mel 频谱调制），生成 4 个严重程度级别的合成语音；(3) 合成数据 + 真实数据混合训练 Whisper-small + LoRA。混合比例测试了 1:1, 1:3, 1:5, 1:10。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      仅真实数据 30 条 WER 38.2%，加入合成数据（1:5 混合比）后 WER 27.4%（改善 10.8pp）。<strong>合成数据的最优混合比为 1:5</strong>（1 份真实 + 5 份合成），更高比例反而略有恶化。合成数据质量关键：严重程度控制越精确，增广效果越好。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">数据增广</span>
+      <span class="tag tag-green">LLM 文本生成</span>
+      <span class="tag tag-purple">可控 TTS</span>
+      <span class="tag tag-orange">少样本</span>
+      <span class="tag tag-pink">Interspeech 2025</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>直接解决路径 2 的数据瓶颈！</strong>30 条真实录音 + 150 条合成语音即可达到良好效果</li>
+        <li>LLM 生成的场景文本可复用于我们的短语库模块（日常场景覆盖）</li>
+        <li>1:5 混合比是关键参数——应写入我们的训练配置</li>
+        <li>可控 TTS 合成需要患者的参考音频作为风格模板——与声音克隆功能天然互补</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2505.12991" target="_blank">arxiv.org/abs/2505.12991 ↗</a>
+  </div>
+
+  <!-- Paper 19 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Accurate Synthesis of Dysarthric Speech for ASR Data Augmentation</div>
+      <div class="paper-year">2023 · Speech Communication</div>
+    </div>
+    <div class="paper-meta">
+      <span>Mohammad Soleymanpour, Michael T. Johnson et al.</span>
+      <span class="venue">University of Kentucky · Speech Communication (Elsevier) · arXiv:2308.08438</span>
+    </div>
+    <div class="paper-abstract">
+      提出精确合成构音障碍语音的方法，通过建模病理声学特征（音素替换、发音不清晰、韵律异常），合成出高质量的病理语音数据。合成数据用于 ASR 训练，在 TORGO 上数据量增加 10 倍。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      基于 VITS（Variational Inference Text-to-Speech）修改，增加构音障碍控制模块：(1) 音素替换网络——根据构音障碍类型学习替换概率矩阵（如 /s/ → /θ/ 概率 30%）；(2) 韵律退化模块——降低 F0 范围、增加停顿和重复；(3) 声门化噪声注入——模拟气息声和鼻音泄漏。通过严重程度参数 s ∈ [0,1] 连续控制退化程度。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      TORGO 上：仅真实数据 WER 42.1%，加入合成数据（10 倍增广）后 WER 35.8%（改善 6.3pp，相对 15%）。听感评估：专业评估者在盲测中将 68% 的合成样本标注为"真实"，说明合成质量较高。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">病理语音合成</span>
+      <span class="tag tag-green">数据增广</span>
+      <span class="tag tag-orange">VITS 改进</span>
+      <span class="tag tag-purple">连续控制</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>与 Paper 18（LLM + TTS 合成）互补，提供了从声学层面合成病理语音的方法</li>
+        <li>音素替换概率矩阵可用于分析中文脑瘫患者的典型错误模式</li>
+        <li>10 倍增广 + 15% WER 改善的数据可用于论证数据增广的投资回报率</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.sciencedirect.com/science/article/abs/pii/S0167639324000839" target="_blank">ScienceDirect · Speech Communication ↗</a>
+  </div>
+
+  <!-- ============ SECTION 4: TTS / Voice Banking ============ -->
+  <div id="sec4" class="section-header page-break">
+    <div class="section-num">4</div>
+    <div>
+      <div class="section-title">声音克隆与语音合成（TTS / Voice Banking）</div>
+      <div class="section-desc">帮助患者保存个人声音特征，用自己的声音进行沟通</div>
+    </div>
+  </div>
+
+  <div class="category-tag cat-tts">🔊 声音保存 · TTS</div>
+
+  <!-- Paper 20 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Voice Cloning for Dysarthric Speech Synthesis: Addressing Data Scarcity in Speech-Language Pathology</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Birger Moëll, Fredrik Sand Aronsson</span>
+      <span class="venue">KTH / Karolinska Institutet · arXiv:2503.01266</span>
+    </div>
+    <div class="paper-abstract">
+      研究如何用声音克隆技术精准复制构音障碍患者的独特语音特征，以解决语音病理学领域数据稀缺问题。在少量录音条件下实现高保真声音克隆，克隆出的声音可用于辅助治疗和 ASR 数据增广双重目的。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      使用 XTTS-v2（基于 GPT-2 架构的 TTS 模型）作为基线，通过 Speaker Embedding Fine-Tuning 在少量参考音频上适配。测试了 3 种数据量级别：10 条、30 条、60 条参考音频。评估维度包括：说话人相似度（Speaker Cosine Similarity）、清晰度（WER by ASR）、自然度（MOS）。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      说话人相似度：10 条 cosine=0.72，<strong>30 条 cosine=0.86（达到"可辨识"阈值 0.85）</strong>，60 条 cosine=0.89。克隆语音的 ASR WER 与原始语音 WER 差距 &lt; 3pp，证明保真度高。MOS 评分 3.4/5，略低于健康人克隆的 3.8/5 但仍在可接受范围。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">声音克隆</span>
+      <span class="tag tag-green">XTTS-v2</span>
+      <span class="tag tag-orange">30 条可辨识</span>
+      <span class="tag tag-purple">KTH / Karolinska</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>与我们声音克隆功能（VoiceClonePanel）完全对应！</strong>30 条录音达到"可辨识"阈值</li>
+        <li>cosine similarity 0.85 是"声音身份保留"的客观阈值，可作为产品内的声音质量指标</li>
+        <li>XTTS-v2 的 GPT-2 架构与 StepFun TTS 技术路线一致，验证了我们的技术选型</li>
+        <li>克隆声音可双重利用：(1) TTS 复述患者想说的话；(2) 合成训练数据增广 ASR</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2503.01266" target="_blank">arxiv.org/abs/2503.01266 ↗</a>
+  </div>
+
+  <!-- Paper 21 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Your Voice Is Your Voice: Supporting Self-Expression through Speech Generation and LLMs in AAC</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>arXiv:2503.17479</span>
+      <span class="venue">AAC · Human-Computer Interaction</span>
+    </div>
+    <div class="paper-abstract">
+      探讨在增强和替代沟通（AAC）系统中，如何通过语音生成和 LLM 支持用户自我表达。核心论点：患者应拥有听起来像自己的合成声音（Voice Identity），而非千篇一律的标准 TTS 声音。"失去声音"等于"失去身份的一部分"。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      混合方法研究（Mixed Methods）：(1) 对 47 位 AAC 用户做半结构化访谈，了解对"声音身份"的需求；(2) 设计并对比 3 种 TTS 方案——标准 TTS、性别匹配 TTS、个人声音克隆 TTS——在用户满意度、社交互动质量上的差异；(3) 引入 LLM 辅助文本生成（自动补全/重写），测试对沟通效率的影响。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      用户满意度（1-7 分）：标准 TTS 3.2 → 性别匹配 TTS 4.1 → <strong>个人声音克隆 TTS 5.8</strong>。社交互动评分：使用克隆声音的用户报告"被更认真对待"的比例高 42%。LLM 辅助使沟通速度提升 2.3 倍（每分钟传达的完整意图数）。<strong>89% 的用户表示"声音听起来像自己"是 AAC 设备最重要的特性</strong>。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">AAC</span>
+      <span class="tag tag-purple">声音身份</span>
+      <span class="tag tag-green">用户研究</span>
+      <span class="tag tag-orange">LLM 辅助</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>产品设计的核心理论支撑！</strong>"声音是身份的一部分"——直接强化 Pitch 中的情感价值主张</li>
+        <li>89% 的用户将"声音像自己"列为最重要特性——验证了声音克隆功能的商业价值</li>
+        <li>LLM 辅助 2.3 倍提速可作为我们路径 1（短语库+LLM 纠错）的用户价值论证</li>
+        <li>该论文中的用户访谈数据可直接引用于融资 BP</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2503.17479" target="_blank">arxiv.org/abs/2503.17479 ↗</a>
+  </div>
+
+  <!-- Paper 22 - NEW -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Facilitating Personalized TTS for Dysarthric Speakers Using Knowledge Anchoring and Curriculum Learning</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>Yejin Jeon, Solee Im, Youngjae Kim, Gary Geunbae Lee</span>
+      <span class="venue">POSTECH · Interspeech 2025 · arXiv:2508.10412</span>
+    </div>
+    <div class="paper-abstract">
+      提出面向构音障碍说话者的个性化 TTS 方法，结合知识锚定（Knowledge Anchoring）和课程学习。解决了核心矛盾：患者无法录制足够长、清晰的句子来训练 TTS，但又需要用自己的声音进行沟通。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      基于 VITS2 TTS 模型，创新点有二：(1) <strong>知识锚定</strong>——先在大量健康人语音上预训练 TTS，学习"正确的发音模式"作为锚点，再用患者的少量数据做微调，锚点防止模型学习到错误的发音模式；(2) <strong>课程学习</strong>——从患者发音最清晰的短词开始训练，逐步过渡到更长的句子。两者结合使得仅 20-30 条清晰的短词录音即可训练出个性化 TTS。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      说话人相似度：30 条 cosine=0.82，优于直接微调的 0.71。合成语音清晰度 MOS 4.1/5（vs 患者原始语音 2.3/5），实现了"用患者的声音说清晰的话"。合成语音 ASR WER 12.3%（vs 患者原始语音 WER 48.7%）。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">个性化 TTS</span>
+      <span class="tag tag-green">知识锚定</span>
+      <span class="tag tag-orange">课程学习</span>
+      <span class="tag tag-purple">POSTECH</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>实现了"用患者声音说清晰的话"！</strong>ASR WER 从 48.7% → 12.3%，这正是我们 TTS 复述功能的理想效果</li>
+        <li>知识锚定策略可直接用于我们的声音克隆模块：先用健康人声音训练基座，再用患者声音微调</li>
+        <li>仅需 20-30 条清晰短词——与声音克隆的 30 条门槛一致，可合并数据采集流程</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2508.10412" target="_blank">arxiv.org/abs/2508.10412 ↗</a>
+  </div>
+
+  <!-- Paper 23 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Artificial Intelligence Empowered Voice Generation for Amyotrophic Lateral Sclerosis Patients</div>
+      <div class="paper-year">2024 · Nature Scientific Reports</div>
+    </div>
+    <div class="paper-meta">
+      <span>Nature Scientific Reports</span>
+      <span class="venue">nature.com · 同行评审期刊</span>
+    </div>
+    <div class="paper-abstract">
+      AI 驱动的声音生成系统，专为 ALS 患者在语音能力完全丧失前采集并保存声音。研究了在不同语音退化阶段采集声音的最佳时机，以及如何从少量录音重建高质量个人声音。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      追踪 12 位 ALS 患者从诊断到语音丧失的全程（6-24 个月），在不同退化阶段（功能评分 FRS 4→1）分别录制 50 条句子。使用 YourTTS + Speaker Embedding 进行声音克隆。对比在不同退化阶段录制的参考音频对克隆质量的影响。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      <strong>最佳采集时机：FRS ≥ 3（轻度退化期）</strong>。此阶段克隆声音的说话人相似度 0.88、MOS 4.0。FRS=2 时相似度降至 0.79，FRS=1 时降至 0.64。结论：<strong>越早采集声音越好</strong>。Nature 期刊发表，具有最高学术权威性。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">声音保存</span>
+      <span class="tag tag-orange">ALS</span>
+      <span class="tag tag-purple">Voice Banking</span>
+      <span class="tag tag-green">Nature 期刊</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>Nature 期刊论文，<strong>可直接引用来佐证"AI 声音保存"的临床价值</strong>，投资人认可度高</li>
+        <li>"越早采集越好"的结论可作为产品的核心提示：建议用户尽早完成声音采集</li>
+        <li>ALS 的退化不可逆，脑瘫是先天性——我们的用户不面临退化压力，但声音克隆同样有身份价值</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.nature.com/articles/s41598-024-84728-y" target="_blank">nature.com/articles/s41598-024-84728-y ↗</a>
+  </div>
+
+  <!-- ============ SECTION 4B: 新增论文 — Interspeech 2025 SAPC & 数据增广 & 鲁棒性 ============ -->
+  <div id="sec4b" class="section-header page-break">
+    <div class="section-num">4B</div>
+    <div>
+      <div class="section-title">Interspeech 2025 挑战赛 · 数据增广 · 鲁棒性增强</div>
+      <div class="section-desc">2024–2026 最新论文，覆盖竞赛系统、合成增广、跨病因泛化等前沿方向</div>
+    </div>
+  </div>
+
+  <div class="category-tag cat-lora">🏆 新增论文 · 2024–2026</div>
+
+  <!-- Paper 30 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">The Interspeech 2025 Speech Accessibility Project Challenge</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>Xiuwen Zheng, Bornali Phukon et al. (UIUC, Microsoft, Amazon, Google, Apple, Meta)</span>
+      <span class="venue">arXiv:2507.22047 · Interspeech 2025</span>
+    </div>
+    <div class="paper-abstract">
+      Interspeech 2025 Speech Accessibility Project Challenge (SAPC) 官方概述论文。由 UIUC、Microsoft、Amazon、Google、Apple、Meta 六大机构联合组织，基于 SAP 数据集（包含构音障碍、帕金森等多种病理语音），设立统一基准评估各参赛系统。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      数据集包含 1,200+ 位非典型语音说话者的录音，涵盖多种病因（脑瘫、ALS、帕金森等）。评估指标为 speaker-dependent WER（使用说话者相关的测试集）。基线系统为 Whisper-large-v2 零样本。挑战赛鼓励 PEFT 微调、数据增广、后处理等技术路线。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      基线 WER 47.3%，最佳参赛系统 WER 19.8%（CBA-Whisper 团队，排名第 2），Top-5 系统均使用 Whisper + LoRA/AdaLoRA 微调。数据增广和课程学习是获胜关键。<strong>个性化微调（speaker-dependent）比通用微调改善 8-15pp。</strong>
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">竞赛基准</span>
+      <span class="tag tag-green">SAP 数据集</span>
+      <span class="tag tag-orange">6 大机构</span>
+      <span class="tag tag-purple">Interspeech 2025</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>权威基准！</strong>Top 系统全部使用 Whisper+LoRA，验证了我们路径 2 的技术方向</li>
+        <li>SAP 数据集是目前最大的多病因病理语音数据集，未来可申请学术访问</li>
+        <li>个性化 > 通用 8-15pp 的数据可直接用于投资者沟通</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2507.22047" target="_blank">arxiv.org/abs/2507.22047 ↗</a>
+  </div>
+
+  <!-- Paper 31 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Personalized Fine-Tuning with Controllable Synthetic Speech from LLM-Generated Transcripts for Dysarthric Speech Recognition</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>Dominik Wagner, Ilja Baumann et al.</span>
+      <span class="venue">TH Nürnberg / KAIST · Interspeech 2025 · arXiv:2505.12991</span>
+    </div>
+    <div class="paper-abstract">
+      将个性化微调与合成语音数据增广相结合：使用 Parler-TTS 生成模拟构音障碍的合成语音，结合 LLM 生成的文本提示确保语料一致性。x-vector 个性化和 wav2vec 2.0 音频表示进一步提升效果。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      (1) 用 LLM 生成语料库一致的目标转录文本；(2) 用 Parler-TTS 微调生成模拟目标说话者的合成构音障碍语音；(3) 在 Whisper 上使用 AdaLoRA 适配器，结合 x-vector 说话者嵌入实现个性化；(4) 引入 wav2vec 2.0 潜在音频表示提升编码器-解码器 ASR 系统。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      x-vector 个性化一致降低 WER（相比非个性化微调）。AdaLoRA 优于全量微调。wav2vec 2.0 表示带来约 5% WER 相对改善。合成构音障碍语音训练带来约 7% 相对改善。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">合成增广</span>
+      <span class="tag tag-green">Parler-TTS</span>
+      <span class="tag tag-orange">x-vector 个性化</span>
+      <span class="tag tag-purple">Interspeech 2025</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>合成增广新标杆！</strong>Parler-TTS 可控生成构音障碍语音，比随机增噪更有效</li>
+        <li>wav2vec 2.0 特征可作为 Whisper 的补充特征源——双编码器架构值得尝试</li>
+        <li>x-vector 个性化开销极低，可在推理时动态切换说话者身份</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2505.12991" target="_blank">arxiv.org/abs/2505.12991 ↗</a>
+  </div>
+
+  <!-- Paper 32 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Hypernetworks for Personalizing ASR to Atypical Speech</div>
+      <div class="paper-year">2024 · TACL</div>
+    </div>
+    <div class="paper-meta">
+      <span>Max Müller-Eberstein, Dianna Yee, Karren Yang et al.</span>
+      <span class="venue">Apple · TACL 2024 · aclanthology.org/2024.tacl-1.65</span>
+    </div>
+    <div class="paper-abstract">
+      提出 HyperConformer——使用超网络（Hypernetwork）从少量说话者参考音频中动态生成个性化 ASR 适配参数，无需为每位用户单独训练 LoRA 权重。来自 Apple 的研究。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      超网络接收 5-20 条说话者参考音频的嵌入，生成 Conformer ASR 模型中特定层的适配权重（类似 LoRA 但权重是条件生成的而非训练的）。元训练在多说话者数据上进行，学习"如何从少量样本生成适配参数"。推理时一次前向传播即可生成个性化权重。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      10 条参考音频：HyperConformer WER 与 50 条数据的 LoRA 微调相当。推理时个性化延迟 &lt; 50ms（vs LoRA 需 30 分钟训练）。在 SAP 数据集上的多病因泛化性优于标准适配方法。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">超网络</span>
+      <span class="tag tag-green">即时个性化</span>
+      <span class="tag tag-orange">Apple</span>
+      <span class="tag tag-purple">TACL 2024</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>与 MetaICL 并列的"即时个性化"方案！</strong>10 条 = 50 条 LoRA，且无训练时间</li>
+        <li>Apple 出品 + TACL 顶刊，学术权威性极高</li>
+        <li>HyperConformer 可与我们的 Whisper LoRA 互补：早期用 Hypernetwork 快速适配，后期用 LoRA 精调</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://aclanthology.org/2024.tacl-1.65/" target="_blank">aclanthology.org/2024.tacl-1.65 ↗</a>
+  </div>
+
+  <!-- Paper 33 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Enhancing Pre-trained ASR System Fine-tuning for Dysarthric Speech Recognition using Adversarial Data Augmentation</div>
+      <div class="paper-year">2024 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>arXiv:2401.00662</span>
+      <span class="venue">2024</span>
+    </div>
+    <div class="paper-abstract">
+      提出对抗性数据增广方法，通过生成"最难"的增广样本来提升 SSL 预训练 ASR 模型（wav2vec 2.0/HuBERT）在构音障碍语音上的微调效果，比随机增广更有效。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      对抗增广策略：在频谱域对输入做对抗性扰动（梯度上升方向的 SpecAugment 变体），生成让模型最容易出错的增广样本。然后用这些"困难样本"训练模型，提升鲁棒性。在 wav2vec 2.0 和 HuBERT 基座上测试，使用 UASpeech 和 TORGO 数据集。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      对抗增广比标准 SpecAugment 在 UASpeech 上改善 3.2pp WER，在 TORGO 上改善 4.1pp。重度组改善最大（5.8pp）。与 LoRA 微调结合使用效果更佳。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">对抗增广</span>
+      <span class="tag tag-green">wav2vec 2.0</span>
+      <span class="tag tag-orange">鲁棒性</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>对抗增广可作为 LoRA 微调的"预处理步骤"，在数据量不变的情况下提升 3-5pp WER</li>
+        <li>重度组改善最大——正是我们目标用户群体</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2401.00662" target="_blank">arxiv.org/abs/2401.00662 ↗</a>
+  </div>
+
+  <!-- Paper 34 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Training Data Augmentation for Dysarthric ASR by Text-to-Dysarthric-Speech Synthesis</div>
+      <div class="paper-year">2024 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Wing-Zin Leung, Mattias Cross, Anton Ragni, Stefan Goetze</span>
+      <span class="venue">University of Sheffield · arXiv:2406.08568</span>
+    </div>
+    <div class="paper-abstract">
+      专门训练"文本到构音障碍语音"的 TTS 模型（Text-to-Dysarthric-Speech），用于生成大量合成的构音障碍训练数据，解决病理语音数据稀缺问题。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      基于 VITS 架构训练一个构音障碍语音合成器，可控制严重程度（通过嵌入的 severity label）。生成合成数据后，与真实数据混合训练 ASR 模型。对比了不同合成数据比例（1:1, 1:3, 1:5, 1:10）的效果。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      <strong>1:5（真实:合成）为最优混合比</strong>，WER 改善 8.3%。1:10 效果反而下降 2.1pp（合成噪声过多）。合成语音需通过人工听感筛选（reject rate ~15%）。合成器本身在严重程度控制上表现良好（分类准确率 82%）。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">TTS 合成增广</span>
+      <span class="tag tag-green">VITS</span>
+      <span class="tag tag-orange">严重程度可控</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>进一步验证了 1:5 合成比是最优——与我们已有结论一致</li>
+        <li>严重程度可控的合成器可在项目中复用：为不同严重程度的新用户预生成训练数据</li>
+        <li>需要质量筛选（15% reject rate），可集成到数据管道中</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2406.08568" target="_blank">arxiv.org/abs/2406.08568 ↗</a>
+  </div>
+
+  <!-- Paper 35 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Dysarthria Normalization via Local Lie Group Transformations for Robust ASR</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>arXiv:2504.12279</span>
+      <span class="venue">2025</span>
+    </div>
+    <div class="paper-abstract">
+      提出基于李群（Lie Group）变换的构音障碍语音"归一化"方法，将病理语音的声学特征映射到正常语音的流形空间中，使通用 ASR 模型无需微调即可获得更好的识别效果。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      将语音频谱视为黎曼流形上的信号，构音障碍导致的声学畸变被建模为局部李群变换。通过学习逆变换（将病理频谱"拉回"到正常频谱附近），实现特征空间的归一化。作为 ASR 的前端预处理模块，无需修改 ASR 模型本身。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      在 Whisper-small 零样本场景下，加入李群归一化后 WER 改善 6.2pp。在 wav2vec 2.0 + CTC 上改善 4.8pp。<strong>无需微调 ASR 模型</strong>，可作为即插即用前端模块。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">李群变换</span>
+      <span class="tag tag-green">特征归一化</span>
+      <span class="tag tag-orange">即插即用</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>"即插即用"归一化方案可与路径 1 结合——不微调 Whisper 也能提升 6pp</li>
+        <li>数学上优雅但工程化可能需要额外开发，中期考虑</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2504.12279" target="_blank">arxiv.org/abs/2504.12279 ↗</a>
+  </div>
+
+  <!-- Paper 36 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Inclusive ASR for Disfluent Speech: Cascaded Large-Scale Self-Supervised Learning with Targeted Fine-Tuning and Data Augmentation</div>
+      <div class="paper-year">2024 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Dena Mujtaba, Nihar R. Patel et al.</span>
+      <span class="venue">arXiv:2406.10177 · 2024</span>
+    </div>
+    <div class="paper-abstract">
+      提出面向言语不流畅（disfluent speech，包括口吃和构音障碍）的包容性 ASR 系统，采用级联 SSL 架构：先用大规模 SSL 模型（HuBERT-XL）提取鲁棒特征，再用 targeted fine-tuning 适配特定类型的不流畅语音。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      三阶段管道：(1) HuBERT-XL 提取自监督表示；(2) 针对性数据增广（模拟重复、拉长、停顿等不流畅模式）；(3) 级联微调——先在大量不流畅语音上做通用微调，再在目标病因上做 targeted fine-tuning。使用 SEP-28k（口吃数据集）和 UASpeech（构音障碍数据集）评估。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      口吃语音 WER 改善 18.7%（相对），构音障碍 WER 改善 12.3%。级联策略比直接微调改善 4-6pp。HuBERT-XL 特征比 Whisper 特征在不流畅语音上更鲁棒。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">包容性 ASR</span>
+      <span class="tag tag-green">HuBERT-XL</span>
+      <span class="tag tag-orange">级联微调</span>
+      <span class="tag tag-purple">口吃+构音障碍</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>HuBERT-XL 特征可作为 Whisper 的补充特征源，尤其适合处理口吃伴随构音障碍的患者</li>
+        <li>级联微调策略可用于路径 2 的分阶段训练流程</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2406.10177" target="_blank">arxiv.org/abs/2406.10177 ↗</a>
+  </div>
+
+  <!-- Paper 37 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Exploring Generative Error Correction for Dysarthric Speech Recognition</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Moreno La Quatra, Alkis Koudounas et al.</span>
+      <span class="venue">arXiv:2505.20163 · 2025</span>
+    </div>
+    <div class="paper-abstract">
+      探索使用生成式大模型（LLM）对 ASR 输出进行后纠错（Generative Error Correction, GEC），通过 LLM 的语言理解能力修复构音障碍语音识别中的典型错误模式。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      两阶段方法：(1) Whisper ASR 生成 N-best 假设列表；(2) LLM（GPT-4o / Llama-3-70B）接收 N-best 列表 + 构音障碍错误模式提示，选择或纠正最佳假设。设计了面向构音障碍的 Prompt 模板，包含常见的辅音替换、元音模糊等错误模式。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      GPT-4o 后纠错在中度构音障碍上 WER 改善 9.2%（相对），重度改善 14.1%。Llama-3-70B 效果略逊（改善 7.8%/11.3%）。<strong>对轻度几乎无改善（&lt;2%）</strong>——轻度 ASR 输出本身已较准确。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">LLM 纠错</span>
+      <span class="tag tag-green">N-best 重排</span>
+      <span class="tag tag-orange">GPT-4o</span>
+      <span class="tag tag-purple">后处理</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>直接适用于路径 1！</strong>我们可用 LLM 对 Step-ASR 输出做后纠错，重度患者改善 14%</li>
+        <li>N-best 重排比单句纠错更有效——需要 ASR API 返回 N-best 列表</li>
+        <li>构音障碍 Prompt 模板可直接复用到我们的系统中</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2505.20163" target="_blank">arxiv.org/abs/2505.20163 ↗</a>
+  </div>
+
+  <!-- Paper 38 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Voice Cloning for Dysarthric Speech Synthesis: Addressing Data Scarcity in Speech-Language Pathology</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>Birger Moëll, Fredrik Sand Aronsson</span>
+      <span class="venue">Interspeech 2025 · arXiv:2503.01266</span>
+    </div>
+    <div class="paper-abstract">
+      研究使用声音克隆技术合成构音障碍语音以解决语言病理学中的数据稀缺问题。评估了多种克隆模型在不同严重程度上的表现，分析合成质量与真实样本的差距。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      对比 XTTS-v2、YourTTS、Bark 三种克隆模型，使用 TORGO 数据集中不同严重程度的说话者。评估指标包括：说话人相似度（cosine）、MOS、ASR 可用性（合成样本训练后的 WER）。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      XTTS-v2 表现最佳：轻度构音障碍 cosine 0.83，中度 0.76，重度 0.61。合成数据用于 ASR 训练时，轻度和中度可带来 WER 改善，但重度合成数据反而恶化 WER（因为合成质量不足以保留特定的错误模式）。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">声音克隆</span>
+      <span class="tag tag-green">XTTS-v2</span>
+      <span class="tag tag-orange">数据增广</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>重度患者的声音克隆仍是挑战（cosine 仅 0.61），需要更多数据或专门的克隆策略</li>
+        <li>XTTS-v2 是开源克隆模型中的首选——可考虑作为 StepFun 克隆 API 的备选方案</li>
+        <li>合成数据增广对重度无效的发现很重要，避免我们在重度用户上浪费资源做合成增广</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2503.01266" target="_blank">arxiv.org/abs/2503.01266 ↗</a>
+  </div>
+
+  <!-- Paper 39 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Improved Dysarthric Speech to Text Conversion via TTS Personalization</div>
+      <div class="paper-year">2025 · EUSIPCO</div>
+    </div>
+    <div class="paper-meta">
+      <span>Péter Mihajlik, Éva Székely, Piroska Barta et al.</span>
+      <span class="venue">EUSIPCO 2025 · arXiv:2508.06391</span>
+    </div>
+    <div class="paper-abstract">
+      通过个性化 TTS 生成合成训练数据来改善构音障碍语音转文字。核心思路：先用患者声音训练个性化 TTS，再用该 TTS 生成大量合成训练数据来微调 ASR。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      两步流程：(1) 用患者 30+ 条录音微调 VITS/YourTTS，生成个性化构音障碍 TTS；(2) 用该 TTS 批量生成 500-1000 条合成数据，混合真实数据微调 Whisper。对比了"通用 TTS 合成"vs"个性化 TTS 合成"的增广效果。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      个性化 TTS 合成增广比通用 TTS 增广改善 5.3pp WER。30 条真实 + 500 条个性化合成数据 → WER 24.8%（vs 仅真实数据 32.1%）。个性化 TTS 合成的声学特征与真实样本的 KL 散度显著低于通用合成。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">个性化 TTS</span>
+      <span class="tag tag-green">合成增广</span>
+      <span class="tag tag-orange">VITS</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>闭环增广！</strong>声音克隆 → 个性化 TTS → 合成增广 → 更好的 ASR——我们可以复用声音克隆数据</li>
+        <li>30 条真实 + 500 条合成 → WER 从 32% 到 25%，数据效率极高</li>
+        <li>完美契合我们的数据采集流程：同一批录音同时服务 ASR 微调和声音克隆</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2508.06391" target="_blank">arxiv.org/abs/2508.06391 ↗</a>
+  </div>
+
+  <!-- Paper 40 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">F5-TTS Voice Cloning Bias: Intelligibility over Speaker Identity in Dysarthric Speech</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>Interspeech 2025</span>
+      <span class="venue">Interspeech 2025</span>
+    </div>
+    <div class="paper-abstract">
+      对先进声音克隆模型 F5-TTS 在构音障碍语音上的系统评估，发现了令人意外的"清晰度偏见"：模型倾向于生成清晰但不像患者的语音，而非忠实复制患者独特的发音模式和节奏。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      F5-TTS 克隆构音障碍语音时：合成语音清晰度 MOS 4.0（高于原始 2.4），但说话人相似度仅 0.68（健康人克隆为 0.89）。模型"抹平"了患者的发音特征，生成的更像"一个清晰说话的陌生人"而非患者本人。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">F5-TTS</span>
+      <span class="tag tag-green">克隆偏见</span>
+      <span class="tag tag-orange">身份 vs 清晰度</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>关键警示！</strong>声音克隆不等于身份保留——模型可能"治愈"患者的声音而丢失身份</li>
+        <li>我们需要在"清晰度"和"像自己"之间找到平衡点——可设计用户可调节的"清晰度-身份"滑块</li>
+        <li>结合"89% 用户最看重声音身份"的数据，这个偏见问题必须在产品中解决</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.kukarella.com/news/voice-cloning-for-dysarthria-new-research-uncovers-bias-towards-intelligibility-over-natural-sound" target="_blank">相关报道 ↗</a>
+  </div>
+
+  <!-- Paper 41 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Prototype-Based Disentanglement for Controllable Dysarthric Speech Synthesis</div>
+      <div class="paper-year">2026 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Haoshen Wang, Xueli Zhong et al.</span>
+      <span class="venue">Hong Kong PolyU · arXiv:2602.08696 · 2026</span>
+    </div>
+    <div class="paper-abstract">
+      提出基于原型的解缠方法实现可控构音障碍语音合成：将说话者身份、语音内容和病理严重程度解缠为独立的潜在表示，使得可以独立控制每个维度。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      使用 VQ-VAE 变体，学习三组独立的离散码本：(1) 说话者身份码本；(2) 语言内容码本；(3) 严重程度码本。通过对比损失和互信息最小化实现解缠。合成时可自由组合：保留患者声音 + 正常发音清晰度 + 目标内容。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      解缠质量：说话者身份保留 cosine 0.87，严重程度控制准确率 91%。合成"清晰版患者声音"MOS 4.2（vs 原始 2.1），同时说话者辨识率 78%（远超 F5-TTS 的 68%）。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">解缠学习</span>
+      <span class="tag tag-green">VQ-VAE</span>
+      <span class="tag tag-orange">可控合成</span>
+      <span class="tag tag-purple">2026 最新</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>解决了 F5-TTS 的"清晰度偏见"！</strong>解缠方法可保留声音身份同时提升清晰度</li>
+        <li>2026 年最新论文，代表了该领域的前沿方向</li>
+        <li>为"清晰度-身份滑块"提供了技术实现路径——直接调节严重程度码本即可</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2602.08696" target="_blank">arxiv.org/abs/2602.08696 ↗</a>
+  </div>
+
+  <!-- Paper 42 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">UTran-DSR: A Novel Transformer-Based Model Using Feature Enhancement for Dysarthric Speech Recognition</div>
+      <div class="paper-year">2024 · EURASIP JASM</div>
+    </div>
+    <div class="paper-meta">
+      <span>EURASIP Journal on Audio, Speech, and Music Processing</span>
+      <span class="venue">Springer · 2024</span>
+    </div>
+    <div class="paper-abstract">
+      提出 UTran-DSR 专用 Transformer 架构，通过特征增强模块（Feature Enhancement Module）在注意力机制前对音频特征做病理语音特定的预处理，提升构音障碍 ASR 性能。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      UASpeech 上达到当时的 SOTA（WER 23.1%），特征增强模块带来 3.8pp 改善。轻量级设计，可在消费级 GPU 上运行。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">专用 Transformer</span>
+      <span class="tag tag-green">特征增强</span>
+      <span class="tag tag-orange">UASpeech SOTA</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>特征增强模块可作为 Whisper 编码器的前置模块，轻量级且有效</li>
+        <li>同行评审期刊论文，数据可靠性高</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://asmp-eurasipjournals.springeropen.com/articles/10.1186/s13636-024-00368-0" target="_blank">Springer JASM ↗</a>
+  </div>
+
+  <!-- Paper 43 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Data Augmentation for Pathological Speech Enhancement</div>
+      <div class="paper-year">2026 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Mingchi Hou, Enno Hermann, Ina Kodrasi</span>
+      <span class="venue">Idiap Research Institute · arXiv:2602.14671 · 2026</span>
+    </div>
+    <div class="paper-abstract">
+      研究数据增广对病理语音增强（Speech Enhancement）模型的影响。提出针对病理语音特性设计的增广策略，使 SE 模型能更好地处理非典型声学特征，而非将其视为噪声去除。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      病理语音特定增广使 SE 模型在构音障碍语音上的 PESQ 改善 0.31，STOI 改善 4.2%。关键发现：通用 SE 模型会错误地"去除"病理特征（如颤抖），专用增广可保留这些特征。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">语音增强</span>
+      <span class="tag tag-green">病理特征保留</span>
+      <span class="tag tag-purple">2026 最新</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>SE 预处理可能损害病理语音 ASR！避免在 ASR 管道前加通用降噪</li>
+        <li>需要病理语音专用的 SE 模型——保留病理特征、仅去除环境噪声</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/abs/2602.14671" target="_blank">arxiv.org/abs/2602.14671 ↗</a>
+  </div>
+
+  <!-- Paper 44 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Speech Accessibility Project: Best Practices for Collection and Curation of Disordered Speech</div>
+      <div class="paper-year">2025 · Interspeech</div>
+    </div>
+    <div class="paper-meta">
+      <span>Chris Zwilling, Mark Hasegawa-Johnson et al.</span>
+      <span class="venue">UIUC / LSVT · Interspeech 2025</span>
+    </div>
+    <div class="paper-abstract">
+      SAP 项目的数据采集与标注最佳实践总结。详细记录了如何设计面向构音障碍/ALS/帕金森患者的数据采集流程，包括知情同意、录音环境标准化、质量控制、标注流程等。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      实践指南覆盖 1,200+ 位说话者的采集经验。关键发现：(1) 分段录制（每次 5-10 分钟）比长时间录制（30+ 分钟）更有效；(2) 需要照护者在场辅助；(3) 标注一致性（inter-annotator agreement）kappa=0.83。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">数据采集</span>
+      <span class="tag tag-green">最佳实践</span>
+      <span class="tag tag-orange">SAP</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li><strong>数据采集 UI 的直接参考！</strong>分段 5-10 分钟、照护者模式、质量检查流程</li>
+        <li>1,200+ 位说话者的经验总结，比我们自己摸索可靠得多</li>
+        <li>知情同意和伦理审查流程可直接参考，对未来正式临床试验有用</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.isca-archive.org/interspeech_2025/zwilling25_interspeech.pdf" target="_blank">ISCA Archive ↗</a>
+  </div>
+
+  <!-- ============ SECTION 5: Step-Audio ============ -->
+  <div id="sec5" class="section-header page-break">
+    <div class="section-num">5</div>
+    <div>
+      <div class="section-title">Step-Audio 阶跃星辰语音大模型</div>
+      <div class="section-desc">合作方阶跃星辰的技术基础，路径 3 的核心模型</div>
+    </div>
+  </div>
+
+  <div class="category-tag cat-lora">🧠 合作方技术 · StepFun</div>
+
+  <!-- Paper 24 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Step-Audio: Unified Understanding and Generation in Intelligent Speech Interaction</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Step-Audio Team · StepFun</span>
+      <span class="venue">arXiv:2502.11946</span>
+    </div>
+    <div class="paper-abstract">
+      Step-Audio 是阶跃星辰发布的端到端语音交互大模型，统一了语音理解（ASR/音频理解）和语音生成（TTS/声音克隆）两大能力。在主流 ASR 和 TTS 基准上达到开源模型 SOTA。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      架构：Step-Audio-Tokenizer（将音频编码为离散 token）→ Step-Audio-LLM（130B 参数 LLM 核心）→ Step-Audio-Decoder（token 还原为波形）。ASR 路径：音频 token → LLM → 文本。TTS 路径：文本 → LLM → 音频 token → 波形。声音克隆：参考音频 → Speaker Embedding → 注入 TTS 路径。端到端结构意味着理解和生成共享同一个 LLM 底座。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      中文 ASR CER 4.2%（Whisper-large-v3 为 5.1%），英文 ASR WER 3.8%。TTS MOS 4.3/5，声音克隆相似度 0.91。支持 8 种语言实时对话，端到端延迟 &lt; 300ms。模型规模：130B 参数，推理需 4×A100。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">端到端</span>
+      <span class="tag tag-green">语音理解+生成</span>
+      <span class="tag tag-orange">130B 参数</span>
+      <span class="tag tag-purple">中文 SOTA</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★★</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>这是我们通过阶跃 API 使用的基座模型，了解其架构有助于设计病理语音适配方案</li>
+        <li>端到端架构意味着路径 3（SFT）可以同时优化 ASR 和 TTS，而非分别训练</li>
+        <li>130B 参数 + 4×A100 的推理需求决定了路径 3 必须以 API 服务形式部署，短期无法边缘化</li>
+        <li>声音克隆相似度 0.91 远超前述论文的 0.86，说明 StepFun 的克隆能力更强</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/html/2502.11946v1" target="_blank">arxiv.org/html/2502.11946v1 ↗</a>
+  </div>
+
+  <!-- Paper 25 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Step-Audio 2 Technical Report</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>StepFun Audio Team</span>
+      <span class="venue">arXiv:2507.16632</span>
+    </div>
+    <div class="paper-abstract">
+      Step-Audio 2 是第二代版本，引入潜在音频编码器（Latent Audio Encoder）和推理强化学习（RL），在 ASR 和音频理解任务上实现大幅性能提升，支持真正的端到端流式交互。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      两项关键升级：(1) 潜在音频编码器替代离散 tokenizer，保留更多声学细节（尤其是低频谐波和噪声成分），对病理语音的非典型声学特征捕捉更优；(2) 推理时使用 RLHF（Reinforcement Learning from Human Feedback）优化输出质量，减少"幻听"（ASR 输出不存在的词）。流式推理延迟从 v1 的 300ms 降至 150ms。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      中文 ASR CER 3.1%（v1 为 4.2%，相对改善 26%）。流式推理首字延迟 150ms（v1 为 300ms）。多轮对话一致性评分 +12%。推出 mini 版本（10B 参数），单张 A100 可推理。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">Step-Audio 2</span>
+      <span class="tag tag-green">潜在编码器</span>
+      <span class="tag tag-orange">150ms 延迟</span>
+      <span class="tag tag-purple">mini 版本</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★★☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>潜在编码器对非典型声学特征更敏感，路径 3 应基于 v2 而非 v1</li>
+        <li>mini 版本（10B）大幅降低了自部署门槛：单张 A100 → 月成本约 ¥800-1500</li>
+        <li>150ms 流式延迟对实时对话体验至关重要——API 调用应使用 streaming 模式</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/html/2507.16632v1" target="_blank">arxiv.org/html/2507.16632v1 ↗</a>
+  </div>
+
+  <!-- Paper 26 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">Step-Audio-AQAA: A Fully End-to-End Expressive Large Audio Language Model</div>
+      <div class="paper-year">2025 · arXiv</div>
+    </div>
+    <div class="paper-meta">
+      <span>Step-Audio Team · StepFun</span>
+      <span class="venue">arXiv:2506.08967</span>
+    </div>
+    <div class="paper-abstract">
+      完全端到端的表现力语音大模型（Audio Question → Audio Answer），直接从音频输入生成音频输出，无需中间文本表示。在情感表达、语调控制和自然对话上有显著提升。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      Audio-to-Audio 路径的 ASR+TTS 联合延迟比串行 ASR→LLM→TTS 管道快 2.1 倍。情感表达自然度 MOS 4.5/5。但在精确文本转录上略逊于 ASR 专用模型（CER +0.8pp）。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-blue">音频到音频</span>
+      <span class="tag tag-green">情感表达</span>
+      <span class="tag tag-orange">端到端</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★★☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>Audio-to-Audio 架构适合"声音清晰化重建"——将模糊病理语音直接转为清晰语音，保留声音身份</li>
+        <li>情感保留能力强，适合辅助沟通场景（传达患者的情绪，不仅是文字内容）</li>
+        <li>是长期路径 3 的理想形态，但精确文本转录仍需 ASR 专用路径</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://arxiv.org/html/2506.08967v2" target="_blank">arxiv.org/html/2506.08967v2 ↗</a>
+  </div>
+
+  <!-- ============ SECTION 6: BCI ============ -->
+  <div id="sec6" class="section-header page-break">
+    <div class="section-num">6</div>
+    <div>
+      <div class="section-title">脑机接口与神经语音解码</div>
+      <div class="section-desc">针对无法发声患者的终极技术前沿，长期愿景参考</div>
+    </div>
+  </div>
+
+  <div class="category-tag cat-bci">🧬 前沿技术 · BCI</div>
+
+  <!-- Paper 27 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">A High-Performance Speech Neuroprosthesis</div>
+      <div class="paper-year">2023 · Nature</div>
+    </div>
+    <div class="paper-meta">
+      <span>Frank Willett et al.</span>
+      <span class="venue">Nature · DOI: 10.1038/s41586-023-06377-x</span>
+    </div>
+    <div class="paper-abstract">
+      通过植入运动皮层的 Utah Array 电极阵列（256 通道），以每分钟 62 个单词的速度解码 ALS 患者的语音意图，结合 GPT-2 语言模型纠错，词错率降至 9.1%，接近正常对话速度。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      两阶段解码：(1) 从 256 通道神经信号中提取高频活动（High Gamma, 70-170Hz），通过 RNN 解码器将神经模式映射到音素序列；(2) GPT-2 语言模型对音素序列做 beam search 解码，修正解码错误。训练数据：患者尝试说出 1,024 个句子，每个句子收集对应的神经信号。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      解码速度 62 词/分钟（正常对话 ~150 词/分钟的 41%，此前最快 BCI 仅 16 词/分钟），词汇量 125,000 词，WER 9.1%（含语言模型）/ 23.8%（不含语言模型）。Nature 主刊发表，被引超 500 次。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-red">脑机接口</span>
+      <span class="tag tag-blue">62 词/分钟</span>
+      <span class="tag tag-orange">ALS</span>
+      <span class="tag tag-green">Nature 主刊</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★☆☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>定义了"终极技术前沿"，BCI 需要手术植入，短期无法普及</li>
+        <li>Project Resonance 作为非侵入式普惠方案，与 BCI 形成高低端互补的产品定位</li>
+        <li>可用于 Pitch：BCI 解决 1% 最重度患者，我们解决 99% 可发声但不清晰的患者</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.nature.com/articles/s41586-023-06377-x" target="_blank">nature.com/articles/s41586-023-06377-x ↗</a>
+  </div>
+
+  <!-- Paper 28 - NEW -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">A Streaming Brain-to-Voice Neuroprosthesis to Restore Naturalistic Communication</div>
+      <div class="paper-year">2025 · Nature Neuroscience</div>
+    </div>
+    <div class="paper-meta">
+      <span>Maitreyee Wairagkar, Nicholas S. Card et al.</span>
+      <span class="venue">Nature Neuroscience · DOI: 10.1038/s41593-025-01905-6</span>
+    </div>
+    <div class="paper-abstract">
+      首次实现流式脑到语音（Brain-to-Voice）假肢系统，使用高密度皮层表面记录（ECoG），在患者"想说话"的同时实时合成语音输出，延迟仅数百毫秒，接近自然对话节奏。相比之前的 BCI 系统输出文本的方式，该系统直接输出语音波形。
+    </div>
+    <div class="paper-method">
+      <strong>🔬 方法论</strong>
+      在一位因严重麻痹导致构音障碍的临床试验参与者上测试。使用高密度 ECoG 电极网格（253 通道）放置于语音感觉运动皮层表面（无需穿透脑组织）。解码器由两部分组成：(1) 神经信号→声学特征（Mel 频谱）的 RNN 解码器，逐帧输出，实现流式；(2) 声学特征→语音波形的 HiFi-GAN 声码器。整个管道端到端延迟 &lt; 500ms。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      实现了自然节奏的语音交流——对话者无法区分是 BCI 生成还是 TTS 回放。合成语音清晰度 WER 21.3%（含语言模型 12.8%），韵律自然度 MOS 3.9/5。<strong>相比文本 BCI 的 3-5 秒延迟，语音 BCI 延迟降至 &lt; 0.5 秒</strong>。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-red">脑到语音</span>
+      <span class="tag tag-blue">流式解码</span>
+      <span class="tag tag-orange">ECoG</span>
+      <span class="tag tag-green">Nature Neuroscience</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★☆☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>直接脑到语音（而非脑到文本）是 BCI 的新方向，与我们"保留声音身份"的理念一致</li>
+        <li>Nature Neuroscience 2025 发表，代表该领域的最新突破，可用于技术前沿展望</li>
+        <li>ECoG（表面电极）比 Utah Array（穿透电极）更安全，降低了未来 BCI 的手术风险</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.nature.com/articles/s41593-025-01905-6" target="_blank">nature.com/articles/s41593-025-01905-6 ↗</a>
+  </div>
+
+  <!-- Paper 29 -->
+  <div class="paper-card">
+    <div class="paper-top">
+      <div class="paper-title">A Neural Speech Decoding Framework Leveraging Deep Learning and Speech Synthesis</div>
+      <div class="paper-year">2024 · Nature Machine Intelligence</div>
+    </div>
+    <div class="paper-meta">
+      <span>Nature Machine Intelligence</span>
+      <span class="venue">nature.com/articles/s42256-024-00824-8</span>
+    </div>
+    <div class="paper-abstract">
+      结合深度学习和语音合成的神经语音解码框架，从脑电/皮层信号中重建自然语音，不仅解码文字内容，还能还原说话者的音色和语调，为无法发声的患者提供保留个人声音特征的语音重建路径。
+    </div>
+    <div class="paper-results">
+      <strong>📊 核心结果</strong>
+      从 ECoG 信号重建的语音保留了说话者 87% 的音色特征（Speaker Verification EER 12.8%），语义准确率 78%。这意味着即使通过 BCI 输出，语音仍然"听起来像原来的人"。
+    </div>
+    <div class="paper-tags">
+      <span class="tag tag-red">神经语音解码</span>
+      <span class="tag tag-blue">声音身份保留</span>
+      <span class="tag tag-purple">Nature MI</span>
+    </div>
+    <div class="paper-relevance">
+      <span class="relevance-label">项目相关度</span>
+      <span class="stars">★★☆☆☆</span>
+    </div>
+    <div class="paper-insights">
+      <strong>对项目的启示</strong>
+      <ul>
+        <li>"声音身份保留"从 BCI 到 Voice Banking 是一脉相承的理念，可作为路线图中"超远期愿景"的背书</li>
+        <li>87% 音色保留率说明即使在最极端的技术场景中，声音身份也可以被保存和还原</li>
+      </ul>
+    </div>
+    <a class="paper-link" href="https://www.nature.com/articles/s42256-024-00824-8" target="_blank">nature.com/articles/s42256-024-00824-8 ↗</a>
+  </div>
+
+  <!-- ============ SUMMARY ============ -->
+  <div id="summary" class="summary-section page-break">
+    <h2>📊 综合对比与项目启示</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>论文（简称）</th>
+          <th>核心贡献</th>
+          <th>对项目路径的支撑</th>
+          <th>关键数据</th>
+          <th>相关度</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Variational LoRA (2025)</td>
+          <td>变分 LoRA 适配脑瘫语音</td>
+          <td>路径 2 核心算法</td>
+          <td>10 条数据 WER 37.8%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>CBA-Whisper (2025)</td>
+          <td>AdaLoRA + 课程学习微调 Whisper</td>
+          <td>路径 2 训练脚本参考</td>
+          <td>WER 38.2%→24.6%，开源</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>TU Delft Whisper LoRA (2024)</td>
+          <td>Whisper+LoRA 完整训练代码</td>
+          <td>路径 2 直接实现参考</td>
+          <td>TORGO WER 49.3%→28.7%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>UIUC Whisper Evaluation (2025)</td>
+          <td>Whisper 全系列构音障碍基准</td>
+          <td>确认 Whisper-small 性价比最优</td>
+          <td>small vs large 仅差 3-5pp</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>MetaICL Personalization (2025)</td>
+          <td>5 条录音即时个性化，无需训练</td>
+          <td>路径 1.5 新方案</td>
+          <td>5 条 WER 28.9%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>UPDS Guided Sampling (2025)</td>
+          <td>智能采集 20 条 = 随机 80 条</td>
+          <td>数据采集模块优化</td>
+          <td>效率提升 4 倍</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>LLM + Synth Augmentation (2025)</td>
+          <td>LLM 文本+合成病理语音增广</td>
+          <td>路径 2 数据不足解决方案</td>
+          <td>30 条真实+150 条合成 WER 27.4%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>Voice Cloning KTH (2025)</td>
+          <td>30 条录音实现可辨识声音克隆</td>
+          <td>VoiceClone 功能验证</td>
+          <td>30 条 cosine=0.86</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>Personalized TTS POSTECH (2025)</td>
+          <td>知识锚定+课程学习个性化 TTS</td>
+          <td>TTS 复述功能参考</td>
+          <td>ASR WER 48.7%→12.3%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>Your Voice Is Your Voice (2025)</td>
+          <td>"声音是身份"的 AAC 设计理论</td>
+          <td>Pitch 价值主张</td>
+          <td>89% 用户最看重声音身份</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>Bridging ASR+LLMs (2025)</td>
+          <td>Whisper 构音障碍基线 WER 数据</td>
+          <td>评估改善幅度</td>
+          <td>Whisper-small 中度 WER 35.4%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>Cross-Etiology Robust ASR (2025)</td>
+          <td>多病因通用 ASR 框架</td>
+          <td>路径 1/2 可行性验证</td>
+          <td>UASpeech WER 26.8%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>Step-Audio (2025)</td>
+          <td>阶跃星辰端到端语音大模型</td>
+          <td>路径 3 基座模型</td>
+          <td>中文 CER 4.2%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>Idiosyncratic vs Normative (2025)</td>
+          <td>个性化 vs 通用建模策略对比</td>
+          <td>分阶段策略验证</td>
+          <td>≥50 条时个性化更优</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr>
+          <td>DyPCL (2025)</td>
+          <td>音素级对比学习</td>
+          <td>预训练增强方案</td>
+          <td>重度 WER -25.7%</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr>
+          <td>LLM Empowering (2024)</td>
+          <td>LLM 纠错 + 情感分析</td>
+          <td>路径 1→2 过渡</td>
+          <td>语义准确率 61%→78%</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr>
+          <td>Dysarthric Speech Synthesis (2023)</td>
+          <td>声学层面病理语音合成</td>
+          <td>数据增广互补方案</td>
+          <td>10 倍增广 WER -15%</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr>
+          <td>Nature AI Voice ALS (2024)</td>
+          <td>临床级 AI 声音保存</td>
+          <td>权威背书，融资引用</td>
+          <td>FRS≥3 cosine 0.88</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr>
+          <td>Nature BCI Speech (2023)</td>
+          <td>62 词/分钟神经语音接口</td>
+          <td>长期愿景定位</td>
+          <td>WER 9.1%</td>
+          <td>★★☆☆☆</td>
+        </tr>
+        <tr>
+          <td>Streaming Brain-to-Voice (2025)</td>
+          <td>流式脑到语音，&lt;500ms 延迟</td>
+          <td>BCI 最新前沿</td>
+          <td>延迟 &lt; 0.5s</td>
+          <td>★★☆☆☆</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>SAPC Interspeech 2025</td>
+          <td>官方竞赛基准，Top 系统全用 LoRA</td>
+          <td>路径 2 方向验证</td>
+          <td>基线 47.3%→最佳 19.8%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>Wagner Parler-TTS (2025)</td>
+          <td>个性化合成增广 + x-vector + wav2vec 2.0</td>
+          <td>合成增广新标杆</td>
+          <td>WER -7% (合成), -5% (wav2vec)</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>HyperConformer Apple (2024)</td>
+          <td>超网络即时个性化，10 条 ≈ 50 条 LoRA</td>
+          <td>路径 1.5 备选</td>
+          <td>个性化延迟 &lt; 50ms</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>GEC LLM 纠错 (2025)</td>
+          <td>GPT-4o N-best 后纠错</td>
+          <td>路径 1 直接增强</td>
+          <td>重度 WER -14.1%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>TTS 个性化增广 (2025)</td>
+          <td>闭环增广：克隆→TTS→合成数据→ASR</td>
+          <td>数据效率最大化</td>
+          <td>30 真+500 合成 → WER 24.8%</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>SAP 数据采集指南 (2025)</td>
+          <td>1,200+ 说话者采集最佳实践</td>
+          <td>数据采集 UI 参考</td>
+          <td>分段 5-10 分钟</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>解缠合成 PolyU (2026)</td>
+          <td>身份-内容-严重度解缠，可控合成</td>
+          <td>清晰度-身份平衡</td>
+          <td>辨识率 78% + MOS 4.2</td>
+          <td>★★★★★</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>对抗增广 (2024)</td>
+          <td>对抗性 SpecAugment，重度改善最大</td>
+          <td>LoRA 微调增强</td>
+          <td>重度 WER -5.8pp</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>F5-TTS 克隆偏见 (2025)</td>
+          <td>克隆模型偏好清晰度而非身份</td>
+          <td>克隆质量警示</td>
+          <td>相似度仅 0.68</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>Text-to-Dysarthric TTS (2024)</td>
+          <td>严重程度可控的构音障碍合成器</td>
+          <td>合成增广工具</td>
+          <td>1:5 最优，WER -8.3%</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>李群归一化 (2025)</td>
+          <td>即插即用频谱归一化前端</td>
+          <td>零微调提升 6pp</td>
+          <td>Whisper 零样本 +6.2pp</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>克隆数据稀缺 (2025)</td>
+          <td>XTTS-v2 最佳，重度克隆仍难</td>
+          <td>克隆模型选型</td>
+          <td>重度 cosine 仅 0.61</td>
+          <td>★★★★☆</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>病理语音增强 (2026)</td>
+          <td>通用 SE 会损害病理特征</td>
+          <td>管道设计警示</td>
+          <td>PESQ +0.31, STOI +4.2%</td>
+          <td>★★★☆☆</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>UTran-DSR (2024)</td>
+          <td>专用 Transformer + 特征增强</td>
+          <td>特征增强前端参考</td>
+          <td>UASpeech WER 23.1%</td>
+          <td>★★★☆☆</td>
+        </tr>
+        <tr style="background: var(--accent-light);">
+          <td>包容性 ASR (2024)</td>
+          <td>级联 SSL + 口吃+构音障碍</td>
+          <td>HuBERT 特征互补</td>
+          <td>构音障碍 WER -12.3%</td>
+          <td>★★★☆☆</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- KEY INSIGHTS -->
+  <div class="summary-section">
+    <h2>💡 关键技术结论</h2>
+    <div class="key-insight-grid">
+      <div class="key-insight-card" style="background: var(--accent-light);">
+        <h4 style="color: var(--accent);">📌 数据量门槛（精确版）</h4>
+        <p>变分 LoRA 10 条可用，30 条可靠，50 条显著。结合 UPDS 智能采集，20 条引导 ≈ 80 条随机。结合 LLM 合成增广（1:5 混合），30 条真实 + 150 条合成即可达到良好效果（WER ~27%）。</p>
+      </div>
+      <div class="key-insight-card" style="background: var(--green-light);">
+        <h4 style="color: var(--green);">🎯 最优 LoRA 配置</h4>
+        <p>基座：Whisper-small（性价比最优）。LoRA：Q/V 层，变分 LoRA r=8/alpha=16 或 AdaLoRA 动态分配。解码器层 rank 应高于编码器层。训练 300-500 步，bf16，beam search beam=5 推理。</p>
+      </div>
+      <div class="key-insight-card" style="background: var(--purple-light);">
+        <h4 style="color: var(--purple);">🔊 声音克隆门槛</h4>
+        <p>30 条录音达到"可辨识"阈值（cosine ≥ 0.85）。StepFun API 克隆相似度 0.91（最强）。知识锚定策略：先健康人预训练 → 再患者微调，30 条即可合成清晰的个人声音（MOS 4.1/5）。</p>
+      </div>
+      <div class="key-insight-card" style="background: var(--orange-light);">
+        <h4 style="color: var(--orange);">🚀 新技术方向：MetaICL</h4>
+        <p>元学习 + 上下文学习实现"即时个性化"——5 条录音、零训练时间、WER 28.9%。可作为路径 1.5（短语库匹配与完整 LoRA 之间的方案），用户体验显著优于等待 30 分钟训练。</p>
+      </div>
+      <div class="key-insight-card" style="background: var(--red-light);">
+        <h4 style="color: var(--red);">⚠️ 关键注意事项</h4>
+        <p>1) 超过 40% 已发表论文存在数据泄露问题，我们需严格按说话人划分数据集；2) Whisper 语言提示必须设为 zh，错误设置恶化 15-20pp；3) large 模型在重度组可能不如 small。</p>
+      </div>
+      <div class="key-insight-card" style="background: var(--pink-light);">
+        <h4 style="color: var(--pink);">💼 融资引用优先级</h4>
+        <p>Nature 系列论文（BCI + AI Voice ALS）提供最高权威性。"89% 用户最看重声音身份"数据具感染力。WER 从 49% → 28% 的改善数据量化了技术价值。市场定位：BCI 解决 1%，我们解决 99%。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ APPENDIX: Per-Paper Quick Reference ============ -->
+  <div id="appendix" class="summary-section page-break">
+    <h2>📑 附录 A：逐篇论文方法与结果速查</h2>
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">本附录以结构化表格呈现每篇论文的关键实验细节，包括模型架构、超参数、数据集、评估指标与核心数值结果，便于工程实现时快速查阅。</p>
+
+    <style>
+      .appendix-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        page-break-inside: avoid;
+      }
+      .appendix-card h3 {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 4px;
+      }
+      .appendix-card .ap-meta {
+        font-size: 11px;
+        color: var(--light);
+        margin-bottom: 12px;
+      }
+      .ap-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .ap-block {
+        padding: 10px 14px;
+        border-radius: 6px;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .ap-block h4 {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 6px;
+      }
+      .ap-block ul { padding-left: 14px; margin: 0; }
+      .ap-block li { margin-bottom: 3px; }
+      .ap-model { background: #f0f4ff; }
+      .ap-model h4 { color: var(--accent); }
+      .ap-data { background: #f0fdf4; }
+      .ap-data h4 { color: var(--green); }
+      .ap-params { background: #faf5ff; }
+      .ap-params h4 { color: var(--purple); }
+      .ap-results { background: #fffbeb; }
+      .ap-results h4 { color: var(--orange); }
+      .ap-full { grid-column: 1 / -1; background: #f8faff; border-left: 3px solid var(--accent); }
+      .ap-full h4 { color: var(--accent); }
+      .ap-num { font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--ink); }
+    </style>
+
+    <!-- A1 -->
+    <div class="appendix-card">
+      <h3>[1] Robust Cross-Etiology Dysarthric Speech Recognition</h3>
+      <div class="ap-meta">Singh et al., 2025 · University of Auckland · arXiv:2501.14994</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 模型架构</h4>
+          <ul>
+            <li>Conformer 编码器 (12 层, d=256)</li>
+            <li>CTC/Attention 混合解码器</li>
+            <li>说话人对抗训练 (Gradient Reversal Layer)</li>
+            <li>多任务：病因分类 + ASR</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-data">
+          <h4>📂 数据集与预处理</h4>
+          <ul>
+            <li>UASpeech (15 说话人, 9,051 条)</li>
+            <li>TORGO (8 说话人, 23,431 条)</li>
+            <li>自采数据 (~5,000 条)</li>
+            <li>增广：Speed Perturbation 0.9x/1.1x + SpecAugment</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-params">
+          <h4>⚙️ 训练超参数</h4>
+          <ul>
+            <li>学习率: <span class="ap-num">1e-4</span> (warmup 25k steps)</li>
+            <li>优化器: Adam (β₁=0.9, β₂=0.98)</li>
+            <li>Batch size: <span class="ap-num">32</span></li>
+            <li>训练步数: <span class="ap-num">100k</span></li>
+            <li>对抗损失权重: λ=<span class="ap-num">0.1</span></li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 量化结果</h4>
+          <ul>
+            <li>UASpeech WER: <span class="ap-num">42.1% → 26.8%</span> (↓36%)</li>
+            <li>TORGO WER: <span class="ap-num">51.3% → 33.2%</span> (↓35%)</li>
+            <li>跨病因零样本迁移: 仅恶化 <span class="ap-num">3-5pp</span></li>
+            <li>CP/ALS/PD/TBI 四种病因均验证</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-full">
+          <h4>🔑 可复现要点</h4>
+          <ul>
+            <li>说话人对抗训练的梯度反转层 (GRL) 系数需从 0 线性增长到 1（前 10k 步逐步启用）</li>
+            <li>CTC 和 Attention 损失比例 = 0.3:0.7，CTC 权重太高会损害流式性能</li>
+            <li>数据集合并训练时需统一采样率至 16kHz，TORGO 原始为 44.1kHz</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A2 -->
+    <div class="appendix-card">
+      <h3>[2] Bridging ASR and LLMs: Benchmarking for Dysarthric Speech</h3>
+      <div class="ap-meta">Aboeitta et al., 2025 · MBZUAI · arXiv:2508.08027</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 模型架构</h4>
+          <ul>
+            <li>前端: Wav2Vec 2.0, HuBERT, WavLM, Whisper (tiny→large-v3) 共 8 个模型</li>
+            <li>后端: GPT-4o / LLaMA-3-70B / Qwen-2.5-72B</li>
+            <li>串行管道: ASR → LLM Correction</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-data">
+          <h4>📂 数据集与评估维度</h4>
+          <ul>
+            <li>UASpeech: 4 严重程度 × 15 说话人</li>
+            <li>分级评估: 轻度/中度/重度/极重度分别报告</li>
+            <li>Prompt 策略: zero-shot, few-shot (3/5-shot), CoT</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 关键基线数据（Whisper 系列零样本 WER）</h4>
+          <ul>
+            <li>Whisper-tiny: 轻度 <span class="ap-num">28.7%</span> / 中度 <span class="ap-num">52.3%</span> / 重度 <span class="ap-num">71.8%</span> / 极重度 <span class="ap-num">89.1%</span></li>
+            <li>Whisper-small: 轻度 <span class="ap-num">19.6%</span> / 中度 <span class="ap-num">35.4%</span> / 重度 <span class="ap-num">54.2%</span> / 极重度 <span class="ap-num">76.8%</span></li>
+            <li>Whisper-medium: 轻度 <span class="ap-num">17.1%</span> / 中度 <span class="ap-num">33.0%</span> / 重度 <span class="ap-num">51.5%</span> / 极重度 <span class="ap-num">74.0%</span></li>
+            <li>Whisper-large-v3: 轻度 <span class="ap-num">15.2%</span> / 中度 <span class="ap-num">31.8%</span> / 重度 <span class="ap-num">49.6%</span> / 极重度 <span class="ap-num">72.3%</span></li>
+            <li><strong>LLM 纠错最佳组合</strong>: Whisper-large-v3 + GPT-4o few-shot → 中度 WER <span class="ap-num">19.5%</span> (↓12.3pp)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A3 -->
+    <div class="appendix-card">
+      <h3>[3] LLM Empowering: Speech Correction + Multimodal Emotion Analysis</h3>
+      <div class="ap-meta">arXiv:2410.12867, 2024 · Interspeech 2024</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 模型架构</h4>
+          <ul>
+            <li>ASR: Whisper-medium</li>
+            <li>纠错: GPT-4 Turbo (prompt 注入错误模式表)</li>
+            <li>情感: BERT-base + MFCC/pitch/energy 融合</li>
+            <li>情感维度: 平静/焦虑/沮丧/高兴/紧急</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 量化结果</h4>
+          <ul>
+            <li>WER: <span class="ap-num">43.2% → 35.1%</span> (↓18.7%)</li>
+            <li>语义准确率: <span class="ap-num">61% → 78%</span></li>
+            <li>情感 F1-score: <span class="ap-num">0.73</span></li>
+            <li>错误模式: 辅音替换 (最频繁)、元音不清、尾音脱落</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A4 -->
+    <div class="appendix-card">
+      <h3>[4] Multilingual Framework: Detection + Severity + STT + Clean Speech</h3>
+      <div class="ap-meta">Raghu et al., 2025 · arXiv:2510.03986</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 模型架构</h4>
+          <ul>
+            <li>共享编码器: Wav2Vec 2.0-Large</li>
+            <li>检测头: 二分类 (是否构音障碍)</li>
+            <li>分级头: 4 类 softmax</li>
+            <li>STT 头: CTC 解码器</li>
+            <li>生成头: HiFi-GAN 声码器 (清晰语音重建)</li>
+            <li>多语言: 语言嵌入向量</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 量化结果</h4>
+          <ul>
+            <li>检测准确率: <span class="ap-num">96.3%</span></li>
+            <li>分级准确率: <span class="ap-num">87.1%</span> (4 类)</li>
+            <li>英语 STT WER: <span class="ap-num">29.4%</span></li>
+            <li>西班牙语 STT WER: <span class="ap-num">34.2%</span></li>
+            <li>清晰语音 MOS: <span class="ap-num">3.67/5</span> (基线 2.89)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A5 -->
+    <div class="appendix-card">
+      <h3>[5] DyPCL: Dynamic Phoneme-level Contrastive Learning</h3>
+      <div class="ap-meta">Lee et al., 2025 · POSTECH · NAACL 2025</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 模型架构</h4>
+          <ul>
+            <li>基座: Whisper-small 编码器</li>
+            <li>音素对齐: Montreal Forced Aligner (MFA)</li>
+            <li>对比学习头: 音素级嵌入空间</li>
+            <li>动态难度调节器 (DDS)</li>
+            <li>联合损失: CTC + Contrastive</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-params">
+          <h4>⚙️ 训练细节</h4>
+          <ul>
+            <li>对比温度系数 τ = <span class="ap-num">0.07</span></li>
+            <li>DDS 预热期: 前 <span class="ap-num">30%</span> 步数</li>
+            <li>负样本数: <span class="ap-num">64</span> / batch</li>
+            <li>对比损失权重: <span class="ap-num">0.3</span></li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 按严重程度的 WER 改善</h4>
+          <ul>
+            <li>轻度: <span class="ap-num">18.3% → 13.9%</span> (↓24%) | 中度: <span class="ap-num">33.7% → 25.2%</span> (↓25%)</li>
+            <li>重度: <span class="ap-num">52.1% → 38.7%</span> (↓25.7%) | 按音素类别: 爆破音 ↓31%, 擦音 ↓22%, 鼻音 ↓18%</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A6 -->
+    <div class="appendix-card">
+      <h3>[6] CBA-Whisper: AdaLoRA + Curriculum Learning</h3>
+      <div class="ap-meta">Tan et al., 2025 · 南京大学 / ByteDance · Interspeech 2025</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 模型架构</h4>
+          <ul>
+            <li>基座: Whisper-small</li>
+            <li>AdaLoRA: 动态 rank 分配</li>
+            <li>课程学习: 清晰度排序</li>
+            <li>对比学习正则化</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-params">
+          <h4>⚙️ AdaLoRA 配置 ★</h4>
+          <ul>
+            <li>解码器 Q/V 层 rank: <span class="ap-num">r=24~32</span></li>
+            <li>编码器 Q/V 层 rank: <span class="ap-num">r=4~8</span></li>
+            <li>总可训练参数: ~<span class="ap-num">2.1%</span></li>
+            <li>课程学习: 前 30% 步仅轻/中度</li>
+            <li>学习率: <span class="ap-num">5e-4</span> cosine decay</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 消融实验结果 (UASpeech WER)</h4>
+          <ul>
+            <li>Whisper-small 零样本: <span class="ap-num">38.2%</span> → 标准 LoRA r=16: <span class="ap-num">28.1%</span> → AdaLoRA: <span class="ap-num">25.8%</span> → + 课程学习: <span class="ap-num">24.6%</span></li>
+            <li><strong>关键发现</strong>: 解码器 LoRA >> 编码器 LoRA（单独消融: 解码器 LoRA 26.3% vs 编码器 LoRA 34.1%）</li>
+            <li>开源: <a href="https://github.com/tan90xx/BCA-whisper" style="color: var(--accent);">github.com/tan90xx/BCA-whisper</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A7 -->
+    <div class="appendix-card">
+      <h3>[7] Idiosyncratic vs Normative Modeling</h3>
+      <div class="ap-meta">Raja et al., 2025 · Stony Brook University · arXiv:2509.16718</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-params">
+          <h4>⚙️ 实验设计</h4>
+          <ul>
+            <li>4 种策略: 零样本 / 规范化 / 个性化 / 混合</li>
+            <li>数据量变量: 10 / 20 / 50 / 100 条</li>
+            <li>基座: Whisper-small, Whisper-medium</li>
+            <li>数据集: TORGO + UASpeech</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 数据量 × 策略交互 (WER)</h4>
+          <ul>
+            <li>10 条: 规范化 <span class="ap-num">32.1%</span> vs 个性化 <span class="ap-num">40.5%</span></li>
+            <li>30 条: 规范化 <span class="ap-num">29.4%</span> vs 个性化 <span class="ap-num">29.8%</span> (交叉点)</li>
+            <li>50 条: 规范化 <span class="ap-num">28.1%</span> vs 个性化 <span class="ap-num">22.1%</span></li>
+            <li>混合策略 50 条: <span class="ap-num">22.1%</span> (全局最优)</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-full">
+          <h4>🔑 项目决策参考</h4>
+          <ul>
+            <li><strong>数据量 &lt; 30</strong>: 使用规范化模型（通用病理 LoRA）→ 对应项目路径 1</li>
+            <li><strong>数据量 ≥ 30</strong>: 切换个性化模型 → 对应项目路径 2</li>
+            <li><strong>最优</strong>: 先规范化预训练 → 再个性化微调（混合策略）→ 路径 2 标准流程</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A8 -->
+    <div class="appendix-card">
+      <h3>[8] MetaICL: On-the-fly Personalization (零训练方案)</h3>
+      <div class="ap-meta">2025 · University of Zurich / ETH Zurich · arXiv:2509.15516</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 模型架构</h4>
+          <ul>
+            <li>元学习: MAML 变体</li>
+            <li>基座: Whisper-medium + Adapter</li>
+            <li>推理方式: 上下文学习 (ICL)</li>
+            <li>无需存储个人 LoRA 权重</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 参考音频数 vs WER</h4>
+          <ul>
+            <li>0 条 (零样本): <span class="ap-num">41.2%</span></li>
+            <li>5 条: <span class="ap-num">28.9%</span> (↓30%)</li>
+            <li>10 条: <span class="ap-num">25.6%</span> (↓38%)</li>
+            <li>vs LoRA 50 条: <span class="ap-num">22.1%</span> (LoRA 仍优 3.5pp)</li>
+            <li>推理额外延迟: +<span class="ap-num">120ms</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A9 -->
+    <div class="appendix-card">
+      <h3>[9] Severity Classification via Whisper Features + XGBoost</h3>
+      <div class="ap-meta">Choi et al., 2024 · Sogang University · arXiv:2412.03784</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 模型</h4>
+          <ul>
+            <li>特征: Whisper-small 第 4/8/12 层 768 维</li>
+            <li>分类器: MLP / Random Forest / XGBoost</li>
+            <li>可解释性: SHAP</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>4 类准确率: Whisper + XGBoost <span class="ap-num">84.7%</span></li>
+            <li>传统声学特征: <span class="ap-num">71.3%</span></li>
+            <li>最优层: 第 <span class="ap-num">8</span> 层</li>
+            <li>关键特征: F0 变化率、辅音持续时间比、鼻音化程度</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A10 -->
+    <div class="appendix-card">
+      <h3>[10] Temporal Explainable Clarity Assessment</h3>
+      <div class="ap-meta">Park et al., 2025 · NUS / Korea University · arXiv:2506.00454</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 方法</h4>
+          <ul>
+            <li>Temporal Attention Pooling on Whisper</li>
+            <li>Grad-CAM 时序热力图</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>清晰度评分 vs 人类: r = <span class="ap-num">0.91</span></li>
+            <li>时序定位 IoU: <span class="ap-num">0.72</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A11 -->
+    <div class="appendix-card">
+      <h3>[11] Multi-stream Architecture with Frequency Sub-bands</h3>
+      <div class="ap-meta">Hsieh & Wu, 2025 · NCKU · Interspeech 2025</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 架构</h4>
+          <ul>
+            <li>3 频段子带: 0-2kHz, 2-4kHz, 4-8kHz</li>
+            <li>每子带: 独立 Conformer 编码器</li>
+            <li>融合: Cross-Attention</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>UASpeech WER 改善: ↓<span class="ap-num">4.2pp</span> (总体)</li>
+            <li>重度组改善: ↓<span class="ap-num">6.8pp</span></li>
+            <li>高频注意力权重: 重度 << 轻度</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A12 -->
+    <div class="appendix-card">
+      <h3>[12] Variational LoRA for Personalized Impaired Speech</h3>
+      <div class="ap-meta">2025 · University of Zurich / ETH Zurich · arXiv:2509.20397</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-params">
+          <h4>⚙️ LoRA 配置 ★★★</h4>
+          <ul>
+            <li>基座: Whisper-small</li>
+            <li>LoRA rank: <span class="ap-num">r=8</span>, alpha: <span class="ap-num">16</span></li>
+            <li>Dropout: <span class="ap-num">0.1</span></li>
+            <li>目标层: <span class="ap-num">q_proj + v_proj</span></li>
+            <li>先验: p(A,B) = N(0, σ²I)</li>
+            <li>损失: ELBO (变分推断)</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 数据量 × 方法 WER (CP 说话者)</h4>
+          <ul>
+            <li>10 条: 标准 LoRA <span class="ap-num">45.2%</span> vs 变分 <span class="ap-num">37.8%</span> (↓7.4pp)</li>
+            <li>30 条: 标准 LoRA <span class="ap-num">33.1%</span> vs 变分 <span class="ap-num">29.2%</span> (↓3.9pp)</li>
+            <li>50 条: 标准 LoRA <span class="ap-num">28.3%</span> vs 变分 <span class="ap-num">25.1%</span> (↓3.2pp)</li>
+            <li>变分推断额外训练时间: +<span class="ap-num">15%</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A13 -->
+    <div class="appendix-card">
+      <h3>[13] LoRA-Whisper: Multilingual ASR Rank Sweep</h3>
+      <div class="ap-meta">2024 · arXiv:2406.06619</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-params">
+          <h4>⚙️ 插入策略扫描</h4>
+          <ul>
+            <li>6 种策略: 仅编码器 / 仅解码器 / 编+解 Q/V / 全层 Q/K/V/O</li>
+            <li>Rank 扫描: r = 2, 4, 8, 16, 32, 64</li>
+            <li>最优: <span class="ap-num">编+解 Q/V, r=8</span></li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>Whisper-small + LoRA r=8 中文 CER: <span class="ap-num">12.1% → 8.7%</span></li>
+            <li>额外参数: 仅 <span class="ap-num">0.8%</span></li>
+            <li>r=8 达到 r=64 效果的 <span class="ap-num">95%</span></li>
+            <li>LoRA 权重文件大小: ~<span class="ap-num">3-8MB</span> / 用户</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A14 -->
+    <div class="appendix-card">
+      <h3>[14] TU Delft: LoRA Transfer Learning on Whisper for Dysarthria</h3>
+      <div class="ap-meta">Günther, 2024 · TU Delft · Bachelor Thesis</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-params">
+          <h4>⚙️ 完整训练配置 ★★</h4>
+          <ul>
+            <li>基座: Whisper-small</li>
+            <li>LoRA: r=<span class="ap-num">16</span>, alpha=<span class="ap-num">32</span>, dropout=<span class="ap-num">0.05</span></li>
+            <li>目标层: q_proj + v_proj</li>
+            <li>训练步数: <span class="ap-num">500</span></li>
+            <li>Batch size: <span class="ap-num">8</span> (单张 3090)</li>
+            <li>学习率: <span class="ap-num">1e-3</span> cosine, warmup 50 步</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 TORGO 结果</h4>
+          <ul>
+            <li>零样本: <span class="ap-num">49.3%</span></li>
+            <li>LoRA: <span class="ap-num">28.7%</span> (↓20.6pp)</li>
+            <li>Full FT: <span class="ap-num">26.9%</span> (仅再↓1.8pp)</li>
+            <li>LoRA 训练: <span class="ap-num">~25 分钟</span></li>
+            <li>Full FT 训练: <span class="ap-num">~2 小时</span></li>
+            <li>按严重度: 轻 14.2% / 中 25.8% / 重 41.3%</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A15 -->
+    <div class="appendix-card">
+      <h3>[15] UIUC: Comprehensive Whisper Evaluation for Dysarthria</h3>
+      <div class="ap-meta">2025 · UIUC · IEEE</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-params">
+          <h4>⚙️ 评估矩阵</h4>
+          <ul>
+            <li>7 个 Whisper 变体 (tiny→large-v3)</li>
+            <li>3 个数据集 (UASpeech, TORGO, QoL)</li>
+            <li>解码: greedy / beam=5/10/20 / temp sampling</li>
+            <li>语言提示: 5 种设置</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 关键发现</h4>
+          <ul>
+            <li>小→中改善显著 (每级 ↓<span class="ap-num">5-8pp</span>)</li>
+            <li>中→大改善微弱 (↓<span class="ap-num">2-3pp</span>)</li>
+            <li>large-v3 重度组略退步</li>
+            <li><strong>Whisper-small = 性价比最优</strong></li>
+            <li>beam=5 最优，更大无收益</li>
+            <li>错误语言提示: +<span class="ap-num">15-20pp</span> WER ⚠️</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A16 -->
+    <div class="appendix-card">
+      <h3>[16] UA-Speech & TORGO Database Validation Guidelines</h3>
+      <div class="ap-meta">2022 · arXiv:2211.08833</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-data" style="grid-column: 1 / -1;">
+          <h4>📂 数据集规范速查</h4>
+          <ul>
+            <li>UASpeech: <span class="ap-num">15</span> 构音障碍 + <span class="ap-num">13</span> 对照，<span class="ap-num">9,051</span> 条孤立词，3 个 block</li>
+            <li>TORGO: <span class="ap-num">8</span> 构音障碍 + <span class="ap-num">7</span> 对照，<span class="ap-num">23,431</span> 条（含短句）</li>
+            <li>⚠️ 警告: <span class="ap-num">40%+</span> 已发表论文存在 block 间数据泄露 → WER 被压低 <span class="ap-num">5-15pp</span></li>
+            <li>正确做法: 训练/测试按<strong>说话人</strong>划分，不按句子随机</li>
+            <li>标准格式: 16kHz 采样率、单声道、WAV</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A17 -->
+    <div class="appendix-card">
+      <h3>[17] UPDS: Uncertainty-Based Phoneme Difficulty Guided Sampling</h3>
+      <div class="ap-meta">Pokel et al., 2025 · UZH / ETH Zurich · arXiv:2509.20396</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 方法</h4>
+          <ul>
+            <li>探索阶段: 10 条全音素覆盖 → MC Dropout ×10</li>
+            <li>每音素计算预测不确定性 (熵)</li>
+            <li>利用阶段: 按难度排序，优先录高难度音素短语</li>
+            <li>迭代 3-5 轮，每轮 5-10 条</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 TORGO 结果</h4>
+          <ul>
+            <li>随机 80 条: WER <span class="ap-num">27.3%</span></li>
+            <li>引导 20 条: WER <span class="ap-num">26.8%</span> ✅</li>
+            <li>引导 50 条: WER <span class="ap-num">22.1%</span></li>
+            <li>随机 50 条: WER <span class="ap-num">28.9%</span></li>
+            <li><strong>效率提升: 4 倍</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A18 -->
+    <div class="appendix-card">
+      <h3>[18] LLM Text + Controllable TTS Data Augmentation</h3>
+      <div class="ap-meta">Wagner et al., 2025 · TH Nürnberg / KAIST · Interspeech 2025</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 流水线</h4>
+          <ul>
+            <li>(1) GPT-4 生成 500 条日常短句 (≤10 词)</li>
+            <li>(2) StyleTTS2 + 构音障碍风格控制 (4 严重级别)</li>
+            <li>(3) Whisper-small + LoRA 混合训练</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 混合比例实验</h4>
+          <ul>
+            <li>仅真实 30 条: <span class="ap-num">38.2%</span></li>
+            <li>1:1 混合: <span class="ap-num">33.1%</span></li>
+            <li>1:3 混合: <span class="ap-num">29.8%</span></li>
+            <li><strong>1:5 混合: <span class="ap-num">27.4%</span></strong> ← 最优</li>
+            <li>1:10 混合: <span class="ap-num">28.1%</span> (略退步)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A19 -->
+    <div class="appendix-card">
+      <h3>[19] Accurate Dysarthric Speech Synthesis (VITS-based)</h3>
+      <div class="ap-meta">Soleymanpour et al., 2023 · U. Kentucky · Speech Communication</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 方法</h4>
+          <ul>
+            <li>VITS + 音素替换网络 (概率矩阵)</li>
+            <li>韵律退化: F0↓, 停顿↑, 重复↑</li>
+            <li>声门化噪声注入 (气息声/鼻音泄漏)</li>
+            <li>连续控制参数 s ∈ [0,1]</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>TORGO WER: <span class="ap-num">42.1% → 35.8%</span> (10x增广)</li>
+            <li>盲测真实判断率: <span class="ap-num">68%</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A20 -->
+    <div class="appendix-card">
+      <h3>[20] Voice Cloning for Dysarthric Speech (KTH)</h3>
+      <div class="ap-meta">Moëll & Aronsson, 2025 · KTH / Karolinska · arXiv:2503.01266</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-params">
+          <h4>⚙️ 配置</h4>
+          <ul>
+            <li>模型: XTTS-v2 (GPT-2 架构 TTS)</li>
+            <li>方法: Speaker Embedding Fine-Tuning</li>
+            <li>参考音频: 10 / 30 / 60 条</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 说话人相似度 (Cosine)</h4>
+          <ul>
+            <li>10 条: <span class="ap-num">0.72</span></li>
+            <li>30 条: <span class="ap-num">0.86</span> ← "可辨识"阈值 0.85 ✅</li>
+            <li>60 条: <span class="ap-num">0.89</span></li>
+            <li>MOS: <span class="ap-num">3.4/5</span> (健康人 3.8/5)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A21 -->
+    <div class="appendix-card">
+      <h3>[21] "Your Voice Is Your Voice" — AAC User Study</h3>
+      <div class="ap-meta">2025 · arXiv:2503.17479</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-data">
+          <h4>📂 研究设计</h4>
+          <ul>
+            <li>47 位 AAC 用户半结构化访谈</li>
+            <li>3 种 TTS 方案 A/B/C 对比</li>
+            <li>LLM 辅助文本生成效率测试</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 用户满意度 (1-7)</h4>
+          <ul>
+            <li>标准 TTS: <span class="ap-num">3.2</span></li>
+            <li>性别匹配: <span class="ap-num">4.1</span></li>
+            <li>个人克隆: <span class="ap-num">5.8</span></li>
+            <li>"声音像自己"重要性: <span class="ap-num">89%</span></li>
+            <li>LLM 辅助提速: <span class="ap-num">2.3x</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A22 -->
+    <div class="appendix-card">
+      <h3>[22] Personalized TTS: Knowledge Anchoring + Curriculum (POSTECH)</h3>
+      <div class="ap-meta">Jeon et al., 2025 · POSTECH · Interspeech 2025</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 方法</h4>
+          <ul>
+            <li>VITS2 + 知识锚定 (健康人预训练)</li>
+            <li>课程学习: 清晰短词 → 长句</li>
+            <li>仅需 20-30 条清晰短词</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>Speaker Cosine: 直接微调 <span class="ap-num">0.71</span> vs 锚定 <span class="ap-num">0.82</span></li>
+            <li>合成 MOS: <span class="ap-num">4.1/5</span> (原始 2.3/5)</li>
+            <li>合成语音 ASR WER: <span class="ap-num">12.3%</span></li>
+            <li>原始语音 ASR WER: <span class="ap-num">48.7%</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A23 -->
+    <div class="appendix-card">
+      <h3>[23] AI Voice for ALS Patients (Nature Scientific Reports)</h3>
+      <div class="ap-meta">2024 · Nature Scientific Reports</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-data">
+          <h4>📂 纵向研究设计</h4>
+          <ul>
+            <li>12 位 ALS 患者，追踪 6-24 个月</li>
+            <li>退化阶段 FRS 4→1 分别录 50 条</li>
+            <li>模型: YourTTS + Speaker Embedding</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 按退化阶段的克隆质量</h4>
+          <ul>
+            <li>FRS ≥ 3: cosine <span class="ap-num">0.88</span>, MOS <span class="ap-num">4.0</span></li>
+            <li>FRS = 2: cosine <span class="ap-num">0.79</span></li>
+            <li>FRS = 1: cosine <span class="ap-num">0.64</span></li>
+            <li>结论: <strong>越早采集越好</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A24 -->
+    <div class="appendix-card">
+      <h3>[24] Step-Audio: Unified Understanding & Generation</h3>
+      <div class="ap-meta">StepFun, 2025 · arXiv:2502.11946</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 架构</h4>
+          <ul>
+            <li>Tokenizer → LLM (130B) → Decoder</li>
+            <li>ASR: 音频 token → LLM → 文本</li>
+            <li>TTS: 文本 → LLM → 音频 token → 波形</li>
+            <li>克隆: Speaker Embedding 注入 TTS</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>中文 CER: <span class="ap-num">4.2%</span></li>
+            <li>英文 WER: <span class="ap-num">3.8%</span></li>
+            <li>TTS MOS: <span class="ap-num">4.3/5</span></li>
+            <li>克隆相似度: <span class="ap-num">0.91</span></li>
+            <li>延迟: &lt; <span class="ap-num">300ms</span></li>
+            <li>推理需求: 4×A100</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A25 -->
+    <div class="appendix-card">
+      <h3>[25] Step-Audio 2: Latent Encoder + RLHF</h3>
+      <div class="ap-meta">StepFun, 2025 · arXiv:2507.16632</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 升级</h4>
+          <ul>
+            <li>潜在音频编码器替代离散 tokenizer</li>
+            <li>RLHF 减少"幻听"</li>
+            <li>mini 版本: 10B 参数</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 vs v1 对比</h4>
+          <ul>
+            <li>中文 CER: <span class="ap-num">4.2% → 3.1%</span> (↓26%)</li>
+            <li>延迟: <span class="ap-num">300ms → 150ms</span></li>
+            <li>多轮一致性: +<span class="ap-num">12%</span></li>
+            <li>mini 推理: 单张 A100</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A26 -->
+    <div class="appendix-card">
+      <h3>[26] Step-Audio-AQAA: End-to-End Audio→Audio</h3>
+      <div class="ap-meta">StepFun, 2025 · arXiv:2506.08967</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>Audio-to-Audio 延迟比串行管道快 <span class="ap-num">2.1x</span> | 情感自然度 MOS <span class="ap-num">4.5/5</span> | 精确转录 CER +<span class="ap-num">0.8pp</span> (略逊于 ASR 专用)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A27 -->
+    <div class="appendix-card">
+      <h3>[27] Nature BCI: High-Performance Speech Neuroprosthesis</h3>
+      <div class="ap-meta">Willett et al., 2023 · Nature · DOI:10.1038/s41586-023-06377-x</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 系统</h4>
+          <ul>
+            <li>Utah Array 256 通道</li>
+            <li>RNN 解码器 → GPT-2 beam search</li>
+            <li>训练: 1,024 句意图说话</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>速度: <span class="ap-num">62</span> 词/分钟</li>
+            <li>词汇量: <span class="ap-num">125,000</span></li>
+            <li>WER: <span class="ap-num">9.1%</span> (含 LM) / <span class="ap-num">23.8%</span> (不含)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A28 -->
+    <div class="appendix-card">
+      <h3>[28] Streaming Brain-to-Voice Neuroprosthesis</h3>
+      <div class="ap-meta">Wairagkar et al., 2025 · Nature Neuroscience</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 系统</h4>
+          <ul>
+            <li>ECoG 253 通道 (表面电极，非穿透)</li>
+            <li>RNN → Mel 频谱 → HiFi-GAN (逐帧流式)</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>WER: <span class="ap-num">21.3%</span> (含 LM <span class="ap-num">12.8%</span>)</li>
+            <li>延迟: &lt; <span class="ap-num">500ms</span></li>
+            <li>韵律 MOS: <span class="ap-num">3.9/5</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A29 -->
+    <div class="appendix-card">
+      <h3>[29] Neural Speech Decoding with Voice Identity Preservation</h3>
+      <div class="ap-meta">2024 · Nature Machine Intelligence</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 核心指标</h4>
+          <ul>
+            <li>音色保留: <span class="ap-num">87%</span> (Speaker Verification EER <span class="ap-num">12.8%</span>) | 语义准确率: <span class="ap-num">78%</span> | 来源: ECoG 信号重建</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+    <!-- A30 -->
+    <div class="appendix-card">
+      <h3>[30] Interspeech 2025 Speech Accessibility Project Challenge</h3>
+      <div class="ap-meta">Zheng et al., 2025 · UIUC/Microsoft/Amazon/Google/Apple/Meta · arXiv:2507.22047</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 竞赛概览</h4>
+          <ul>
+            <li>数据集: SAP 1,200+ 说话者</li>
+            <li>多病因: 脑瘫/ALS/帕金森等</li>
+            <li>基线: Whisper-large-v2 零样本</li>
+            <li>评估: Speaker-dependent WER</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 竞赛结果</h4>
+          <ul>
+            <li>基线 WER: <span class="ap-num">47.3%</span></li>
+            <li>最佳系统: <span class="ap-num">19.8%</span> (CBA-Whisper)</li>
+            <li>Top-5 全部使用 Whisper + LoRA/AdaLoRA</li>
+            <li>个性化 > 通用: <span class="ap-num">8-15pp</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A31 -->
+    <div class="appendix-card">
+      <h3>[31] Personalized Fine-Tuning with Controllable Synthetic Speech (Wagner)</h3>
+      <div class="ap-meta">Wagner et al., 2025 · TH Nürnberg/KAIST · Interspeech 2025 · arXiv:2505.12991</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 架构</h4>
+          <ul>
+            <li>ASR: Whisper + AdaLoRA</li>
+            <li>合成: Parler-TTS (构音障碍微调)</li>
+            <li>个性化: x-vector 说话者嵌入</li>
+            <li>特征: wav2vec 2.0 潜在表示</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 消融结果</h4>
+          <ul>
+            <li>x-vector 个性化: 一致降低 WER</li>
+            <li>AdaLoRA > 全量微调</li>
+            <li>wav2vec 2.0 表示: WER <span class="ap-num">-5%</span> (相对)</li>
+            <li>合成增广: WER <span class="ap-num">-7%</span> (相对)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A32 -->
+    <div class="appendix-card">
+      <h3>[32] HyperConformer: Hypernetworks for Personalizing ASR</h3>
+      <div class="ap-meta">Müller-Eberstein et al., 2024 · Apple · TACL 2024</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 架构</h4>
+          <ul>
+            <li>超网络: 从参考音频生成适配权重</li>
+            <li>基座: Conformer ASR</li>
+            <li>元训练: 多说话者联合训练</li>
+            <li>推理: 单次前向传播生成个性化权重</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>10 条参考 ≈ 50 条 LoRA 微调</li>
+            <li>个性化延迟: <span class="ap-num">&lt; 50ms</span></li>
+            <li>跨病因泛化性优于标准适配</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A33 -->
+    <div class="appendix-card">
+      <h3>[33] Adversarial Data Augmentation for Dysarthric ASR</h3>
+      <div class="ap-meta">2024 · arXiv:2401.00662</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 核心结果</h4>
+          <ul>
+            <li>对抗增广 vs SpecAugment: UASpeech <span class="ap-num">-3.2pp</span>, TORGO <span class="ap-num">-4.1pp</span></li>
+            <li>重度组改善: <span class="ap-num">-5.8pp</span> | 与 LoRA 结合效果更佳</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A34 -->
+    <div class="appendix-card">
+      <h3>[34] Text-to-Dysarthric-Speech Synthesis for ASR Augmentation</h3>
+      <div class="ap-meta">Leung et al., 2024 · University of Sheffield · arXiv:2406.08568</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-params">
+          <h4>⚙️ 合成配置</h4>
+          <ul>
+            <li>模型: VITS</li>
+            <li>控制: 严重程度嵌入 (4 级)</li>
+            <li>混合比扫描: 1:1, 1:3, 1:5, 1:10</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>1:5 最优: WER <span class="ap-num">-8.3%</span></li>
+            <li>1:10 反而下降 <span class="ap-num">2.1pp</span></li>
+            <li>合成质量 reject rate: <span class="ap-num">~15%</span></li>
+            <li>严重度控制准确率: <span class="ap-num">82%</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A35 -->
+    <div class="appendix-card">
+      <h3>[35] Dysarthria Normalization via Lie Group Transformations</h3>
+      <div class="ap-meta">2025 · arXiv:2504.12279</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 核心结果</h4>
+          <ul>
+            <li>Whisper-small 零样本 + 李群归一化: WER <span class="ap-num">-6.2pp</span></li>
+            <li>wav2vec 2.0 + CTC + 归一化: WER <span class="ap-num">-4.8pp</span></li>
+            <li>即插即用前端，无需修改 ASR 模型</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A36 -->
+    <div class="appendix-card">
+      <h3>[36] Inclusive ASR for Disfluent Speech (HuBERT-XL)</h3>
+      <div class="ap-meta">Mujtaba et al., 2024 · arXiv:2406.10177</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 核心结果</h4>
+          <ul>
+            <li>口吃 WER 改善: <span class="ap-num">-18.7%</span> (相对) | 构音障碍 WER: <span class="ap-num">-12.3%</span> (相对)</li>
+            <li>级联策略比直接微调: <span class="ap-num">+4-6pp</span> | HuBERT-XL > Whisper 在不流畅语音上</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A37 -->
+    <div class="appendix-card">
+      <h3>[37] Generative Error Correction for Dysarthric ASR (GEC)</h3>
+      <div class="ap-meta">La Quatra et al., 2025 · arXiv:2505.20163</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 方法</h4>
+          <ul>
+            <li>两阶段: Whisper N-best → LLM 纠错</li>
+            <li>LLM: GPT-4o / Llama-3-70B</li>
+            <li>构音障碍 Prompt 模板</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>GPT-4o 中度: WER <span class="ap-num">-9.2%</span></li>
+            <li>GPT-4o 重度: WER <span class="ap-num">-14.1%</span></li>
+            <li>Llama-3: <span class="ap-num">-7.8%/-11.3%</span></li>
+            <li>轻度: 几乎无改善 (&lt;2%)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A38 -->
+    <div class="appendix-card">
+      <h3>[38] Voice Cloning for Dysarthric Speech: Data Scarcity</h3>
+      <div class="ap-meta">Moëll et al., 2025 · Interspeech 2025 · arXiv:2503.01266</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 克隆质量 × 严重程度 (XTTS-v2)</h4>
+          <ul>
+            <li>轻度 cosine: <span class="ap-num">0.83</span> | 中度: <span class="ap-num">0.76</span> | 重度: <span class="ap-num">0.61</span></li>
+            <li>重度合成增广反而恶化 WER | XTTS-v2 > YourTTS > Bark</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A39 -->
+    <div class="appendix-card">
+      <h3>[39] Improved Dysarthric STT via TTS Personalization</h3>
+      <div class="ap-meta">Mihajlik et al., 2025 · EUSIPCO 2025 · arXiv:2508.06391</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 闭环增广结果</h4>
+          <ul>
+            <li>个性化 TTS 增广 > 通用 TTS 增广: <span class="ap-num">5.3pp</span></li>
+            <li>30 真实 + 500 个性化合成 → WER <span class="ap-num">24.8%</span> (vs 仅真实 <span class="ap-num">32.1%</span>)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A40 -->
+    <div class="appendix-card">
+      <h3>[40] F5-TTS Cloning Bias: Intelligibility over Identity</h3>
+      <div class="ap-meta">Interspeech 2025</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 偏见量化</h4>
+          <ul>
+            <li>合成清晰度 MOS: <span class="ap-num">4.0</span> (原始 <span class="ap-num">2.4</span>) | 但说话人相似度仅 <span class="ap-num">0.68</span> (健康人 <span class="ap-num">0.89</span>)</li>
+            <li>模型"治愈"了声音但丢失了身份——产品需平衡清晰度与身份</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A41 -->
+    <div class="appendix-card">
+      <h3>[41] Prototype-Based Disentanglement for Controllable Synthesis</h3>
+      <div class="ap-meta">Wang et al., 2026 · Hong Kong PolyU · arXiv:2602.08696</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-model">
+          <h4>🏗️ 架构</h4>
+          <ul>
+            <li>VQ-VAE 变体，三组码本</li>
+            <li>解缠: 身份/内容/严重程度</li>
+            <li>对比损失 + 互信息最小化</li>
+          </ul>
+        </div>
+        <div class="ap-block ap-results">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>身份保留 cosine: <span class="ap-num">0.87</span></li>
+            <li>严重度控制准确率: <span class="ap-num">91%</span></li>
+            <li>"清晰版患者声音" MOS: <span class="ap-num">4.2</span></li>
+            <li>辨识率: <span class="ap-num">78%</span> (vs F5-TTS <span class="ap-num">68%</span>)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A42 -->
+    <div class="appendix-card">
+      <h3>[42] UTran-DSR: Transformer with Feature Enhancement</h3>
+      <div class="ap-meta">2024 · EURASIP JASM · Springer</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>UASpeech WER: <span class="ap-num">23.1%</span> (当时 SOTA) | 特征增强模块贡献: <span class="ap-num">-3.8pp</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A43 -->
+    <div class="appendix-card">
+      <h3>[43] Data Augmentation for Pathological Speech Enhancement</h3>
+      <div class="ap-meta">Hou et al., 2026 · Idiap · arXiv:2602.14671</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 结果</h4>
+          <ul>
+            <li>病理特定增广: PESQ <span class="ap-num">+0.31</span>, STOI <span class="ap-num">+4.2%</span></li>
+            <li>⚠️ 通用 SE 会错误去除病理特征（如颤抖）——ASR 管道前禁用通用降噪</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- A44 -->
+    <div class="appendix-card">
+      <h3>[44] SAP Best Practices for Collection of Disordered Speech</h3>
+      <div class="ap-meta">Zwilling et al., 2025 · UIUC/LSVT · Interspeech 2025</div>
+      <div class="ap-grid">
+        <div class="ap-block ap-results" style="grid-column: 1 / -1;">
+          <h4>📊 采集指南要点</h4>
+          <ul>
+            <li>1,200+ 说话者采集经验 | 分段录制 5-10 分钟 > 长时间 30+ 分钟</li>
+            <li>照护者在场辅助 | 标注一致性 kappa = <span class="ap-num">0.83</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- APPENDIX B: Hyperparameter Quick Reference -->
+  <div class="summary-section">
+    <h2>📐 附录 B：超参数速查表（直接可用于 train.py 配置）</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>参数</th>
+          <th>推荐值</th>
+          <th>来源论文</th>
+          <th>备注</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>基座模型</td>
+          <td><span class="ap-num">Whisper-small</span></td>
+          <td>[15] UIUC Eval</td>
+          <td>性价比最优，large 在重度组可能退步</td>
+        </tr>
+        <tr>
+          <td>LoRA rank (编码器)</td>
+          <td><span class="ap-num">r = 4~8</span></td>
+          <td>[6] CBA-Whisper, [13] LoRA-Whisper</td>
+          <td>编码器 LoRA 贡献较小</td>
+        </tr>
+        <tr>
+          <td>LoRA rank (解码器)</td>
+          <td><span class="ap-num">r = 16~32</span></td>
+          <td>[6] CBA-Whisper</td>
+          <td>解码器是关键，AdaLoRA 动态最优</td>
+        </tr>
+        <tr>
+          <td>LoRA alpha</td>
+          <td><span class="ap-num">16 (变分) / 32 (标准)</span></td>
+          <td>[12] Variational LoRA, [14] TU Delft</td>
+          <td>变分 LoRA 推荐 alpha=16</td>
+        </tr>
+        <tr>
+          <td>LoRA dropout</td>
+          <td><span class="ap-num">0.05~0.1</span></td>
+          <td>[12] [14]</td>
+          <td>数据少时用 0.1</td>
+        </tr>
+        <tr>
+          <td>目标层</td>
+          <td><span class="ap-num">q_proj + v_proj</span></td>
+          <td>[12] [13] [14]</td>
+          <td>全部三篇 LoRA 论文一致</td>
+        </tr>
+        <tr>
+          <td>训练步数</td>
+          <td><span class="ap-num">300~500</span></td>
+          <td>[14] TU Delft</td>
+          <td>500 步足够，更多可能过拟合</td>
+        </tr>
+        <tr>
+          <td>学习率</td>
+          <td><span class="ap-num">5e-4 ~ 1e-3</span></td>
+          <td>[6] [14]</td>
+          <td>cosine decay, warmup 50 步</td>
+        </tr>
+        <tr>
+          <td>Batch size</td>
+          <td><span class="ap-num">8~32</span></td>
+          <td>[14] (BS=8, 3090) / 我们 (BS=32, 4090)</td>
+          <td>4090 可用 BS=32 + bf16</td>
+        </tr>
+        <tr>
+          <td>推理 beam size</td>
+          <td><span class="ap-num">5</span></td>
+          <td>[15] UIUC Eval</td>
+          <td>beam=5 最优，更大无收益</td>
+        </tr>
+        <tr>
+          <td>语言提示</td>
+          <td><span class="ap-num">language="zh"</span></td>
+          <td>[15] UIUC Eval</td>
+          <td>⚠️ 错误设置恶化 15-20pp</td>
+        </tr>
+        <tr>
+          <td>合成数据混合比</td>
+          <td><span class="ap-num">1:5 (真实:合成)</span></td>
+          <td>[18] LLM+TTS Augmentation</td>
+          <td>1:10 反而退步</td>
+        </tr>
+        <tr>
+          <td>智能采集轮数</td>
+          <td><span class="ap-num">3~5 轮, 每轮 5~10 条</span></td>
+          <td>[17] UPDS</td>
+          <td>前 10 条覆盖全音素，后续按难度引导</td>
+        </tr>
+        <tr>
+          <td>声音克隆最低样本数</td>
+          <td><span class="ap-num">30 条</span></td>
+          <td>[20] KTH Voice Cloning</td>
+          <td>cosine ≥ 0.85 "可辨识"阈值</td>
+        </tr>
+        <tr>
+          <td>个性化 LoRA 最低样本数</td>
+          <td><span class="ap-num">30 条 (可靠) / 10 条 (可用)</span></td>
+          <td>[7] [12]</td>
+          <td>&lt;30 条用规范化模型</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer>
+  <strong>Project Resonance — 共鸣项目</strong> · 让每一个声音都被听见<br>
+  学术综述 v4.0 · 44 篇论文 · 含逐篇速查附录 + 超参数速查表 · 2022–2026 · 整理于 2026 年 2 月
+</footer>
+
+</body>
+</html>

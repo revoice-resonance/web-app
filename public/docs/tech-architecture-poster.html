@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>共鸣 · 技术架构海报</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', system-ui, sans-serif;
+    background: #0a0f1a;
+    color: #e0f0f0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 20px;
+  }
+
+  .poster {
+    width: 1080px;
+    min-height: 1920px;
+    background: linear-gradient(170deg, #060d1a 0%, #0a1628 40%, #0d1a2e 100%);
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    padding: 80px 60px 60px;
+  }
+
+  /* Circuit background pattern */
+  .poster::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 95% 15%, rgba(0,210,190,0.06) 0%, transparent 40%),
+      radial-gradient(circle at 5% 85%, rgba(0,210,190,0.04) 0%, transparent 35%);
+    pointer-events: none;
+  }
+
+  /* Grid lines */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,210,190,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,210,190,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 8px 24px;
+    border: 1px solid rgba(0,210,190,0.4);
+    border-radius: 100px;
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: rgba(0,210,190,0.9);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    background: rgba(0,210,190,0.05);
+  }
+
+  .title {
+    font-size: 72px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    background: linear-gradient(135deg, #00d2be 0%, #00e8d0 50%, #4af5e0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-size: 28px;
+    font-weight: 300;
+    color: rgba(0,210,190,0.6);
+    letter-spacing: 6px;
+  }
+
+  /* ===== Architecture Layers ===== */
+  .layers {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 60px;
+  }
+
+  /* Vertical connector line */
+  .layers::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom,
+      transparent 0%,
+      rgba(0,210,190,0.15) 10%,
+      rgba(0,210,190,0.15) 90%,
+      transparent 100%
+    );
+    z-index: 0;
+  }
+
+  .layer-card {
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(0,210,190,0.2);
+    border-radius: 16px;
+    padding: 36px 40px;
+    background: rgba(0,210,190,0.03);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .layer-card:hover {
+    border-color: rgba(0,210,190,0.5);
+    background: rgba(0,210,190,0.06);
+    transform: translateX(4px);
+    box-shadow: 0 0 40px rgba(0,210,190,0.08);
+  }
+
+  .layer-number {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    border: 2px solid rgba(0,210,190,0.4);
+    background: rgba(0,210,190,0.08);
+    color: #00d2be;
+  }
+
+  .layer-icon {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+  }
+
+  .layer-body { flex: 1; }
+
+  .layer-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #00e8d0;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .layer-name-en {
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(0,210,190,0.4);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  .layer-desc {
+    font-size: 16px;
+    color: rgba(224,240,240,0.7);
+    line-height: 1.7;
+  }
+
+  .tech-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .tech-tag {
+    padding: 4px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(0,210,190,0.1);
+    border: 1px solid rgba(0,210,190,0.2);
+    color: rgba(0,210,190,0.8);
+  }
+
+  /* Arrow connectors between cards */
+  .arrow-connector {
+    display: flex;
+    justify-content: center;
+    height: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .arrow-connector::after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    border-right: 2px solid rgba(0,210,190,0.3);
+    border-bottom: 2px solid rgba(0,210,190,0.3);
+    transform: rotate(45deg);
+    margin-top: -6px;
+  }
+
+  /* ===== Accessibility Section ===== */
+  .a11y-section {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 60px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(0,210,190,0.3), transparent);
+  }
+
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #00e8d0;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+
+  .a11y-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .a11y-card {
+    border: 1px solid rgba(0,210,190,0.15);
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
+    background: rgba(0,210,190,0.02);
+    transition: all 0.3s ease;
+  }
+
+  .a11y-card:hover {
+    border-color: rgba(0,210,190,0.4);
+    background: rgba(0,210,190,0.05);
+  }
+
+  .a11y-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .a11y-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e0f0f0;
+    margin-bottom: 8px;
+  }
+
+  .a11y-detail {
+    font-size: 13px;
+    color: rgba(224,240,240,0.5);
+    line-height: 1.5;
+  }
+
+  /* ===== Data Flow ===== */
+  .flow-section {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 60px;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px 0;
+  }
+
+  .flow-node {
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: 1px solid rgba(0,210,190,0.25);
+    background: rgba(0,210,190,0.05);
+    color: #e0f0f0;
+    text-align: center;
+    min-width: 140px;
+  }
+
+  .flow-arrow {
+    font-size: 20px;
+    color: rgba(0,210,190,0.4);
+    flex-shrink: 0;
+  }
+
+  .flow-node.highlight {
+    border-color: rgba(0,210,190,0.6);
+    background: rgba(0,210,190,0.12);
+    color: #00e8d0;
+    box-shadow: 0 0 20px rgba(0,210,190,0.1);
+  }
+
+  /* ===== Footer ===== */
+  .footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding-top: 40px;
+    border-top: 1px solid rgba(0,210,190,0.1);
+  }
+
+  .footer-brand {
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(0,210,190,0.6);
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+
+  .footer-slogan {
+    font-size: 14px;
+    color: rgba(0,210,190,0.3);
+    letter-spacing: 2px;
+  }
+
+  /* ===== Print ===== */
+  @media print {
+    body { background: #0a0f1a; padding: 0; }
+    .poster { border-radius: 0; min-height: auto; }
+  }
+
+  /* ===== Glow decorations ===== */
+  .glow-dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(0,210,190,0.5);
+    box-shadow: 0 0 12px rgba(0,210,190,0.3);
+  }
+</style>
+</head>
+<body>
+
+<div class="poster">
+  <div class="grid-bg"></div>
+
+  <!-- Decorative glow dots -->
+  <div class="glow-dot" style="top:120px;right:80px;"></div>
+  <div class="glow-dot" style="top:600px;left:40px;"></div>
+  <div class="glow-dot" style="top:1100px;right:60px;"></div>
+  <div class="glow-dot" style="bottom:200px;left:100px;"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">Project Resonance · 技术亮点</div>
+    <h1 class="title">技术架构</h1>
+    <p class="subtitle">四层解耦 · 安全可控 · 无障碍优先</p>
+  </div>
+
+  <!-- Architecture Layers -->
+  <div class="layers">
+    <!-- Layer 1 -->
+    <div class="layer-card">
+      <div class="layer-number">01</div>
+      <div class="layer-icon">🖥️</div>
+      <div class="layer-body">
+        <div class="layer-name">前端展示层</div>
+        <div class="layer-name-en">Frontend Presentation Layer</div>
+        <div class="layer-desc">通过微信小程序 WebView 分发，用户扫码即用，零安装门槛</div>
+        <div class="tech-tags">
+          <span class="tech-tag">React 18</span>
+          <span class="tech-tag">TypeScript</span>
+          <span class="tech-tag">Tailwind CSS</span>
+          <span class="tech-tag">微信小程序</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-connector"></div>
+
+    <!-- Layer 2 -->
+    <div class="layer-card">
+      <div class="layer-number">02</div>
+      <div class="layer-icon">🔐</div>
+      <div class="layer-body">
+        <div class="layer-name">API 代理层</div>
+        <div class="layer-name-en">API Proxy Layer</div>
+        <div class="layer-desc">统一代理所有 AI 服务请求，API 密钥存储于云端环境变量，永不暴露给客户端</div>
+        <div class="tech-tags">
+          <span class="tech-tag">Supabase Edge Functions</span>
+          <span class="tech-tag">Deno Runtime</span>
+          <span class="tech-tag">CORS 安全策略</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-connector"></div>
+
+    <!-- Layer 3 -->
+    <div class="layer-card">
+      <div class="layer-number">03</div>
+      <div class="layer-icon">🧠</div>
+      <div class="layer-body">
+        <div class="layer-name">AI 服务层</div>
+        <div class="layer-name-en">AI Service Layer</div>
+        <div class="layer-desc">阶跃星辰提供语音识别、语音合成与声音克隆三大核心能力，仅需 10 秒音频即可克隆用户音色</div>
+        <div class="tech-tags">
+          <span class="tech-tag">ASR 语音识别</span>
+          <span class="tech-tag">TTS 语音合成</span>
+          <span class="tech-tag">Voice Clone 音色克隆</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-connector"></div>
+
+    <!-- Layer 4 -->
+    <div class="layer-card">
+      <div class="layer-number">04</div>
+      <div class="layer-icon">💾</div>
+      <div class="layer-body">
+        <div class="layer-name">数据持久层</div>
+        <div class="layer-name-en">Data Persistence Layer</div>
+        <div class="layer-desc">云端数据库存储用户档案、录音元数据与训练样本，支持未来个性化模型微调</div>
+        <div class="tech-tags">
+          <span class="tech-tag">PostgreSQL</span>
+          <span class="tech-tag">Row Level Security</span>
+          <span class="tech-tag">Storage Bucket</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Flow -->
+  <div class="flow-section">
+    <div class="section-header">
+      <div class="section-line"></div>
+      <h2 class="section-title">📡 核心数据流</h2>
+      <div class="section-line" style="background:linear-gradient(to left, rgba(0,210,190,0.3), transparent);"></div>
+    </div>
+    <div class="flow-row">
+      <div class="flow-node">用户录音</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node highlight">Edge Function 代理</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">ASR 识别</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node highlight">音色克隆 + TTS</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">语音播放</div>
+    </div>
+  </div>
+
+  <!-- Accessibility -->
+  <div class="a11y-section">
+    <div class="section-header">
+      <div class="section-line"></div>
+      <h2 class="section-title">♿ 无障碍设计 · 核心而非附加</h2>
+      <div class="section-line" style="background:linear-gradient(to left, rgba(0,210,190,0.3), transparent);"></div>
+    </div>
+    <div class="a11y-grid">
+      <div class="a11y-card">
+        <span class="a11y-icon">👆</span>
+        <div class="a11y-label">大触控目标</div>
+        <div class="a11y-detail">所有按钮最小<br><strong style="color:#00e8d0;font-size:20px;">44 × 44 px</strong><br>符合 WCAG 2.5.8</div>
+      </div>
+      <div class="a11y-card">
+        <span class="a11y-icon">🔲</span>
+        <div class="a11y-label">高对比度模式</div>
+        <div class="a11y-detail">加粗边框 · 增强色差<br>跟随系统偏好<br>或手动切换</div>
+      </div>
+      <div class="a11y-card">
+        <span class="a11y-icon">⌨️</span>
+        <div class="a11y-label">键盘快捷键</div>
+        <div class="a11y-detail">完整键盘导航<br>空格录音 · R重试<br>? 查看所有快捷键</div>
+      </div>
+      <div class="a11y-card">
+        <span class="a11y-icon">🔊</span>
+        <div class="a11y-label">屏幕阅读器</div>
+        <div class="a11y-detail">语义化 HTML<br>ARIA 标注<br>VoiceOver 友好</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-brand">共鸣 PROJECT RESONANCE</div>
+    <div class="footer-slogan">精准识音 · 以你之声 · 畅所欲言</div>
+  </div>
+</div>
+
+</body>
+</html>

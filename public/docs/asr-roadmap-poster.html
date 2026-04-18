@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>共鸣 · 三阶段技术路径海报</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', system-ui, sans-serif;
+    background: #06080f;
+    color: #e0e8f0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .poster {
+    width: 1080px;
+    min-height: 1920px;
+    background: linear-gradient(175deg, #080c18 0%, #0b1225 50%, #0a0f1e 100%);
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    padding: 80px 60px 60px;
+  }
+
+  /* Ambient glows */
+  .poster::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 10% 20%, rgba(56,189,248,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 500px 500px at 90% 50%, rgba(168,85,247,0.05) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 300px at 50% 90%, rgba(34,197,94,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Grid */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(148,163,184,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,0.04) 1px, transparent 1px);
+    background-size: 80px 80px;
+    pointer-events: none;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 56px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 8px 28px;
+    border: 1px solid rgba(148,163,184,0.25);
+    border-radius: 100px;
+    font-size: 13px;
+    letter-spacing: 5px;
+    color: rgba(148,163,184,0.7);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    background: rgba(148,163,184,0.04);
+  }
+
+  .title {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    background: linear-gradient(135deg, #38bdf8 0%, #a855f7 50%, #22c55e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 16px;
+    line-height: 1.3;
+  }
+
+  .subtitle {
+    font-size: 26px;
+    font-weight: 300;
+    color: rgba(203,213,225,0.5);
+    letter-spacing: 4px;
+  }
+
+  /* Core message */
+  .core-message {
+    text-align: center;
+    margin-bottom: 56px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .core-message p {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 6px;
+    background: linear-gradient(90deg, rgba(56,189,248,0.8), rgba(168,85,247,0.8), rgba(34,197,94,0.8));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 60px;
+  }
+
+  .timeline-line {
+    position: absolute;
+    left: 44px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom,
+      rgba(56,189,248,0.6) 0%,
+      rgba(168,85,247,0.6) 50%,
+      rgba(34,197,94,0.6) 100%
+    );
+    border-radius: 2px;
+  }
+
+  .phase {
+    position: relative;
+    padding-left: 110px;
+    margin-bottom: 48px;
+  }
+
+  .phase:last-child { margin-bottom: 0; }
+
+  .phase-dot {
+    position: absolute;
+    left: 30px;
+    top: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    z-index: 2;
+  }
+
+  .phase-dot::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid;
+    opacity: 0.3;
+  }
+
+  .phase:nth-child(1) .phase-dot { background: #38bdf8; }
+  .phase:nth-child(1) .phase-dot::after { border-color: #38bdf8; }
+  .phase:nth-child(2) .phase-dot { background: #a855f7; }
+  .phase:nth-child(2) .phase-dot::after { border-color: #a855f7; }
+  .phase:nth-child(3) .phase-dot { background: #22c55e; }
+  .phase:nth-child(3) .phase-dot::after { border-color: #22c55e; }
+
+  .phase-card {
+    border: 1px solid rgba(148,163,184,0.12);
+    border-radius: 20px;
+    padding: 36px 40px;
+    background: rgba(15,23,42,0.6);
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+  }
+
+  .phase:nth-child(1) .phase-card { border-left: 3px solid rgba(56,189,248,0.5); }
+  .phase:nth-child(2) .phase-card { border-left: 3px solid rgba(168,85,247,0.5); }
+  .phase:nth-child(3) .phase-card { border-left: 3px solid rgba(34,197,94,0.5); }
+
+  .phase-card:hover {
+    border-color: rgba(148,163,184,0.25);
+    background: rgba(15,23,42,0.8);
+    transform: translateX(6px);
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+  }
+
+  .phase-status {
+    padding: 4px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .status-done {
+    background: rgba(56,189,248,0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56,189,248,0.3);
+  }
+
+  .status-active {
+    background: rgba(168,85,247,0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168,85,247,0.3);
+  }
+
+  .status-future {
+    background: rgba(34,197,94,0.1);
+    color: rgba(34,197,94,0.7);
+    border: 1px solid rgba(34,197,94,0.2);
+  }
+
+  .phase-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 1px;
+  }
+
+  .phase-subtitle {
+    font-size: 15px;
+    color: rgba(148,163,184,0.6);
+    margin-bottom: 18px;
+    letter-spacing: 1px;
+  }
+
+  .phase-desc {
+    font-size: 17px;
+    color: rgba(203,213,225,0.75);
+    line-height: 1.8;
+    margin-bottom: 20px;
+  }
+
+  .phase-metrics {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 24px;
+    border-radius: 14px;
+    background: rgba(148,163,184,0.04);
+    border: 1px solid rgba(148,163,184,0.08);
+    min-width: 130px;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .phase:nth-child(1) .metric-value { color: #38bdf8; }
+  .phase:nth-child(2) .metric-value { color: #c084fc; }
+  .phase:nth-child(3) .metric-value { color: #22c55e; }
+
+  .metric-label {
+    font-size: 13px;
+    color: rgba(148,163,184,0.5);
+    letter-spacing: 1px;
+  }
+
+  .tech-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .tech-tag {
+    padding: 5px 14px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(148,163,184,0.06);
+    border: 1px solid rgba(148,163,184,0.12);
+    color: rgba(203,213,225,0.7);
+  }
+
+  /* Progress visualization */
+  .progress-section {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 60px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(148,163,184,0.2), transparent);
+  }
+
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: rgba(203,213,225,0.8);
+    letter-spacing: 3px;
+    white-space: nowrap;
+  }
+
+  .accuracy-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .accuracy-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .accuracy-label {
+    width: 100px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(203,213,225,0.6);
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .accuracy-track {
+    flex: 1;
+    height: 36px;
+    background: rgba(148,163,184,0.06);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(148,163,184,0.08);
+  }
+
+  .accuracy-fill {
+    height: 100%;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 16px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .accuracy-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent 60%, rgba(255,255,255,0.08) 100%);
+  }
+
+  .fill-1 {
+    width: 50%;
+    background: linear-gradient(90deg, #0c4a6e, #38bdf8);
+  }
+
+  .fill-2 {
+    width: 77%;
+    background: linear-gradient(90deg, #581c87, #a855f7);
+  }
+
+  .fill-3 {
+    width: 90%;
+    background: linear-gradient(90deg, #14532d, #22c55e);
+  }
+
+  /* Flow diagram */
+  .flow-section {
+    position: relative;
+    z-index: 1;
+    margin-bottom: 60px;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px 0;
+    flex-wrap: wrap;
+  }
+
+  .flow-node {
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    border: 1px solid rgba(148,163,184,0.15);
+    background: rgba(15,23,42,0.5);
+    color: rgba(203,213,225,0.8);
+    text-align: center;
+  }
+
+  .flow-arrow {
+    font-size: 18px;
+    color: rgba(148,163,184,0.3);
+    flex-shrink: 0;
+  }
+
+  .flow-node.highlight-blue {
+    border-color: rgba(56,189,248,0.4);
+    background: rgba(56,189,248,0.08);
+    color: #38bdf8;
+  }
+
+  .flow-node.highlight-purple {
+    border-color: rgba(168,85,247,0.4);
+    background: rgba(168,85,247,0.08);
+    color: #c084fc;
+  }
+
+  .flow-node.highlight-green {
+    border-color: rgba(34,197,94,0.4);
+    background: rgba(34,197,94,0.08);
+    color: #22c55e;
+  }
+
+  /* Footer */
+  .footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding-top: 40px;
+    border-top: 1px solid rgba(148,163,184,0.08);
+  }
+
+  .footer-brand {
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(148,163,184,0.4);
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+
+  .footer-slogan {
+    font-size: 14px;
+    color: rgba(148,163,184,0.25);
+    letter-spacing: 2px;
+  }
+
+  /* Decorative dots */
+  .glow-dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    box-shadow: 0 0 14px 4px;
+  }
+
+  @media print {
+    body { background: #080c18; padding: 0; }
+    .poster { border-radius: 0; min-height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="poster">
+  <div class="grid-bg"></div>
+
+  <!-- Decorative dots -->
+  <div class="glow-dot" style="top:100px;right:90px;background:rgba(56,189,248,0.5);box-shadow:0 0 14px rgba(56,189,248,0.3);"></div>
+  <div class="glow-dot" style="top:700px;left:50px;background:rgba(168,85,247,0.5);box-shadow:0 0 14px rgba(168,85,247,0.3);"></div>
+  <div class="glow-dot" style="top:1300px;right:70px;background:rgba(34,197,94,0.5);box-shadow:0 0 14px rgba(34,197,94,0.3);"></div>
+  <div class="glow-dot" style="bottom:150px;left:120px;background:rgba(56,189,248,0.3);box-shadow:0 0 14px rgba(56,189,248,0.2);"></div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="badge">Project Resonance · 技术路径</div>
+    <h1 class="title">三阶段进化</h1>
+    <p class="subtitle">从模糊匹配到个性化智能</p>
+  </div>
+
+  <!-- Core message -->
+  <div class="core-message">
+    <p>系 统 越 用 越 懂 你</p>
+  </div>
+
+  <!-- Timeline -->
+  <div class="timeline">
+    <div class="timeline-line"></div>
+
+    <!-- Phase 1 -->
+    <div class="phase">
+      <div class="phase-dot">1</div>
+      <div class="phase-card">
+        <div class="phase-header">
+          <h2 class="phase-title">短语库 + ASR 模糊匹配</h2>
+          <span class="phase-status status-done">✓ 已完成</span>
+        </div>
+        <div class="phase-subtitle">Phase 1 · Phrase Library Fuzzy Matching</div>
+        <div class="phase-desc">
+          ASR 输出的模糊文本与预设短语库做 Levenshtein 编辑距离匹配，找到最接近的意图候选。零额外成本，纯前端逻辑，几十行代码即可落地。
+        </div>
+        <div class="phase-metrics">
+          <div class="metric">
+            <div class="metric-value">40-60%</div>
+            <div class="metric-label">识别准确率</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">¥0</div>
+            <div class="metric-label">额外成本</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">1-2h</div>
+            <div class="metric-label">开发耗时</div>
+          </div>
+        </div>
+        <div class="tech-tags">
+          <span class="tech-tag">Levenshtein 距离</span>
+          <span class="tech-tag">编辑距离匹配</span>
+          <span class="tech-tag">前端纯逻辑</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="phase">
+      <div class="phase-dot">2</div>
+      <div class="phase-card">
+        <div class="phase-header">
+          <h2 class="phase-title">Whisper + LoRA 个性化微调</h2>
+          <span class="phase-status status-active">● 进行中</span>
+        </div>
+        <div class="phase-subtitle">Phase 2 · Personalized Fine-tuning with LoRA</div>
+        <div class="phase-desc">
+          冻结 Whisper 基座模型，在注意力层插入低秩适配矩阵（LoRA），仅训练 &lt;1% 参数。每位用户只需录制几分钟语音，模型即可"学会听懂"其独特发音模式。
+        </div>
+        <div class="phase-metrics">
+          <div class="metric">
+            <div class="metric-value">70-85%</div>
+            <div class="metric-label">目标准确率</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">~8MB</div>
+            <div class="metric-label">LoRA 权重</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">3 min</div>
+            <div class="metric-label">所需录音</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">~30 min</div>
+            <div class="metric-label">训练时长</div>
+          </div>
+        </div>
+        <div class="tech-tags">
+          <span class="tech-tag">OpenAI Whisper</span>
+          <span class="tech-tag">LoRA r=8-32</span>
+          <span class="tech-tag">HuggingFace PEFT</span>
+          <span class="tech-tag">RTX 4090</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="phase">
+      <div class="phase-dot">3</div>
+      <div class="phase-card">
+        <div class="phase-header">
+          <h2 class="phase-title">Step-Audio 大模型全量微调</h2>
+          <span class="phase-status status-future">◇ 远期规划</span>
+        </div>
+        <div class="phase-subtitle">Phase 3 · Full Fine-tuning on Step-Audio</div>
+        <div class="phase-desc">
+          基于阶跃星辰开源的 Step-Audio 端到端语音大模型，采集大规模病理语音数据进行全量 SFT 训练，构建通用构音障碍识别模型，并叠加个人 LoRA 实现双层个性化。
+        </div>
+        <div class="phase-metrics">
+          <div class="metric">
+            <div class="metric-value">85-95%</div>
+            <div class="metric-label">目标准确率</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">多卡 A100</div>
+            <div class="metric-label">训练资源</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value">3-6 月</div>
+            <div class="metric-label">研发周期</div>
+          </div>
+        </div>
+        <div class="tech-tags">
+          <span class="tech-tag">Step-Audio 2</span>
+          <span class="tech-tag">全量 SFT</span>
+          <span class="tech-tag">分布式训练</span>
+          <span class="tech-tag">通用 + 个人 LoRA</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accuracy visualization -->
+  <div class="progress-section">
+    <div class="section-header">
+      <div class="section-line"></div>
+      <h2 class="section-title">📊 识别准确率演进</h2>
+      <div class="section-line" style="background:linear-gradient(to left, rgba(148,163,184,0.2), transparent);"></div>
+    </div>
+    <div class="accuracy-bars">
+      <div class="accuracy-row">
+        <div class="accuracy-label">阶段一</div>
+        <div class="accuracy-track">
+          <div class="accuracy-fill fill-1">40-60%</div>
+        </div>
+      </div>
+      <div class="accuracy-row">
+        <div class="accuracy-label">阶段二</div>
+        <div class="accuracy-track">
+          <div class="accuracy-fill fill-2">70-85%</div>
+        </div>
+      </div>
+      <div class="accuracy-row">
+        <div class="accuracy-label">阶段三</div>
+        <div class="accuracy-track">
+          <div class="accuracy-fill fill-3">85-95%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evolution flow -->
+  <div class="flow-section">
+    <div class="section-header">
+      <div class="section-line"></div>
+      <h2 class="section-title">🔄 演进逻辑</h2>
+      <div class="section-line" style="background:linear-gradient(to left, rgba(148,163,184,0.2), transparent);"></div>
+    </div>
+    <div class="flow-row">
+      <div class="flow-node highlight-blue">通用 ASR<br><small style="opacity:0.6">所有用户共享</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node highlight-purple">个人 LoRA<br><small style="opacity:0.6">每人独立适配</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node highlight-green">专病 + 个人<br><small style="opacity:0.6">双层个性化</small></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-brand">共鸣 PROJECT RESONANCE</div>
+    <div class="footer-slogan">精准识音 · 以你之声 · 畅所欲言</div>
+  </div>
+</div>
+
+</body>
+</html>
