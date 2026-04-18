@@ -1,10 +1,8 @@
 import { StorageService } from '../types';
-import { KVStorage } from './KVStorage';
 import { MemoryStorage } from './MemoryStorage';
 import { MinioStorage } from './MinioStorage';
 
 interface Env {
-  RESONANCE_KV?: KVNamespace;
   MINIO_ENDPOINT?: string;
   MINIO_ACCESS_KEY?: string;
   MINIO_SECRET_KEY?: string;
@@ -21,12 +19,7 @@ export function createStorageService(env: Env): StorageService {
     return new MinioStorage(env as any);
   }
   
-  // 其次使用 KV 存储
-  if (env.RESONANCE_KV) {
-    return new KVStorage(env as any);
-  }
-  
-  // 最后使用内存存储（仅用于开发）
+  // 使用内存存储（仅用于开发）
   return new MemoryStorage();
 }
 
@@ -106,6 +99,10 @@ export class StorageManager {
 
   // 获取存储类型信息
   getStorageType(): string {
-    return this.storage instanceof KVStorage ? 'KV' : 'Memory';
+    if (this.storage.constructor.name === 'MinioStorage') {
+      return 'minio';
+    } else {
+      return 'memory';
+    }
   }
 }

@@ -15,9 +15,6 @@ export interface Env {
   GEMINI_ASR_URL?: string;
   GEMINI_ASR_KEY?: string;
   
-  // 存储配置
-  RESONANCE_KV?: KVNamespace;
-  
   // Minio 对象存储配置（用于语料收集）
   MINIO_ENDPOINT?: string;
   MINIO_PORT?: string;

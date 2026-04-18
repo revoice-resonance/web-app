@@ -10,7 +10,7 @@ interface Env {
   COSYVOICE_VPC?: Fetcher;
   GEMINI_ASR_URL?: string;
   GEMINI_ASR_KEY?: string;
-  RESONANCE_KV?: KVNamespace;
+
   MINIO_ENDPOINT?: string;
   MINIO_ACCESS_KEY?: string;
   MINIO_SECRET_KEY?: string;

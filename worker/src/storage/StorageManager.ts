@@ -2,7 +2,6 @@ import { StorageService } from '../types';
 import { createStorageService } from './index';
 
 interface Env {
-  RESONANCE_KV?: KVNamespace;
   MINIO_ENDPOINT?: string;
   MINIO_ACCESS_KEY?: string;
   MINIO_SECRET_KEY?: string;
@@ -68,8 +67,6 @@ export class StorageManager {
   getStorageType(): string {
     if (this.storageService.constructor.name === 'MinioStorage') {
       return 'minio';
-    } else if (this.storageService.constructor.name === 'KVStorage') {
-      return 'kv';
     } else {
       return 'memory';
     }

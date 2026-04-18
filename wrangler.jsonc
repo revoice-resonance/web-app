@@ -27,10 +27,5 @@
       "remote": true
     }
   ],
-  "kv_namespaces": [
-    {
-      "binding": "RESONANCE_KV",
-      "id": "your-kv-namespace-id"
-    }
-  ]
+
 }
