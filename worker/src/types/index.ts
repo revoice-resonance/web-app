@@ -83,7 +83,34 @@ export interface LoggingService {
   getRecentLogs(limit?: number): Promise<LogEntry[]>;
 }
 
+export interface CorpusQuery {
+  userId?: string;
+  sessionId?: string;
+  speakerId?: string;
+  startTime?: string;
+  endTime?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface CorpusStats {
+  totalCorpus: number;
+  totalAudioSize: number;
+  uniqueSpeakers: number;
+  uniqueUsers: number;
+  uniqueSessions: number;
+  lastUpload: string | null;
+}
+
 export interface CorpusService {
   upload(data: CorpusData): Promise<void>;
   validate(data: CorpusData): Promise<boolean>;
+  query(query: CorpusQuery): Promise<CorpusData[]>;
+  getStats(): Promise<CorpusStats>;
+  getUserStats(userId: string): Promise<{
+    totalCorpus: number;
+    totalAudioSize: number;
+    uniqueSessions: number;
+    lastUpload: string | null;
+  }>;
 }
