@@ -32,9 +32,9 @@ export interface Env {
 }
 
 /**
- * 处理语音识别请求
+ * 处理音频上传请求（用于ASR/TTS）
  */
-async function handleASRRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+async function handleAudioUploadRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
   if (request.method !== 'POST') {
     return createCorsResponse(createErrorResponse('Method not allowed'), 405);
   }
@@ -48,98 +48,211 @@ async function handleASRRequest(request: Request, serviceManager: ServiceManager
     }
 
     const audioBuffer = await audioFile.arrayBuffer();
-    const asrService = serviceManager.getASRService();
+    const storageManager = serviceManager.getStorageManager();
     
-    // 获取识别参数
-    const language = formData.get('language') as string || 'zh-CN';
-    const prefer = formData.get('prefer') as 'whisper' | 'gemini' | undefined;
+    // 生成唯一标识符
+    const audioId = generateId('audio');
+    const audioKey = `audio/${audioId}.wav`;
     
-    const result = await asrService.transcribe(audioBuffer, { language, prefer });
-    
-    // 记录成功日志
-    await serviceManager.getLoggingService().info('ASR recognition completed', {
-      duration: result.duration,
-      confidence: result.confidence,
-      source: result.source,
-      language: result.language,
+    // 保存音频到S3
+    const result = await storageManager.saveAudio(audioKey, audioBuffer, {
+      originalName: audioFile.name,
+      size: audioFile.size,
+      type: audioFile.type,
+      uploadedAt: new Date().toISOString(),
     });
 
-    return createCorsResponse(createSuccessResponse(result));
+    await serviceManager.getLoggingService().info('Audio uploaded to S3', {
+      audioKey: result.key,
+      size: audioFile.size,
+      type: audioFile.type,
+    });
+
+    return createCorsResponse(createSuccessResponse({
+      audioKey: result.key,
+      url: result.url,
+      message: '音频上传成功'
+    }));
     
   } catch (error) {
-    await serviceManager.getLoggingService().error('ASR recognition failed', {
+    await serviceManager.getLoggingService().error('Audio upload failed', {
       error: error instanceof Error ? error.message : String(error)
     });
     
     return createCorsResponse(createErrorResponse(
-      error instanceof Error ? error.message : '语音识别失败'
+      error instanceof Error ? error.message : '音频上传失败'
     ));
   }
 }
 
 /**
- * 处理语音合成请求
+ * 提交ASR识别任务
  */
-async function handleTTSRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+async function handleASRJobSubmitRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
   if (request.method !== 'POST') {
     return createCorsResponse(createErrorResponse('Method not allowed'), 405);
   }
 
   try {
-    const contentType = request.headers.get('content-type') || '';
+    const body = await request.json();
+    const { audioKey, language, prefer } = body;
     
-    if (contentType.includes('multipart/form-data')) {
-      // 语音克隆请求
-      const formData = await request.formData();
-      const promptWav = formData.get('prompt_wav') as File;
-      const ttsText = formData.get('tts_text') as string;
-      
-      if (!promptWav || !ttsText) {
-        return createCorsResponse(createErrorResponse('缺少参考音频或合成文本'));
-      }
-      
-      const audioBuffer = await promptWav.arrayBuffer();
-      const ttsService = serviceManager.getTTSService();
-      
-      const result = await ttsService.cloneVoice(audioBuffer, ttsText);
-      
-      await serviceManager.getLoggingService().info('Voice cloning completed', {
-        textLength: ttsText.length,
-        duration: result.duration,
-      });
-
-      return createCorsResponse(createSuccessResponse(result));
-      
-    } else {
-      // 标准语音合成请求
-      const body = await request.json();
-      const { text, voice, speed, pitch } = body;
-      
-      if (!text) {
-        return createCorsResponse(createErrorResponse('缺少合成文本'));
-      }
-      
-      const ttsService = serviceManager.getTTSService();
-      const result = await ttsService.synthesize({ text, voice, speed, pitch });
-      
-      await serviceManager.getLoggingService().info('TTS synthesis completed', {
-        textLength: text.length,
-        duration: result.duration,
-        voice,
-      });
-
-      return createCorsResponse(createSuccessResponse(result));
+    if (!audioKey) {
+      return createCorsResponse(createErrorResponse('缺少音频文件标识符'));
     }
+
+    const asrService = serviceManager.getASRService();
+    const job = await asrService.submitTranscriptionJob(audioKey, { language, prefer });
+    
+    await serviceManager.getLoggingService().info('ASR job submitted', {
+      jobId: job.jobId,
+      audioKey: job.audioKey,
+      status: job.status,
+    });
+
+    return createCorsResponse(createSuccessResponse(job));
     
   } catch (error) {
-    await serviceManager.getLoggingService().error('TTS request failed', {
+    await serviceManager.getLoggingService().error('ASR job submission failed', {
       error: error instanceof Error ? error.message : String(error)
     });
     
     return createCorsResponse(createErrorResponse(
-      error instanceof Error ? error.message : '语音合成失败'
+      error instanceof Error ? error.message : 'ASR任务提交失败'
     ));
   }
+}
+
+/**
+ * 查询ASR任务状态
+ */
+async function handleASRJobStatusRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method === 'GET') {
+    try {
+      const url = new URL(request.url);
+      const jobId = url.searchParams.get('jobId');
+      
+      if (!jobId) {
+        return createCorsResponse(createErrorResponse('缺少任务ID'));
+      }
+
+      const asrService = serviceManager.getASRService();
+      const job = await asrService.getJobStatus(jobId);
+      
+      return createCorsResponse(createSuccessResponse(job));
+      
+    } catch (error) {
+      return createCorsResponse(createErrorResponse(
+        error instanceof Error ? error.message : 'ASR任务状态查询失败'
+      ));
+    }
+  }
+  
+  return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+}
+
+/**
+ * 提交TTS合成任务
+ */
+async function handleTTSJobSubmitRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method !== 'POST') {
+    return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+  }
+
+  try {
+    const body = await request.json();
+    const { text, voice, speed, pitch } = body;
+    
+    if (!text) {
+      return createCorsResponse(createErrorResponse('缺少合成文本'));
+    }
+
+    const ttsService = serviceManager.getTTSService();
+    const job = await ttsService.submitSynthesisJob({ text, voice, speed, pitch });
+    
+    await serviceManager.getLoggingService().info('TTS job submitted', {
+      jobId: job.jobId,
+      textLength: text.length,
+      voice: voice || 'default',
+    });
+
+    return createCorsResponse(createSuccessResponse(job));
+    
+  } catch (error) {
+    await serviceManager.getLoggingService().error('TTS job submission failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+    
+    return createCorsResponse(createErrorResponse(
+      error instanceof Error ? error.message : 'TTS任务提交失败'
+    ));
+  }
+}
+
+/**
+ * 提交语音克隆任务
+ */
+async function handleVoiceCloneJobSubmitRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method !== 'POST') {
+    return createCorsResponse(createErrorResponse('Method not allowed'), 405);
+  }
+
+  try {
+    const body = await request.json();
+    const { referenceAudioKey, text } = body;
+    
+    if (!referenceAudioKey || !text) {
+      return createCorsResponse(createErrorResponse('缺少参考音频标识符或合成文本'));
+    }
+
+    const ttsService = serviceManager.getTTSService();
+    const job = await ttsService.submitVoiceCloneJob(referenceAudioKey, text);
+    
+    await serviceManager.getLoggingService().info('Voice clone job submitted', {
+      jobId: job.jobId,
+      referenceAudioKey,
+      textLength: text.length,
+    });
+
+    return createCorsResponse(createSuccessResponse(job));
+    
+  } catch (error) {
+    await serviceManager.getLoggingService().error('Voice clone job submission failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
+    
+    return createCorsResponse(createErrorResponse(
+      error instanceof Error ? error.message : '语音克隆任务提交失败'
+    ));
+  }
+}
+
+/**
+ * 查询TTS任务状态
+ */
+async function handleTTSJobStatusRequest(request: Request, serviceManager: ServiceManager): Promise<Response> {
+  if (request.method === 'GET') {
+    try {
+      const url = new URL(request.url);
+      const jobId = url.searchParams.get('jobId');
+      
+      if (!jobId) {
+        return createCorsResponse(createErrorResponse('缺少任务ID'));
+      }
+
+      const ttsService = serviceManager.getTTSService();
+      const job = await ttsService.getJobStatus(jobId);
+      
+      return createCorsResponse(createSuccessResponse(job));
+      
+    } catch (error) {
+      return createCorsResponse(createErrorResponse(
+        error instanceof Error ? error.message : 'TTS任务状态查询失败'
+      ));
+    }
+  }
+  
+  return createCorsResponse(createErrorResponse('Method not allowed'), 405);
 }
 
 /**
@@ -433,12 +546,28 @@ export default {
 
     try {
       // API 路由分发
-      if (path === '/api/whisper-asr' || path === '/api/gemini-asr') {
-        return await handleASRRequest(request, serviceManager);
+      if (path === '/api/audio/upload') {
+        return await handleAudioUploadRequest(request, serviceManager);
       }
       
-      if (path === '/api/cosyvoice-tts') {
-        return await handleTTSRequest(request, serviceManager);
+      if (path === '/api/asr/jobs') {
+        return await handleASRJobSubmitRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/asr/jobs/status') {
+        return await handleASRJobStatusRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/tts/jobs') {
+        return await handleTTSJobSubmitRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/tts/voice-clone') {
+        return await handleVoiceCloneJobSubmitRequest(request, serviceManager);
+      }
+      
+      if (path === '/api/tts/jobs/status') {
+        return await handleTTSJobStatusRequest(request, serviceManager);
       }
       
       if (path === '/api/client-logs') {

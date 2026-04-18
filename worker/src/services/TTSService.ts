@@ -1,5 +1,6 @@
-import { TTSService, TTSRequest, TTSResult } from '../types';
-import { validateAudioFormat } from '../utils';
+import { TTSService, TTSRequest, TTSResult, TTSJob } from '../types';
+import { JobService } from './JobService';
+import { StorageManager } from './StorageManager';
 
 interface Env {
   COSYVOICE_VPC?: Fetcher;
@@ -7,52 +8,81 @@ interface Env {
 
 /**
  * TTS 语音合成服务
- * 支持标准语音合成和语音克隆功能
+ * 基于S3标识符的异步任务模式
  */
 export class TTSServiceImpl implements TTSService {
-  constructor(private env: Env) {}
+  private jobService: JobService;
+  private storageManager: StorageManager;
 
-  async synthesize(request: TTSRequest): Promise<TTSResult> {
-    const { text, voice = 'default', speed = 1.0, pitch = 1.0 } = request;
+  constructor(private env: Env) {
+    this.jobService = new JobService(env);
+    this.storageManager = new StorageManager(env);
+  }
 
+  async submitSynthesisJob(request: TTSRequest): Promise<TTSJob> {
     // 验证输入文本
+    if (!request.text || request.text.trim().length === 0) {
+      throw new Error('合成文本不能为空');
+    }
+
+    if (request.text.length > 1000) {
+      throw new Error('合成文本过长（最多1000字符）');
+    }
+
+    // 创建TTS任务
+    const job = await this.jobService.createTTSJob(request);
+    
+    // 这里应该触发GPU机器处理任务
+    // 简化实现：直接模拟处理
+    setTimeout(() => {
+      this.processTTSJob(job.jobId).catch(console.error);
+    }, 100);
+
+    return job;
+  }
+
+  async submitVoiceCloneJob(referenceAudioKey: string, text: string): Promise<TTSJob> {
+    // 验证参考音频文件是否存在
+    const audioExists = await this.storageManager.getAudio(referenceAudioKey);
+    if (!audioExists) {
+      throw new Error('参考音频文件不存在');
+    }
+
     if (!text || text.trim().length === 0) {
       throw new Error('合成文本不能为空');
     }
 
-    if (text.length > 1000) {
-      throw new Error('合成文本过长（最多1000字符）');
-    }
+    // 创建语音克隆任务
+    const request = { text, voice: 'cloned' };
+    const job = await this.jobService.createTTSJob(request, true);
+    
+    // 保存参考音频标识符到任务元数据
+    await this.jobService.updateTTSJob(job.jobId, {
+      request: { ...request, referenceAudioKey }
+    });
 
-    try {
-      return await this.tryCosyVoiceSynthesis(text, voice, speed, pitch);
-    } catch (error) {
-      console.error('TTS synthesis failed:', error);
-      throw new Error('语音合成服务暂时不可用');
-    }
+    // 这里应该触发GPU机器处理任务
+    setTimeout(() => {
+      this.processVoiceCloneJob(job.jobId).catch(console.error);
+    }, 100);
+
+    return job;
   }
 
-  async cloneVoice(referenceAudio: ArrayBuffer, text: string): Promise<TTSResult> {
-    // 验证参考音频
-    if (!validateAudioFormat(referenceAudio)) {
-      throw new Error('无效的参考音频格式');
+  async getJobStatus(jobId: string): Promise<TTSJob> {
+    const job = await this.jobService.getTTSJob(jobId);
+    if (!job) {
+      throw new Error(`TTS任务不存在: ${jobId}`);
     }
+    return job;
+  }
 
-    // 验证文本
-    if (!text || text.trim().length === 0) {
-      throw new Error('克隆文本不能为空');
+  async getSynthesizedAudio(audioKey: string): Promise<ArrayBuffer> {
+    const audio = await this.storageManager.getAudio(audioKey);
+    if (!audio) {
+      throw new Error('合成音频不存在');
     }
-
-    if (text.length > 500) {
-      throw new Error('克隆文本过长（最多500字符）');
-    }
-
-    try {
-      return await this.tryCosyVoiceCloning(referenceAudio, text);
-    } catch (error) {
-      console.error('Voice cloning failed:', error);
-      throw new Error('语音克隆服务暂时不可用');
-    }
+    return audio;
   }
 
   private async tryCosyVoiceSynthesis(
