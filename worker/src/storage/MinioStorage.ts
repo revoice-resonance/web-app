@@ -64,7 +64,7 @@ export class MinioStorage implements StorageService {
   /**
    * 上传文件到Minio
    */
-  private async uploadToMinio(objectKey: string, data: ArrayBuffer, contentType?: string): Promise<void> {
+  private async uploadToMinio(objectKey: string, data: ArrayBuffer, contentType?: string, metadata?: Record<string, any>): Promise<void> {
     const url = this.buildMinioUrl(objectKey);
     
     const headers: Record<string, string> = {
@@ -72,6 +72,15 @@ export class MinioStorage implements StorageService {
       'Content-Type': contentType || 'application/octet-stream',
       'Content-Length': data.byteLength.toString(),
     };
+
+    // 添加自定义元数据
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          headers[`x-amz-meta-${key}`] = String(value);
+        }
+      });
+    }
 
     const response = await fetch(url, {
       method: 'PUT',
@@ -122,24 +131,82 @@ export class MinioStorage implements StorageService {
     return btoa(`${timestamp}:${this.config.secretKey}`);
   }
 
-  async saveAudio(key: string, audio: ArrayBuffer): Promise<void> {
+  async saveAudio(key: string, audio: ArrayBuffer, metadata?: Record<string, any>): Promise<{ url: string; key: string }> {
     const objectKey = this.generateObjectKey('audio', key, 'wav');
-    await this.uploadToMinio(objectKey, audio, 'audio/wav');
+    await this.uploadToMinio(objectKey, audio, 'audio/wav', metadata);
+    
+    return {
+      url: this.buildMinioUrl(objectKey),
+      key: objectKey
+    };
   }
 
   async getAudio(key: string): Promise<ArrayBuffer | null> {
-    // 由于Minio使用对象键而不是简单key，这里需要额外的映射机制
-    // 简化实现：假设key就是对象键的一部分
-    const objectKey = `audio/${key}`;
-    return await this.downloadFromMinio(objectKey);
+    return await this.downloadFromMinio(key);
+  }
+
+  async getAudioUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    // 生成预签名URL（简化实现，实际应使用Minio SDK）
+    return this.buildMinioUrl(key);
   }
 
   async deleteAudio(key: string): Promise<void> {
-    const objectKey = `audio/${key}`;
-    const url = this.buildMinioUrl(objectKey);
+    await this.deleteObject(key);
+  }
+
+  async saveTranscription(key: string, result: TranscriptionResult): Promise<{ url: string; key: string }> {
+    const objectKey = this.generateObjectKey('transcriptions', key, 'json');
+    const data = new TextEncoder().encode(JSON.stringify(result));
+    await this.uploadToMinio(objectKey, data, 'application/json');
+    
+    return {
+      url: this.buildMinioUrl(objectKey),
+      key: objectKey
+    };
+  }
+
+  async getTranscription(key: string): Promise<TranscriptionResult | null> {
+    const data = await this.downloadFromMinio(key);
+    
+    if (!data) return null;
+    
+    try {
+      const text = new TextDecoder().decode(data);
+      return JSON.parse(text) as TranscriptionResult;
+    } catch {
+      return null;
+    }
+  }
+
+  async getTranscriptionUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    return this.buildMinioUrl(key);
+  }
+
+  async putObject(key: string, data: ArrayBuffer | string, contentType?: string): Promise<{ url: string; key: string }> {
+    const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+    const actualContentType = contentType || (typeof data === 'string' ? 'text/plain' : 'application/octet-stream');
+    
+    await this.uploadToMinio(key, buffer, actualContentType);
+    
+    return {
+      url: this.buildMinioUrl(key),
+      key: key
+    };
+  }
+
+  async getObject(key: string): Promise<ArrayBuffer | null> {
+    return await this.downloadFromMinio(key);
+  }
+
+  async getObjectUrl(key: string, expiresIn: number = 3600): Promise<string> {
+    return this.buildMinioUrl(key);
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    const url = this.buildMinioUrl(key);
     
     const headers: Record<string, string> = {
-      'Authorization': `AWS ${this.config.accessKey}:${this.generateSignature('DELETE', objectKey)}`,
+      'Authorization': `AWS ${this.config.accessKey}:${this.generateSignature('DELETE', key)}`,
     };
 
     const response = await fetch(url, {
@@ -152,24 +219,40 @@ export class MinioStorage implements StorageService {
     }
   }
 
-  async saveTranscription(key: string, result: TranscriptionResult): Promise<void> {
-    const objectKey = this.generateObjectKey('transcriptions', key, 'json');
-    const data = new TextEncoder().encode(JSON.stringify(result));
-    await this.uploadToMinio(objectKey, data, 'application/json');
+  async getObjectMetadata(key: string): Promise<Record<string, any> | null> {
+    // 简化实现，实际应使用HEAD请求获取元数据
+    const url = this.buildMinioUrl(key);
+    
+    const headers: Record<string, string> = {
+      'Authorization': `AWS ${this.config.accessKey}:${this.generateSignature('HEAD', key)}`,
+    };
+
+    const response = await fetch(url, {
+      method: 'HEAD',
+      headers,
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error(`Minio metadata fetch failed: ${response.status} ${response.statusText}`);
+    }
+
+    // 提取响应头中的元数据
+    const metadata: Record<string, any> = {};
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase().startsWith('x-amz-meta-')) {
+        metadata[key.substring(11)] = value;
+      }
+    });
+
+    return metadata;
   }
 
-  async getTranscription(key: string): Promise<TranscriptionResult | null> {
-    const objectKey = `transcriptions/${key}`;
-    const data = await this.downloadFromMinio(objectKey);
-    
-    if (!data) return null;
-    
-    try {
-      const text = new TextDecoder().decode(data);
-      return JSON.parse(text) as TranscriptionResult;
-    } catch {
-      return null;
-    }
+  async listObjects(prefix?: string, limit: number = 100): Promise<{ key: string; size: number; lastModified: string }[]> {
+    // 简化实现，Minio不支持直接列表，需要额外实现
+    // 实际项目中应使用Minio SDK或维护索引
+    console.log('List objects with prefix:', prefix, 'limit:', limit);
+    return [];
   }
 
   async saveLogs(logs: LogEntry[]): Promise<void> {
