@@ -75,7 +75,7 @@ export default {
         error: error instanceof Error ? error.message : String(error)
       });
 
-      return createCorsResponse(createErrorResponse('Internal server error'), 500);
+      return createCorsResponse(createErrorResponse(error instanceof Error ? error.message : String(error)), 500);
     }
   },
 };
