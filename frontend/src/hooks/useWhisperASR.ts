@@ -112,7 +112,6 @@ export function useWhisperASR(): UseWhisperASRReturn {
       setFinalText('');
 
       const startTime = Date.now();
-      const authKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 
       // FormData 可复用（SO Q35138135），File/Blob 每次新流
       const formData = new FormData();
@@ -140,9 +139,6 @@ export function useWhisperASR(): UseWhisperASRReturn {
         try {
           const response = await fetch('/api/whisper-asr', {
             method: 'POST',
-            headers: {
-              Authorization: `Bearer ${authKey}`,
-            },
             body: formData,
             signal: controller.signal,
           });

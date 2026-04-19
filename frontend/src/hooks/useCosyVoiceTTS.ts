@@ -127,9 +127,6 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
 
         response = await fetch('/api/tts/voice-clone', {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${authKey}`,
-          },
           body: formData,
         });
       } else {
@@ -138,7 +135,6 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authKey}`,
           },
           body: JSON.stringify({ text }),
         });
