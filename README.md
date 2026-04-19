@@ -16,23 +16,23 @@
 ```
 project-resonance-src/
 ├── frontend/                 # 前端 React 应用
-│   ├── src/                  # 前端源代码
-│   │   ├── components/      # React组件
-│   │   ├── hooks/           # 自定义Hooks
+│   ├── src/
+│   │   ├── components/      # React 组件
+│   │   ├── hooks/           # 自定义 Hooks
 │   │   ├── pages/           # 页面组件
 │   │   ├── lib/             # 工具函数
-│   │   └── types/           # TypeScript类型定义
+│   │   └── types/           # TypeScript 类型定义
 │   ├── public/              # 静态资源
 │   └── package.json         # 前端依赖配置
-├── worker/                   # Cloudflare Worker API网关
-│   ├── src/                  # Worker源代码
+├── worker/                   # Cloudflare Worker API 网关
+│   ├── src/
 │   │   ├── services/        # 核心服务模块
-│   │   ├── storage/         # 存储管理模块  
+│   │   ├── storage/         # 存储管理模块
 │   │   ├── types/           # 类型定义
 │   │   └── utils/           # 工具函数
-│   ├── wrangler.jsonc       # Cloudflare Worker 配置文件
-│   └── package.json         # Worker依赖配置
-└── README.md                # 项目说明文档
+│   ├── wrangler.jsonc       # Cloudflare Worker 配置
+│   └── package.json         # Worker 依赖配置
+└── README.md                 # 项目说明文档
 ```
 
 ## 🚀 快速开始
@@ -81,11 +81,11 @@ pnpm deploy
 
 ## 🎯 核心功能
 
-- 🎤 **智能语音识别** - 支持 Whisper、Gemini 多引擎识别
-- 🔊 **高质量语音合成** - CosyVoice 语音克隆技术
-- 📱 **跨平台支持** - Web、iOS、Android 全平台适配
-- ♿ **无障碍设计** - 完整的键盘导航和屏幕阅读器支持
-- 🎯 **个性化训练** - 基于用户录音的智能识别模型
+- 🎤 **智能语音识别** - Whisper + Gemini 多引擎 ASR，支持降级 fallback
+- 🔊 **语音合成与克隆** - CosyVoice 高质量 TTS
+- 📱 **跨平台支持** - Web + iOS/Android 原生应用
+- ♿ **无障碍设计** - WCAG 2.1 AA 合规，键盘导航 + 屏幕阅读器优化
+- 🎯 **个性化训练** - 基于用户录音数据优化识别准确率
 
 ## 🏗️ 技术架构
 
@@ -97,8 +97,8 @@ pnpm deploy
 | TypeScript | 5.8.3 | 类型安全开发 |
 | Vite | 5.4.19 | 构建工具和开发服务器 |
 | Tailwind CSS | 3.4.17 | 原子化CSS框架 |
-| shadcn/ui | 最新 | 现代化UI组件库 |
-| Radix UI | 最新 | 无障碍基础组件 |
+| Radix UI | 1.2.x | 无障碍基础组件 |
+| shadcn/ui | - | 基于 Radix UI 的 UI 组件 |
 
 ### AI 服务集成
 
@@ -112,15 +112,20 @@ pnpm deploy
 ### 部署架构
 
 ```
-┌─────────────┐    ┌──────────────────┐    ┌─────────────────────┐
-│  浏览器/移动端  │ → │ Cloudflare Worker │ → │  私有GPU服务         │
-│  (React + TS) │    │ (API网关 + 反向代理) │    │ Whisper / CosyVoice  │
-└─────────────┘    └──────────────────┘    └─────────────────────┘
-     ↓ 本地存储           ↓ 可选fallback           ↓ 主要AI引擎
-┌─────────────┐    ┌──────────────────┐
-│ localStorage │    │ Gemini API       │
-│ 用户数据管理   │    │ (备用识别引擎)    │
-└─────────────┘    └──────────────────┘
+浏览器/移动端 (React + TS)
+        │
+        ▼
+Cloudflare Worker (API网关 + 反向代理)
+        │
+        ├──► 私有GPU服务 (Whisper / CosyVoice)
+        │         │
+        │         ▼
+        │    MinIO 存储
+        │
+        └──► Gemini API (备用识别引擎)
+             │
+             ▼
+        localStorage (用户数据管理)
 ```
 
 ### Worker 服务功能
@@ -138,10 +143,11 @@ Worker通过VPC服务连接到私有GPU服务，提供Whisper语音识别、Cosy
 
 ## 📊 性能优化
 
-- **代码分割**：基于路由的懒加载
-- **图片优化**：WebP格式和响应式图片
-- **缓存策略**：Service Worker和CDN缓存
-- **包大小优化**：Tree shaking和代码压缩
+- **首包优化**：前端包体积减少 57%
+- **路由懒加载**：基于路由的代码分割
+- **缓存策略**：Service Worker + CDN 缓存
+- **连接稳定性**：ASR 错误自动恢复机制
+- **内存管理**：P0-P2 级别内存泄漏修复
 
 ## 🤝 贡献指南
 
