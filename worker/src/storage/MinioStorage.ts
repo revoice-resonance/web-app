@@ -36,7 +36,7 @@ export class MinioStorage implements StorageService {
       accessKey: env.MINIO_ACCESS_KEY,
       secretKey: env.MINIO_SECRET_KEY,
       bucketName: env.MINIO_BUCKET_NAME,
-      region: env.MINIO_REGION || 'us-east-1',
+      region: env.MINIO_REGION || 'LHR',
     };
     this.bucketName = this.config.bucketName;
   }

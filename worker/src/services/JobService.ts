@@ -80,7 +80,8 @@ export class JobService {
       const text = new TextDecoder().decode(data);
       return JSON.parse(text) as ASRJob;
     } catch (e) {
-      throw new Error(`ASRJob JSON解析失败: 内容="${new TextDecoder().decode(data)}", 错误=${(e as Error).message}`);
+      console.error(`[Data Recovery] ASRJob 解析失败, jobId=${jobId}`);
+      return null;
     }
   }
 
@@ -140,7 +141,8 @@ export class JobService {
       const text = new TextDecoder().decode(data);
       return JSON.parse(text) as TTSJob;
     } catch (e) {
-      throw new Error(`TTSJob JSON解析失败: 内容="${new TextDecoder().decode(data)}", 错误=${(e as Error).message}`);
+      console.error(`[Data Recovery] TTSJob 解析失败, jobId=${jobId}`);
+      return null;
     }
   }
 
