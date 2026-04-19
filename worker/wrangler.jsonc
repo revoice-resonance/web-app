@@ -1,0 +1,21 @@
+{
+	"main": "./src/index.ts",
+	"compatibility_date": "2025-04-28",
+	"vpc_services": [
+		{
+			"binding": "COSYVOICE_VPC",
+			"service_id": "019d8637-dc3a-78b1-a77a-170b7ba1daa5",
+			"remote": true
+		},
+		{
+			"binding": "WHISPER_VPC",
+			"service_id": "019d8636-cd3c-78f1-aa3e-1995010552df",
+			"remote": true
+		},
+		{
+			"binding": "MINIO_VPC",
+			"service_id": "019da135-5b1e-7c41-a592-bf81ada13ac9",
+			"remote": true
+		}
+	]
+}
