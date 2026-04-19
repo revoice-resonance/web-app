@@ -112,39 +112,7 @@ export function useWhisperASR(): UseWhisperASRReturn {
       setFinalText('');
 
       const startTime = Date.now();
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-
-      if (!supabaseUrl) {
-        const err = buildASRError('ALL_FAILED', {
-          status: null,
-          attempts: 0,
-          totalDurationMs: 0,
-          originalError: '未配置后端地址 (VITE_SUPABASE_URL)',
-          timestamp: new Date().toISOString(),
-        });
-        emitTelemetry(err);
-        setError(err);
-        setIsProcessing(false);
-        return null;
-      }
-
-      // 提前判断离线，避免无谓重试
-      if (
-        typeof navigator !== 'undefined' &&
-        navigator.onLine === false
-      ) {
-        const err = buildASRError('NETWORK_OFFLINE', {
-          status: null,
-          attempts: 0,
-          totalDurationMs: 0,
-          originalError: 'navigator.onLine === false',
-          timestamp: new Date().toISOString(),
-        });
-        emitTelemetry(err);
-        setError(err);
-        setIsProcessing(false);
-        return null;
-      }
+      const authKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 
       // FormData 可复用（SO Q35138135），File/Blob 每次新流
       const formData = new FormData();
@@ -170,17 +138,14 @@ export function useWhisperASR(): UseWhisperASRReturn {
         );
 
         try {
-          const response = await fetch(
-            `${supabaseUrl}/functions/v1/whisper-asr`,
-            {
-              method: 'POST',
-              headers: {
-                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-              },
-              body: formData,
-              signal: controller.signal,
+          const response = await fetch('/api/whisper-asr', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${authKey}`,
             },
-          );
+            body: formData,
+            signal: controller.signal,
+          });
 
           lastStatus = response.status;
           lastStatusText = response.statusText;

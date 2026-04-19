@@ -106,8 +106,7 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
     }
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      if (!supabaseUrl) throw new Error('未配置后端地址');
+      const authKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
 
       setIsSpeaking(true);
 
@@ -126,20 +125,20 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
         formData.append('prompt_text', promptText);
         formData.append('prompt_wav', promptBlob, 'prompt.wav');
 
-        response = await fetch(`${supabaseUrl}/functions/v1/cosyvoice-tts`, {
+        response = await fetch('/api/tts/voice-clone', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${authKey}`,
           },
           body: formData,
         });
       } else {
         // Default SFT mode
-        response = await fetch(`${supabaseUrl}/functions/v1/cosyvoice-tts`, {
+        response = await fetch('/api/tts/jobs', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${authKey}`,
           },
           body: JSON.stringify({ text }),
         });
