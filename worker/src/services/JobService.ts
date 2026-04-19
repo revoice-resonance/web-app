@@ -73,14 +73,14 @@ export class JobService {
   async getASRJob(jobId: string): Promise<ASRJob | null> {
     const jobKey = `jobs/asr/${jobId}.json`;
     const data = await this.storageManager.getObject(jobKey);
-    
+
     if (!data) return null;
-    
+
     try {
       const text = new TextDecoder().decode(data);
       return JSON.parse(text) as ASRJob;
-    } catch {
-      return null;
+    } catch (e) {
+      throw new Error(`ASRJob JSON解析失败: 内容="${new TextDecoder().decode(data)}", 错误=${(e as Error).message}`);
     }
   }
 
@@ -133,14 +133,14 @@ export class JobService {
   async getTTSJob(jobId: string): Promise<TTSJob | null> {
     const jobKey = `jobs/tts/${jobId}.json`;
     const data = await this.storageManager.getObject(jobKey);
-    
+
     if (!data) return null;
-    
+
     try {
       const text = new TextDecoder().decode(data);
       return JSON.parse(text) as TTSJob;
-    } catch {
-      return null;
+    } catch (e) {
+      throw new Error(`TTSJob JSON解析失败: 内容="${new TextDecoder().decode(data)}", 错误=${(e as Error).message}`);
     }
   }
 
