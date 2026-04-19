@@ -12,6 +12,7 @@ export interface Env {
 
   // Minio 对象存储配置（用于语料收集）
   MINIO_ENDPOINT?: string;
+  MINIO_VPC?: Fetcher;
   MINIO_PORT?: string;
   MINIO_USE_SSL?: string;
   MINIO_ACCESS_KEY: string;
