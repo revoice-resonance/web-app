@@ -19,7 +19,15 @@ export class TTSServiceImpl implements TTSService {
     this.storageManager = new StorageManager(env);
   }
 
+  private async ensureBackendAvailable(): Promise<void> {
+    const isHealthy = await this.healthCheck();
+    if (!isHealthy) {
+      throw new Error('后端 TTS 服务连接异常，请确保服务已启动');
+    }
+  }
+
   async submitSynthesisJob(request: TTSRequest): Promise<TTSJob> {
+    await this.ensureBackendAvailable();
     // 验证输入文本
     if (!request.text || request.text.trim().length === 0) {
       throw new Error('合成文本不能为空');
@@ -42,6 +50,7 @@ export class TTSServiceImpl implements TTSService {
   }
 
   async submitVoiceCloneJob(referenceAudioKey: string, text: string): Promise<TTSJob> {
+    await this.ensureBackendAvailable();
     // 验证参考音频文件是否存在
     const audioExists = await this.storageManager.getAudio(referenceAudioKey);
     if (!audioExists) {
