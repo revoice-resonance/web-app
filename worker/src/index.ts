@@ -62,6 +62,14 @@ export default {
       // 首先尝试路由匹配
       const routeResponse = await router.match(request, serviceManager);
       if (routeResponse) {
+        // 强制检查响应内容
+        const clonedResponse = routeResponse.clone();
+        const text = await clonedResponse.text();
+        // 如果返回内容不是合法的 JSON 但前端以为是，在这里拦截
+        if (text.startsWith('-')) {
+           console.error(`[CRITICAL] 路由返回了非法数据: ${text}`);
+           return createCorsResponse(createErrorResponse(`路由返回非法数据: ${text}`), 500);
+        }
         return routeResponse;
       }
 
