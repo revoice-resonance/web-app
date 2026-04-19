@@ -49,19 +49,26 @@ export async function handleVoiceCloneJobSubmitRequest(request: Request, service
   }
 
   try {
-    const body = await request.json() as TTSVoiceCloneRequest;
-    const { referenceAudioKey, text } = body;
+    const formData = await request.formData();
+    const promptWav = formData.get('prompt_wav') as unknown as File;
+    const text = formData.get('tts_text') as string;
 
-    if (!referenceAudioKey || !text) {
-      return createCorsResponse(createErrorResponse('缺少参考音频标识符或合成文本'));
+    if (!promptWav || !text) {
+      return createCorsResponse(createErrorResponse('缺少参考音频文件或合成文本'));
     }
 
+    // 将上传的文件保存到 storage
+    const storageManager = serviceManager.getStorageManager();
+    const audioKey = `tts/reference/${crypto.randomUUID()}.wav`;
+    const audioBuffer = await promptWav.arrayBuffer();
+    await storageManager.saveAudio(audioKey, audioBuffer);
+
     const ttsService = serviceManager.getTTSService();
-    const job = await ttsService.submitVoiceCloneJob(referenceAudioKey, text);
+    const job = await ttsService.submitVoiceCloneJob(audioKey, text);
 
     await serviceManager.getLoggingService().info('Voice clone job submitted', {
       jobId: job.jobId,
-      referenceAudioKey,
+      audioKey,
       textLength: text.length,
     });
 
