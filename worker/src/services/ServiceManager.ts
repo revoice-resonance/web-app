@@ -4,13 +4,9 @@ import { TTSServiceImpl } from './TTSService';
 import { LoggingServiceImpl } from './LoggingService';
 import { StorageManager } from '../storage/StorageManager';
 import { CorpusServiceImpl } from './CorpusService';
+import { Env } from '../types/env';
 
-interface Env {
-  WHISPER_VPC?: Fetcher;
-  COSYVOICE_VPC?: Fetcher;
-  GEMINI_ASR_URL?: string;
-  GEMINI_ASR_KEY?: string;
-
+interface ServiceManagerEnv extends Env {
   MINIO_ENDPOINT?: string;
   MINIO_ACCESS_KEY?: string;
   MINIO_SECRET_KEY?: string;
@@ -28,10 +24,10 @@ export class ServiceManager {
   private corpusService: CorpusService;
   private storageManager: StorageManager;
 
-  constructor(private env: Env) {
+  constructor(private env: ServiceManagerEnv) {
     // 初始化存储管理器
     this.storageManager = new StorageManager(env);
-    
+
     // 初始化业务服务
     this.asrService = new ASRServiceImpl(env);
     this.ttsService = new TTSServiceImpl(env);
