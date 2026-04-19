@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mc config *)",
+      "Bash(mc alias *)",
+      "Bash(mc ls *)"
+    ]
+  }
+}
