@@ -61,21 +61,16 @@ export default {
     try {
       // 首先尝试路由匹配
       const routeResponse = await router.match(request, serviceManager);
-      if (routeResponse) {
-        // 强制检查响应内容
-        const clonedResponse = routeResponse.clone();
-        const text = await clonedResponse.text();
-        // 如果返回内容不是合法的 JSON 但前端以为是，在这里拦截
-        if (text.startsWith('-')) {
-           console.error(`[CRITICAL] 路由返回了非法数据: ${text}`);
-           return createCorsResponse(createErrorResponse(`路由返回非法数据: ${text}`), 500);
-        }
-        return routeResponse;
+      const response = routeResponse || await env.ASSETS.fetch(request);
+
+      // 强制克隆一份检查内容
+      const cloned = response.clone();
+      const text = await cloned.text();
+      if (text.trim().startsWith('-')) {
+        return createCorsResponse(createErrorResponse(`Worker 返回了无效数据: ${text.substring(0, 50)}`), 500);
       }
 
-      // 如果没有路由匹配，尝试服务静态资源
-      return env.ASSETS.fetch(request);
-
+      return response;
     } catch (error) {
       // 最后的全局错误处理
       await serviceManager.getLoggingService().error('Unhandled error in worker', {
