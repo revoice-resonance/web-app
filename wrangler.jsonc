@@ -1,6 +1,7 @@
 {
-	"main": "./src/index.ts",
+	"main": "./worker/src/index.ts",
 	"compatibility_date": "2025-04-28",
+	"assets": { "bucket": "./frontend/dist" },
 	"vpc_services": [
 		{
 			"binding": "COSYVOICE_VPC",
