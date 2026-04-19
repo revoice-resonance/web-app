@@ -66,11 +66,7 @@ export default {
       }
 
       // 如果没有路由匹配，尝试服务静态资源
-      const assetResponse = await env.ASSETS.fetch(request);
-      if (assetResponse.status === 404) {
-        return env.ASSETS.fetch(new Request(new URL(request.url).origin + '/index.html'));
-      }
-      return assetResponse;
+      return env.ASSETS.fetch(request);
 
     } catch (error) {
       // 最后的全局错误处理
