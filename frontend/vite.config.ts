@@ -42,11 +42,11 @@ export default defineConfig(({ mode }) => ({
         manualChunks(id) {
           if (!id.includes("node_modules")) return;
           // react 生态必须同 chunk（否则 context 初始化报错）
-          if (/\/node_modules\/(react|react-dom|scheduler|react-router-dom)\//.test(id)) {
+          if (/\/node_modules\/(react|react-dom|scheduler|react-router-dom|@radix-ui|@tanstack)\//.test(id)) {
             return "react";
           }
-          if (id.includes("@radix-ui")) return "radix";
-          if (id.includes("@supabase")) return "supabase";
+          if (id.includes("@radix-ui")) return "react";
+          if (id.includes("@tanstack")) return "react";
           if (id.includes("framer-motion") || id.includes("motion-dom")) return "motion";
           return "vendor";
         },
