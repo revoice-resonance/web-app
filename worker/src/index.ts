@@ -560,6 +560,11 @@ export default {
         return await handleAudioUploadRequest(request, serviceManager);
       }
       
+      // 兼容旧路径 /api/whisper-asr
+      if (path === '/api/whisper-asr') {
+        return await handleASRJobSubmitRequest(request, serviceManager);
+      }
+
       if (path === '/api/asr/jobs') {
         return await handleASRJobSubmitRequest(request, serviceManager);
       }
