@@ -119,93 +119,76 @@ export class MinioStorage implements StorageService {
   }
 
   /**
-   * 生成AWS签名（简化版）
+   * 生成 Basic Auth 签名
    */
-  private generateSignature(method: string, objectKey: string): string {
-    // 简化签名实现，实际项目中应使用完整的AWS签名算法
-    const timestamp = new Date().toISOString().replace(/[^0-9TZ]/g, '');
-    const stringToSign = `${method}\n\n\n${timestamp}\n/${this.bucketName}/${objectKey}`;
-    
-    // 使用HMAC-SHA256生成签名
-    // 这里简化处理，实际应使用完整的签名算法
-    return btoa(`${timestamp}:${this.config.secretKey}`);
+  private generateAuthHeader(): string {
+    const creds = `${this.config.accessKey}:${this.config.secretKey}`;
+    return `Basic ${btoa(creds)}`;
   }
 
-  async saveAudio(key: string, audio: ArrayBuffer, metadata?: Record<string, any>): Promise<{ url: string; key: string }> {
-    const objectKey = this.generateObjectKey('audio', key, 'wav');
-    await this.uploadToMinio(objectKey, audio, 'audio/wav', metadata);
-    
-    return {
-      url: this.buildMinioUrl(objectKey),
-      key: objectKey
+  /**
+   * 上传文件到Minio
+   */
+  private async uploadToMinio(objectKey: string, data: ArrayBuffer | Uint8Array, contentType?: string, metadata?: Record<string, any>): Promise<void> {
+    const url = this.buildMinioUrl(objectKey);
+
+    const headers: Record<string, string> = {
+      'Authorization': this.generateAuthHeader(),
+      'Content-Type': contentType || 'application/octet-stream',
+      'Content-Length': data.byteLength.toString(),
     };
-  }
 
-  async getAudio(key: string): Promise<ArrayBuffer | null> {
-    return await this.downloadFromMinio(key);
-  }
+    // 添加自定义元数据
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          headers[`x-amz-meta-${key}`] = String(value);
+        }
+      });
+    }
 
-  async getAudioUrl(key: string, expiresIn: number = 3600): Promise<string> {
-    // 生成预签名URL（简化实现，实际应使用Minio SDK）
-    return this.buildMinioUrl(key);
-  }
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers,
+      body: data,
+    });
 
-  async deleteAudio(key: string): Promise<void> {
-    await this.deleteObject(key);
-  }
-
-  async saveTranscription(key: string, result: TranscriptionResult): Promise<{ url: string; key: string }> {
-    const objectKey = this.generateObjectKey('transcriptions', key, 'json');
-    await this.uploadToMinio(objectKey, new TextEncoder().encode(JSON.stringify(result)), 'application/json');
-    
-    return {
-      url: this.buildMinioUrl(objectKey),
-      key: objectKey
-    };
-  }
-
-  async getTranscription(key: string): Promise<TranscriptionResult | null> {
-    const data = await this.downloadFromMinio(key);
-    
-    if (!data) return null;
-    
-    try {
-      const text = new TextDecoder().decode(data);
-      return JSON.parse(text) as TranscriptionResult;
-    } catch {
-      return null;
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Minio upload failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
   }
 
-  async getTranscriptionUrl(key: string, expiresIn: number = 3600): Promise<string> {
-    return this.buildMinioUrl(key);
-  }
+  /**
+   * 从Minio下载文件
+   */
+  private async downloadFromMinio(objectKey: string): Promise<ArrayBuffer | null> {
+    const url = this.buildMinioUrl(objectKey);
 
-  async putObject(key: string, data: ArrayBuffer | string, contentType?: string): Promise<{ url: string; key: string }> {
-    const buffer = typeof data === 'string' ? new TextEncoder().encode(data) : data;
-    const actualContentType = contentType || (typeof data === 'string' ? 'text/plain' : 'application/octet-stream');
-    
-    await this.uploadToMinio(key, buffer, actualContentType);
-    
-    return {
-      url: this.buildMinioUrl(key),
-      key: key
+    const headers: Record<string, string> = {
+      'Authorization': this.generateAuthHeader(),
     };
-  }
 
-  async getObject(key: string): Promise<ArrayBuffer | null> {
-    return await this.downloadFromMinio(key);
-  }
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
 
-  async getObjectUrl(key: string, expiresIn: number = 3600): Promise<string> {
-    return this.buildMinioUrl(key);
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`Minio download failed: ${response.status} ${response.statusText}`);
+    }
+
+    return await response.arrayBuffer();
   }
 
   async deleteObject(key: string): Promise<void> {
     const url = this.buildMinioUrl(key);
-    
+
     const headers: Record<string, string> = {
-      'Authorization': `AWS ${this.config.accessKey}:${this.generateSignature('DELETE', key)}`,
+      'Authorization': this.generateAuthHeader(),
     };
 
     const response = await fetch(url, {
@@ -219,11 +202,10 @@ export class MinioStorage implements StorageService {
   }
 
   async getObjectMetadata(key: string): Promise<Record<string, any> | null> {
-    // 简化实现，实际应使用HEAD请求获取元数据
     const url = this.buildMinioUrl(key);
-    
+
     const headers: Record<string, string> = {
-      'Authorization': `AWS ${this.config.accessKey}:${this.generateSignature('HEAD', key)}`,
+      'Authorization': this.generateAuthHeader(),
     };
 
     const response = await fetch(url, {
@@ -236,7 +218,6 @@ export class MinioStorage implements StorageService {
       throw new Error(`Minio metadata fetch failed: ${response.status} ${response.statusText}`);
     }
 
-    // 提取响应头中的元数据
     const metadata: Record<string, any> = {};
     response.headers.forEach((value, key) => {
       if (key.toLowerCase().startsWith('x-amz-meta-')) {
