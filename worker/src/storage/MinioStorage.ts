@@ -68,6 +68,13 @@ export class MinioStorage implements StorageService {
     );
   }
 
+  private async safeFetch(url: string, init: RequestInit): Promise<Response> {
+    if (this.config.vpc) {
+      return this.config.vpc.fetch(url, init);
+    }
+    return fetch(url, init);
+  }
+
   private async uploadToMinio(objectKey: string, data: ArrayBuffer | Uint8Array, contentType?: string, metadata?: Record<string, any>): Promise<void> {
     const url = this.buildMinioUrl(objectKey);
     let headers: Record<string, string> = {
@@ -85,7 +92,7 @@ export class MinioStorage implements StorageService {
     const bufferData = data instanceof Uint8Array ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) : data;
     headers = await this.getSignedHeaders('PUT', url, bufferData as ArrayBuffer, headers);
 
-    const response = await fetch(url, { method: 'PUT', headers, body: data });
+    const response = await this.safeFetch(url, { method: 'PUT', headers, body: data });
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Minio upload failed: ${response.status} ${response.statusText} - ${errorText}`);
@@ -96,7 +103,7 @@ export class MinioStorage implements StorageService {
     const url = this.buildMinioUrl(objectKey);
     const headers = await this.getSignedHeaders('GET', url, new ArrayBuffer(0));
 
-    const response = await fetch(url, { method: 'GET', headers });
+    const response = await this.safeFetch(url, { method: 'GET', headers });
     if (!response.ok) {
       if (response.status === 404) return null;
       throw new Error(`Minio download failed: ${response.status} ${response.statusText}`);
@@ -145,7 +152,7 @@ export class MinioStorage implements StorageService {
   async deleteObject(key: string): Promise<void> {
     const url = this.buildMinioUrl(key);
     const headers = await this.getSignedHeaders('DELETE', url, new ArrayBuffer(0));
-    const response = await fetch(url, { method: 'DELETE', headers });
+    const response = await this.safeFetch(url, { method: 'DELETE', headers });
     if (!response.ok && response.status !== 404) {
       throw new Error(`Minio delete failed: ${response.status} ${response.statusText}`);
     }
@@ -154,7 +161,7 @@ export class MinioStorage implements StorageService {
   async getObjectMetadata(key: string): Promise<Record<string, any> | null> {
     const url = this.buildMinioUrl(key);
     const headers = await this.getSignedHeaders('HEAD', url, new ArrayBuffer(0));
-    const response = await fetch(url, { method: 'HEAD', headers });
+    const response = await this.safeFetch(url, { method: 'HEAD', headers });
     if (!response.ok) return response.status === 404 ? null : null;
     const metadata: Record<string, any> = {};
     response.headers.forEach((value, k) => {
