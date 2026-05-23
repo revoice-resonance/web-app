@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  resonance-server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    image: resonance-server:latest
+    container_name: resonance-server
+    ports:
+      - "8080:8080"
+    environment:
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-resonance}
+      - MINIO_REGION=${MINIO_REGION:-us-east-1}
+      - MINIO_USE_SSL=${MINIO_USE_SSL:-false}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - resonance-net
+
+networks:
+  resonance-net:
+    driver: bridge
