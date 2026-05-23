@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -15,7 +16,12 @@ import (
 	"github.com/minc-nice-100/project-resonance/server/internal/storage"
 )
 
+// K8s health state
+var ready atomic.Bool
+
 func main() {
+	ready.Store(false)
+
 	// Parse flags
 	addr := flag.String("addr", ":8080", "server address")
 	minioEndpoint := flag.String("minio-endpoint", os.Getenv("MINIO_ENDPOINT"), "MinIO endpoint")
@@ -42,28 +48,43 @@ func main() {
 		})
 		if err != nil {
 			log.Printf("Warning: Failed to initialize MinIO storage: %v", err)
-			// Continue without storage - some features will be disabled
 		} else {
 			// Ensure bucket exists
 			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			if err := store.EnsureBucket(ctx); err != nil {
 				log.Printf("Warning: Failed to ensure bucket exists: %v", err)
+			} else {
+				ready.Store(true) // Mark as ready after successful init
 			}
 			cancel()
 		}
 	} else {
 		log.Println("Warning: MinIO not configured, running in limited mode")
+		ready.Store(true) // Ready even without MinIO
 	}
 
 	// Initialize services
 	jobService := service.NewJobService(store)
-
-	// Initialize handlers
 	handler := api.NewHandler(jobService)
 
 	// Setup router
 	mux := http.NewServeMux()
 	handler.SetupRoutes(mux)
+
+	// K8s health endpoints for probes
+	mux.HandleFunc("/health/live", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+	mux.HandleFunc("/health/ready", func(w http.ResponseWriter, r *http.Request) {
+		if ready.Load() {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status":"ready"}`))
+		} else {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(`{"status":"not ready"}`))
+		}
+	})
 
 	// Add CORS middleware
 	corsMux := corsMiddleware(mux)
@@ -91,9 +112,10 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
+	ready.Store(false)
 
 	// Graceful shutdown with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
