@@ -50,7 +50,8 @@ export async function signS3Request(
   ].join('\n');
 
   // 4. Signing Key
-  const kDate = await hmac(encoder.encode(`AWS4${secretKey}`), dateShort);
+  const secretKeyBytes = encoder.encode(`AWS4${secretKey}`);
+  const kDate = await hmac(secretKeyBytes.buffer as ArrayBuffer, dateShort);
   const kRegion = await hmac(kDate, region);
   const kService = await hmac(kRegion, 's3');
   const kSigning = await hmac(kService, 'aws4_request');
