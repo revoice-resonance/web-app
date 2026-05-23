@@ -1,5 +1,5 @@
-import { ServiceManager } from './services/ServiceManager';
-import { createCorsResponse, createSuccessResponse, createErrorResponse, generateId } from './utils';
+import { ServiceManager } from '../services/ServiceManager';
+import { createCorsResponse, createSuccessResponse, createErrorResponse, generateId } from '../utils';
 
 export interface Env {
   // VPC 绑定

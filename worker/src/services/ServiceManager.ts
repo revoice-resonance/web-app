@@ -8,9 +8,9 @@ import { Env } from '../types/env';
 
 interface ServiceManagerEnv extends Env {
   MINIO_ENDPOINT?: string;
-  MINIO_ACCESS_KEY?: string;
-  MINIO_SECRET_KEY?: string;
-  MINIO_BUCKET_NAME?: string;
+  MINIO_PORT?: string;
+  MINIO_USE_SSL?: string;
+  MINIO_REGION?: string;
 }
 
 /**
