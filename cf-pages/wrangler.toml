@@ -1,0 +1,9 @@
+# Cloudflare Pages Functions
+# This directory contains the Workers code that runs on Cloudflare Pages
+
+# Routes configuration for Cloudflare Pages
+# All paths are routed to the _worker.js
+
+[[catchall]]
+route = "/*"
+script = "_worker"
