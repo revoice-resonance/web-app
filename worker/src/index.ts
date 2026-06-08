@@ -13,6 +13,7 @@ import { createCorsResponse, createSuccessResponse, createErrorResponse } from '
 import { handleAudioUploadRequest } from './handlers/audio';
 import { handleASRJobSubmitRequest, handleASRJobStatusRequest } from './handlers/asr';
 import { handleTTSJobSubmitRequest, handleVoiceCloneJobSubmitRequest, handleTTSJobStatusRequest } from './handlers/tts';
+import { handleStepFunTTSRequest } from './handlers/stepfunTts';
 import { handleLogsRequest, handleClientLogsUploadRequest, handleLogsQueryRequest, handleLogsStatsRequest } from './handlers/logs';
 import { handleCorpusUploadRequest, handleCorpusBatchUploadRequest, handleCorpusQueryRequest, handleCorpusStatsRequest } from './handlers/corpus';
 import { handleHealthCheck, handleStatsRequest } from './handlers/health';
@@ -59,6 +60,23 @@ export default {
     const serviceManager = new ServiceManager(env);
 
     try {
+      // StepFun TTS 直连通道（需要访问 env.STEPFUN_API_KEY，故在 router 之前 short-circuit）
+      const url = new URL(request.url);
+      if (request.method === 'OPTIONS' && url.pathname === '/api/tts/stepfun') {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '86400',
+          },
+        });
+      }
+      if (request.method === 'POST' && url.pathname === '/api/tts/stepfun') {
+        return await handleStepFunTTSRequest(request, serviceManager, env);
+      }
+
       // 首先尝试路由匹配
       const routeResponse = await router.match(request, serviceManager);
       const response = routeResponse || await env.ASSETS.fetch(request);

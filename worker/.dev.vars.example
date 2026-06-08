@@ -1,0 +1,11 @@
+# StepFun TTS — 本地开发用
+# 1. cp worker/.dev.vars.example worker/.dev.vars
+# 2. 把 STEPFUN_API_KEY 填成你在 platform.stepfun.com 的真实 key
+# 3. worker/.dev.vars 已被 .gitignore，不会进 git
+# 4. wrangler dev 会自动读这个文件
+STEPFUN_API_KEY=sk-your-stepfun-key-here
+
+# 可选覆盖（不填走代码默认值）
+# STEPFUN_BASE_URL=https://api.stepfun.com/v1
+# STEPFUN_DEFAULT_MODEL=step-tts-mini
+# STEPFUN_DEFAULT_VOICE=wenrounvsheng
