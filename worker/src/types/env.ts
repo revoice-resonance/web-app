@@ -20,6 +20,14 @@ export interface Env {
   MINIO_BUCKET_NAME: string;
   MINIO_REGION?: string;
 
+  // CloudSpeech TTS（云端兜底 / 独立合成通道）
+  // 注入方式：`wrangler secret put CLOUD_SPEECH_API_KEY`（生产）/ `worker/.dev.vars`（本地）
+  // 永远不要把 key 明文写进任何文件或 wrangler.jsonc
+  CLOUD_SPEECH_API_KEY?: string;
+  CLOUD_SPEECH_BASE_URL?: string;   // 可选覆盖，默认 https://api.cloud-speech.com/v1
+  CLOUD_SPEECH_DEFAULT_MODEL?: string;  // 可选覆盖，默认 step-tts-mini
+  CLOUD_SPEECH_DEFAULT_VOICE?: string;  // 可选覆盖，默认 wenrounvsheng
+
   // 静态资源
   ASSETS: Fetcher;
 }

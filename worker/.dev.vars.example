@@ -1,0 +1,11 @@
+# CloudSpeech TTS — 本地开发用
+# 1. cp worker/.dev.vars.example worker/.dev.vars
+# 2. 把 CLOUD_SPEECH_API_KEY 填成你在 platform.cloud-speech.com 的真实 key
+# 3. worker/.dev.vars 已被 .gitignore，不会进 git
+# 4. wrangler dev 会自动读这个文件
+CLOUD_SPEECH_API_KEY=sk-your-cloud-speech-key-here
+
+# 可选覆盖（不填走代码默认值）
+# CLOUD_SPEECH_BASE_URL=https://api.cloud-speech.com/v1
+# CLOUD_SPEECH_DEFAULT_MODEL=step-tts-mini
+# CLOUD_SPEECH_DEFAULT_VOICE=wenrounvsheng
