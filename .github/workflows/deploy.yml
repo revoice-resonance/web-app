@@ -16,8 +16,31 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - uses: cloudflare/wrangler-action@v3
+
+      # 工作区统一安装（frontend + worker，使用根 pnpm-lock.yaml）
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # 构建：根 build script 已改为 pnpm（不再依赖 runner 上未安装的 bun）
+      - name: Build frontend
+        run: pnpm build
+
+      # 质量检查：非阻塞（continue-on-error），先暴露问题但不阻断部署
+      # 注意：--filter 用目录选择器（./frontend、./worker），按包名过滤会因包名不匹配而静默跳过
+      - name: Lint frontend
+        continue-on-error: true
+        run: pnpm --filter ./frontend lint
+      - name: Typecheck frontend
+        continue-on-error: true
+        run: pnpm --filter ./frontend typecheck
+      - name: Test frontend
+        continue-on-error: true
+        run: pnpm --filter ./frontend test
+      - name: Typecheck worker
+        continue-on-error: true
+        run: pnpm --filter ./worker typecheck
+
+      - name: Deploy worker
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -11,6 +12,10 @@ import (
 	"github.com/minc-nice-100/project-resonance/server/internal/storage"
 	"github.com/minc-nice-100/project-resonance/server/internal/types"
 )
+
+// ErrStorageNotConfigured 表示 MinIO 未初始化（未配置或初始化失败）。
+// 调用方应将其映射为 HTTP 503，而非 nil 解引用 panic。
+var ErrStorageNotConfigured = errors.New("storage not configured: MinIO not initialized")
 
 // Idempotency record for caching responses
 type IdempotencyRecord struct {
@@ -183,6 +188,9 @@ func (s *JobService) UploadCorpus(ctx context.Context, data *types.CorpusUploadR
 
 	// Store audio file
 	if len(audio) > 0 {
+		if s.storage == nil {
+			return "", ErrStorageNotConfigured
+		}
 		audioKey := fmt.Sprintf("corpus/audio/%s.wav", corpusID)
 		if err := s.storage.PutObject(ctx, audioKey, audio, "audio/wav", map[string]string{
 			"corpusId":   corpusID,
@@ -193,6 +201,9 @@ func (s *JobService) UploadCorpus(ctx context.Context, data *types.CorpusUploadR
 	}
 
 	// Store metadata
+	if s.storage == nil {
+		return "", ErrStorageNotConfigured
+	}
 	metadataKey := fmt.Sprintf("corpus/meta/%s.json", corpusID)
 	meta := map[string]interface{}{
 		"corpusId":   corpusID,
@@ -312,11 +323,17 @@ func (s *JobService) HealthCheck(ctx context.Context) map[string]interface{} {
 
 // StoreAudio stores audio data in MinIO
 func (s *JobService) StoreAudio(ctx context.Context, key string, data []byte) error {
+	if s.storage == nil {
+		return ErrStorageNotConfigured
+	}
 	return s.storage.PutObject(ctx, key, data, "audio/wav", nil)
 }
 
 // BuildAudioURL builds a URL for an audio object
 func (s *JobService) BuildAudioURL(key string) string {
+	if s.storage == nil {
+		return ""
+	}
 	return s.storage.BuildURL(key)
 }
 

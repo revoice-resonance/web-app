@@ -1,5 +1,5 @@
 import { Cpu, Cloud, Globe, Check, Loader2 } from 'lucide-react';
-import type { ASREngine, ASREngineStage } from '@/hooks/useWhisperASR';
+import type { ASREngine, ASREngineStage } from '@/types/asrEngine';
 
 interface ASREngineIndicatorProps {
   engine: ASREngine | null;

@@ -12,25 +12,32 @@ export async function handleCorpusUploadRequest(request: Request, serviceManager
   try {
     const formData = await request.formData();
 
-    // 获取音频文件
-    const audioFileRaw = formData.get('audio') as unknown;
-    // 使用类型守卫
+    // 获取音频文件：前端用 'file'，旧调用方用 'audio'，二者兼容
+    const audioFileRaw = (formData.get('file') ?? formData.get('audio')) as unknown;
     if (!audioFileRaw || !(audioFileRaw instanceof File)) {
-      return createCorsResponse(createErrorResponse('缺少音频文件或格式错误'));
+      return createCorsResponse(createErrorResponse('缺少音频文件或格式错误'), 400);
     }
     const audioFile = audioFileRaw;
 
-    // 获取转录文本
-    const transcript = formData.get('transcript') as string;
+    // 获取转录文本：前端用 'label'，旧调用方用 'transcript'
+    const transcript = (formData.get('label') as string) ?? (formData.get('transcript') as string);
     if (!transcript) {
-      return createCorsResponse(createErrorResponse('缺少转录文本'));
+      return createCorsResponse(createErrorResponse('缺少转录文本'), 400);
     }
 
     // 获取可选参数
     const speakerId = formData.get('speakerId') as string;
+    const durationMsStr = formData.get('duration_ms') as string;
+    const source = formData.get('source') as string;
     const metadataStr = formData.get('metadata') as string;
 
-    const metadata = metadataStr ? JSON.parse(metadataStr) : undefined;
+    const parsedMetadata = metadataStr ? JSON.parse(metadataStr) : {};
+    // duration_ms / source 不在 CorpusData 字段内，并入 metadata 一并保留
+    const metadata: Record<string, any> = {
+      ...parsedMetadata,
+      ...(durationMsStr ? { duration_ms: Number(durationMsStr) } : {}),
+      ...(source ? { source } : {}),
+    };
 
     const audioBuffer = await audioFile.arrayBuffer();
 
@@ -47,6 +54,7 @@ export async function handleCorpusUploadRequest(request: Request, serviceManager
     return createCorsResponse(createSuccessResponse({
       message: '语料上传成功',
       corpusId: result.corpusId,
+      file_name: `corpus_${result.corpusId}`,
       audioSize: audioBuffer.byteLength,
       transcriptLength: transcript.length,
     }));
