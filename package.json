@@ -2,8 +2,8 @@
   "name": "project-resonance",
   "private": true,
   "scripts": {
-    "dev": "cd frontend && bun dev",
-    "build": "cd frontend && bun run build",
-    "deploy": "bun run build && wrangler deploy"
+    "dev": "cd frontend && pnpm dev",
+    "build": "cd frontend && pnpm run build",
+    "deploy": "pnpm run build && wrangler deploy"
   }
 }

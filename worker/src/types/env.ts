@@ -30,4 +30,10 @@ export interface Env {
 
   // 静态资源
   ASSETS: Fetcher;
+
+  // 安全配置（可选）
+  // ALLOWED_ORIGIN: 限制 CORS 允许的来源（如 https://app.example.com）；未设置时回显请求 Origin
+  ALLOWED_ORIGIN?: string;
+  // API_KEY: 写接口共享密钥；未设置时不鉴权（仅限本地开发），生产部署应配置并通过 X-API-Key 头访问
+  API_KEY?: string;
 }

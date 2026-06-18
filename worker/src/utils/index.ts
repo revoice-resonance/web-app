@@ -67,7 +67,7 @@ export function getCurrentTimestamp(): string {
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, X-API-Key',
 };
 
 export function createCorsResponse(body?: any, status = 200): Response {

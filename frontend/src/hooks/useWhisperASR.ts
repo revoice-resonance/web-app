@@ -32,6 +32,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** axios-retry 决策树：仅 5xx / 429 / 网络错误重试，4xx 不重试 */
 function isRetryable(status: number | null): boolean {
   if (status === null) return true; // 网络 / timeout
+  if (status === 501) return false; // NOT_IMPLEMENTED 是永久错误，重试无意义，直接降级
   if (status === 429) return true;
   if (status >= 500 && status <= 599) return true;
   return false;

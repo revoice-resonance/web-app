@@ -80,14 +80,16 @@ export class ASRServiceImpl implements ASRService {
       // 执行语音识别（这里应该调用GPU机器）
       const result = await this.performTranscription(audio);
       
-      // 保存转录结果到S3
-      const resultKey = `transcriptions/${jobId}.json`;
-      await this.storageManager.saveTranscription(resultKey, result);
+      // 保存转录结果到S3（使用 saveTranscription 实际返回的 key，避免与下游 getTranscription 不一致）
+      const { key: resultKey } = await this.storageManager.saveTranscription(
+        `transcriptions/${jobId}`,
+        result,
+      );
 
       // 更新任务状态为完成
-      await this.jobService.updateASRJob(jobId, { 
-        status: 'completed', 
-        resultKey 
+      await this.jobService.updateASRJob(jobId, {
+        status: 'completed',
+        resultKey,
       });
 
     } catch (error) {

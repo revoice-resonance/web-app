@@ -92,20 +92,22 @@ export class TTSServiceImpl implements TTSService {
       // 执行语音合成（这里应该调用GPU机器）
       const audio = await this.performSynthesis(job.request);
       
-      // 保存合成音频到S3
-      const audioKey = `tts/audio/${jobId}.wav`;
-      await this.storageManager.saveAudio(audioKey, audio);
+      // 保存合成音频到S3（使用 saveAudio 实际返回的 key，避免与下游 getAudio 不一致）
+      const { key: audioKey } = await this.storageManager.saveAudio(
+        `tts/audio/${jobId}`,
+        audio,
+      );
 
       // 更新任务状态为完成
-      await this.jobService.updateTTSJob(jobId, { 
-        status: 'completed', 
-        audioKey 
+      await this.jobService.updateTTSJob(jobId, {
+        status: 'completed',
+        audioKey,
       });
 
     } catch (error) {
       // 更新任务状态为失败
-      await this.jobService.updateTTSJob(jobId, { 
-        status: 'failed', 
+      await this.jobService.updateTTSJob(jobId, {
+        status: 'failed',
         error: error instanceof Error ? error.message : '未知错误'
       });
     }
@@ -130,15 +132,17 @@ export class TTSServiceImpl implements TTSService {
 
       // 执行语音克隆（这里应该调用GPU机器）
       const audio = await this.performVoiceCloning(referenceAudio, job.request.text);
-      
-      // 保存合成音频到S3
-      const audioKey = `tts/cloned/${jobId}.wav`;
-      await this.storageManager.saveAudio(audioKey, audio);
+
+      // 保存合成音频到S3（使用 saveAudio 实际返回的 key）
+      const { key: audioKey } = await this.storageManager.saveAudio(
+        `tts/cloned/${jobId}`,
+        audio,
+      );
 
       // 更新任务状态为完成
-      await this.jobService.updateTTSJob(jobId, { 
-        status: 'completed', 
-        audioKey 
+      await this.jobService.updateTTSJob(jobId, {
+        status: 'completed',
+        audioKey,
       });
 
     } catch (error) {
