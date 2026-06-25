@@ -30,6 +30,8 @@ func main() {
 	minioBucket := flag.String("minio-bucket", os.Getenv("MINIO_BUCKET_NAME"), "MinIO bucket name")
 	minioRegion := flag.String("minio-region", "us-east-1", "MinIO region")
 	minioUseSSL := flag.Bool("minio-ssl", false, "Use SSL for MinIO")
+	allowedOrigin := flag.String("allowed-origin", os.Getenv("ALLOWED_ORIGIN"), "CORS allowed origin (empty = reflect request Origin)")
+	apiKey := flag.String("api-key", os.Getenv("API_KEY"), "Shared secret for write endpoints (empty = no auth, dev only)")
 
 	flag.Parse()
 
@@ -60,7 +62,7 @@ func main() {
 		}
 	} else {
 		log.Println("Warning: MinIO not configured, running in limited mode")
-		ready.Store(true) // Ready even without MinIO
+		// 不再标记 ready：未配置存储时，依赖存储的接口应返回 503，而不是 ready 后 nil panic
 	}
 
 	// Initialize services
@@ -77,22 +79,36 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 	mux.HandleFunc("/health/ready", func(w http.ResponseWriter, r *http.Request) {
-		if ready.Load() {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"status":"ready"}`))
-		} else {
+		if !ready.Load() {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write([]byte(`{"status":"not ready"}`))
+			return
 		}
+		if store == nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(`{"status":"storage not configured"}`))
+			return
+		}
+		// 实时探测 MinIO，避免初始化后存储掉线仍被判定 ready
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		ok := store.HealthCheck(ctx)
+		cancel()
+		if !ok {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte(`{"status":"storage unavailable"}`))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ready"}`))
 	})
 
-	// Add CORS middleware
-	corsMux := corsMiddleware(mux)
+	// CORS（外层）+ 鉴权（内层）：OPTIONS 预检在 CORS 层短路，不进入鉴权
+	rootHandler := corsMiddleware(apiKeyAuth(mux, *apiKey), *allowedOrigin)
 
 	// Create server
 	srv := &http.Server{
 		Addr:         *addr,
-		Handler:      corsMux,
+		Handler:      rootHandler,
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second,
@@ -125,18 +141,59 @@ func main() {
 	log.Println("Server exited")
 }
 
-// corsMiddleware adds CORS headers
-func corsMiddleware(next http.Handler) http.Handler {
+// resolveOrigin picks the Access-Control-Allow-Origin value.
+// If allowedOrigin is set, use it (browsers reject non-matching cross-origin).
+// Otherwise reflect the request Origin (better than a wildcard '*').
+func resolveOrigin(allowedOrigin string, r *http.Request) string {
+	if allowedOrigin != "" {
+		return allowedOrigin
+	}
+	if o := r.Header.Get("Origin"); o != "" {
+		return o
+	}
+	return "*"
+}
+
+// corsMiddleware (外层) 添加 CORS 头并短路 OPTIONS 预检，
+// 使预检请求不会进入内层的 apiKeyAuth。
+func corsMiddleware(next http.Handler, allowedOrigin string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := resolveOrigin(allowedOrigin, r)
+		w.Header().Set("Access-Control-Allow-Origin", origin)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Idempotency-Key, X-Client-Info")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Idempotency-Key, X-Client-Info, X-API-Key")
+		w.Header().Set("Vary", "Origin")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
+		next.ServeHTTP(w, r)
+	})
+}
+
+// apiKeyAuth (内层) 限制写操作（非 GET/OPTIONS）需要 X-API-Key。
+// apiKey 为空时不鉴权（仅本地开发）；生产部署应设置 API_KEY，并由客户端发送 X-API-Key。
+// 健康检查端点始终公开。
+func apiKeyAuth(next http.Handler, apiKey string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if apiKey == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// GET / OPTIONS / 健康检查走公开
+		if r.Method == http.MethodGet || r.Method == http.MethodOptions ||
+			r.URL.Path == "/health/live" || r.URL.Path == "/health/ready" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if r.Header.Get("X-API-Key") != apiKey {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte(`{"ok":false,"error":"Unauthorized"}`))
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

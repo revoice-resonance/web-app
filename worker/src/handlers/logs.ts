@@ -32,10 +32,29 @@ export async function handleClientLogsUploadRequest(request: Request, serviceMan
   try {
     const body = await request.json();
 
-    const logs = (body as any).logs as any[];
-    if (!Array.isArray(logs)) {
-      return createCorsResponse(createErrorResponse('请求格式错误，需要 logs 数组'));
+    // 前端 DiagnosticsPanel 发送字段 'entries'，旧路径用 'logs'，二者兼容
+    const rawLogs = (body as any).entries ?? (body as any).logs;
+    if (!Array.isArray(rawLogs)) {
+      return createCorsResponse(createErrorResponse('请求格式错误，需要 entries/logs 数组'), 400);
     }
+
+    // 前端条目形状 { ts, level, message } → worker LogEntry { timestamp, level, message, metadata }
+    // 前端 level 含 'log'，worker 仅允许 info|warn|error；未知值兜底为 'info'
+    const normalizeLevel = (lvl: string): 'info' | 'warn' | 'error' => {
+      if (lvl === 'warn' || lvl === 'error') return lvl;
+      return 'info';
+    };
+    const requestMeta = {
+      ...(body as any).ua ? { ua: (body as any).ua } : {},
+      ...(body as any).url ? { url: (body as any).url } : {},
+      ...(body as any).ts ? { clientTs: (body as any).ts } : {},
+    };
+    const logs = rawLogs.map((e: any) => ({
+      timestamp: e.ts || e.timestamp || new Date().toISOString(),
+      level: normalizeLevel(e.level),
+      message: typeof e.message === 'string' ? e.message : JSON.stringify(e.message ?? ''),
+      ...(Object.keys(requestMeta).length ? { metadata: requestMeta } : {}),
+    }));
 
     const loggingService = serviceManager.getLoggingService();
     await loggingService.saveClientLogs(logs);

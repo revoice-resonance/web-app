@@ -1,6 +1,6 @@
 import { ServiceManager } from '../services/ServiceManager';
 import { createCorsResponse, createSuccessResponse, createErrorResponse } from '../utils';
-import { TTSJobSubmitRequest, TTSVoiceCloneRequest, TTSJobStatusRequest } from '../types/requests';
+import { TTSJobSubmitRequest, TTSJobStatusRequest } from '../types/requests';
 
 /**
  * 提交TTS合成任务
@@ -12,22 +12,19 @@ export async function handleTTSJobSubmitRequest(request: Request, serviceManager
 
   try {
     const body = await request.json() as TTSJobSubmitRequest;
-    const { text, voice, speed, pitch } = body;
+    const { text } = body;
 
     if (!text) {
-      return createCorsResponse(createErrorResponse('缺少合成文本'));
+      return createCorsResponse(createErrorResponse('缺少合成文本'), 400);
     }
 
-    const ttsService = serviceManager.getTTSService();
-    const job = await ttsService.submitSynthesisJob({ text, voice, speed, pitch });
-
-    await serviceManager.getLoggingService().info('TTS job submitted', {
-      jobId: job.jobId,
-      textLength: text.length,
-      voice: voice || 'default',
-    });
-
-    return createCorsResponse(createSuccessResponse(job));
+    // CosyVoice 本地通道为 mock（performSynthesis 返回硬编码字节）→ 显式 501。
+    // 前端 useCosyVoiceTTS 会把任何 JSON/非音频响应当作错误抛出，501 与该行为一致。
+    // 真实合成请使用云端通道 /api/tts/cloud-speech，或配置 COSYVOICE_VPC 后实现 performSynthesis。
+    return createCorsResponse(
+      createErrorResponse('TTS 合成暂未实现（CosyVoice 本地通道为 mock），请使用 /api/tts/cloud-speech 云端通道'),
+      501
+    );
 
   } catch (error) {
     await serviceManager.getLoggingService().error('TTS job submission failed', {
@@ -54,25 +51,14 @@ export async function handleVoiceCloneJobSubmitRequest(request: Request, service
     const text = formData.get('tts_text') as string;
 
     if (!promptWav || !text) {
-      return createCorsResponse(createErrorResponse('缺少参考音频文件或合成文本'));
+      return createCorsResponse(createErrorResponse('缺少参考音频文件或合成文本'), 400);
     }
 
-    // 将上传的文件保存到 storage
-    const storageManager = serviceManager.getStorageManager();
-    const audioKey = `tts/reference/${crypto.randomUUID()}.wav`;
-    const audioBuffer = await promptWav.arrayBuffer();
-    await storageManager.saveAudio(audioKey, audioBuffer);
-
-    const ttsService = serviceManager.getTTSService();
-    const job = await ttsService.submitVoiceCloneJob(audioKey, text);
-
-    await serviceManager.getLoggingService().info('Voice clone job submitted', {
-      jobId: job.jobId,
-      audioKey,
-      textLength: text.length,
-    });
-
-    return createCorsResponse(createSuccessResponse(job));
+    // 语音克隆本地通道为 mock（performVoiceCloning 返回硬编码字节）→ 显式 501。
+    return createCorsResponse(
+      createErrorResponse('语音克隆暂未实现（CosyVoice 本地通道为 mock）'),
+      501
+    );
 
   } catch (error) {
     await serviceManager.getLoggingService().error('Voice clone job submission failed', {

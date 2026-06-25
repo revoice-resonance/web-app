@@ -20,12 +20,18 @@ export async function signS3Request(
   const payloadHash = await crypto.subtle.digest('SHA-256', payload);
   const payloadHashHex = Array.from(new Uint8Array(payloadHash)).map(b => b.toString(16).padStart(2, '0')).join('');
 
+  // 规范化：所有 header key 统一转小写，确保后续按小写 key 查找时能命中
+  // （调用方传入的 'Content-Type' / 'Content-Length' / 'x-amz-meta-*' 原始大小写，
+  //  若不规范化，下面 headers[k.toLowerCase()] 会拿到 undefined，.trim() 抛错）
+  headers = Object.fromEntries(
+    Object.entries(headers).map(([k, v]) => [k.toLowerCase(), v])
+  );
   headers['x-amz-content-sha256'] = payloadHashHex;
   headers['x-amz-date'] = amzDate;
   headers['host'] = host;
 
   // 2. Canonical Request
-  const sortedHeaderNames = Object.keys(headers).map(k => k.toLowerCase()).sort();
+  const sortedHeaderNames = Object.keys(headers).sort();
   const canonicalHeaders = sortedHeaderNames.map(k => `${k}:${headers[k].trim()}`).join('\n');
   const signedHeaders = sortedHeaderNames.join(';');
 

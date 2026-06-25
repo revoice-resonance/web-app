@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -524,7 +525,18 @@ func (h *Handler) wrapIdempotent(f func(w http.ResponseWriter, r *http.Request) 
 
 		data, status, err := f(w, r)
 		if err != nil {
+			// 存储未配置 → 503，而非默认 500
+			if errors.Is(err, service.ErrStorageNotConfigured) {
+				status = http.StatusServiceUnavailable
+			}
 			Error(w, status, err.Error())
+			return
+		}
+
+		// 非 200 且无 error（如 405 方法不允许 / 400 参数缺失）：传播真实状态码，
+		// 不要被下方的 Success 伪装成 200。
+		if status != http.StatusOK {
+			Error(w, status, http.StatusText(status))
 			return
 		}
 

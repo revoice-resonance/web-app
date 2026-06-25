@@ -61,8 +61,8 @@ func (s *MinioStorage) EnsureBucket(ctx context.Context) error {
 
 func (s *MinioStorage) PutObject(ctx context.Context, key string, data []byte, contentType string, metadata map[string]string) error {
 	_, err := s.client.PutObject(ctx, s.bucket, key, bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{
-		ContentType: contentType,
-		Metadata:    metadata,
+		ContentType:  contentType,
+		UserMetadata: metadata,
 	})
 	return err
 }

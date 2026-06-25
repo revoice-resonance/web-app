@@ -58,6 +58,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export type PageTab = 'training' | 'usage' | 'phrases' | 'settings' | 'data';
 
+export type { ASREngine, ASREngineStage } from './asrEngine';
+
 export const CATEGORIES = [
   '生理需求',
   '照护协助',
