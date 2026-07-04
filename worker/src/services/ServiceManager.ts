@@ -69,8 +69,9 @@ export class ServiceManager {
     timestamp: string;
   }> {
     return {
-      asr: { whisper: !!this.env.WHISPER_VPC, gemini: !!this.env.GEMINI_ASR_URL },
-      tts: !!this.env.COSYVOICE_VPC,
+      // WHISPER_VPC / COSYVOICE_VPC removed (migrated to CloudSpeech)
+      asr: { whisper: false, gemini: !!this.env.GEMINI_ASR_URL },
+      tts: true, // CloudSpeech TTS is always available when API key is set
       corpus: !!(this.env.MINIO_ENDPOINT && this.env.MINIO_ACCESS_KEY && this.env.MINIO_SECRET_KEY && this.env.MINIO_BUCKET_NAME),
       storage: 'minio',
       timestamp: new Date().toISOString(),
@@ -86,7 +87,7 @@ export class ServiceManager {
     logStats: any;
   }> {
     const asrEngines = [];
-    if (this.env.WHISPER_VPC) asrEngines.push('whisper');
+    if (this.env.CLOUD_SPEECH_API_KEY) asrEngines.push('cloud-speech');
     if (this.env.GEMINI_ASR_URL) asrEngines.push('gemini');
 
     const logStats = { total: 0, byLevel: { info: 0, warn: 0, error: 0 }, recentErrors: 0 };
@@ -94,7 +95,7 @@ export class ServiceManager {
     return {
       storageType: this.storageManager.getStorageType(),
       asrEngines,
-      ttsAvailable: !!this.env.COSYVOICE_VPC,
+      ttsAvailable: !!this.env.CLOUD_SPEECH_API_KEY,
       corpusAvailable: !!(this.env.MINIO_ENDPOINT && this.env.MINIO_ACCESS_KEY && this.env.MINIO_SECRET_KEY && this.env.MINIO_BUCKET_NAME),
       logStats,
     };

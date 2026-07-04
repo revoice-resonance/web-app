@@ -1,7 +1,8 @@
 export interface Env {
-  // VPC 绑定
-  WHISPER_VPC?: Fetcher;
-  COSYVOICE_VPC?: Fetcher;
+  // VPC 绑定（已废弃 —— 改用 CloudSpeech 云端 API + MinIO HTTP 直连）
+  // WHISPER_VPC / COSYVOICE_VPC / MINIO_VPC 不再在主配置中声明。
+  // ASRService / TTSService / MinioStorage 各自的 Env 类型仍保留对应字段以维持 API 兼容，
+  // 但所有使用点均已做空值检查（if (!this.env.WHISPER_VPC) return fallback）。
 
   // Gemini ASR 配置
   GEMINI_ASR_URL?: string;
@@ -9,7 +10,6 @@ export interface Env {
 
   // Minio 对象存储配置（用于语料收集）
   MINIO_ENDPOINT?: string;
-  MINIO_VPC?: Fetcher;
   MINIO_PORT?: string;
   MINIO_USE_SSL?: string;
   MINIO_ACCESS_KEY: string;

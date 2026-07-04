@@ -1,0 +1,259 @@
+
+> vite_react_shadcn_ts@0.0.0 test /home/runner/work/web-app/web-app/frontend
+> vitest run
+
+
+ RUN  v3.2.4 /home/runner/work/web-app/web-app/frontend
+
+ ✓ src/hooks/__tests__/useAudioRecorder.test.ts (6 tests) 142ms
+ ✓ src/pages/__tests__/UsagePage.test.tsx (13 tests) 161ms
+ ❯ src/hooks/__tests__/useCosyVoiceTTS.test.ts (8 tests | 2 failed) 40ms
+   ✓ useCosyVoiceTTS > initial state: not speaking, no prompt, no error 13ms
+   ✓ useCosyVoiceTTS > hasPromptAudio is true when localStorage has prompt audio 2ms
+   ✓ useCosyVoiceTTS > clearPromptAudio removes from localStorage and sets hasPromptAudio false 4ms
+   ✓ useCosyVoiceTTS > stop pauses audio and resets state 2ms
+   × useCosyVoiceTTS > speak in SFT mode sends JSON body 9ms
+     → expected '/api/tts/jobs' to contain '/functions/v1/cosyvoice-tts'
+   ✓ useCosyVoiceTTS > speak handles API error 2ms
+   ✓ useCosyVoiceTTS > speak handles network error 2ms
+   × useCosyVoiceTTS > speak handles missing VITE_SUPABASE_URL 3ms
+     → expected 'Cannot read properties of undefined (…' to be '未配置后端地址' // Object.is equality
+ ✓ src/components/__tests__/ASRStreamingResult.test.tsx (13 tests) 231ms
+ ✓ src/test/example.test.ts (1 test) 3ms
+ ❯ src/hooks/__tests__/useWhisperASR.test.ts (12 tests | 2 failed) 3525ms
+   ✓ useWhisperASR > initial state is correct 18ms
+   ✓ useWhisperASR > transcribe returns text on success 6ms
+   ✓ useWhisperASR > empty text → BAD_REQUEST with friendly message 3ms
+   ✓ useWhisperASR > 5xx retries and then falls back / fails with SERVER_ERROR  1188ms
+   ✓ useWhisperASR > 400 does NOT retry (4xx not retryable) 6ms
+   ✓ useWhisperASR > 401 maps to AUTH_ERROR and no retry 7ms
+   ✓ useWhisperASR > network error exhausts retries → ALL_FAILED or NETWORK_* 181ms
+   × useWhisperASR > offline pre-flight short-circuits with NETWORK_OFFLINE 387ms
+     → expected "spy" to not be called at all, but actually been called 3 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+  2nd spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+  3rd spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+
+Number of calls: 3
+
+   ✓ useWhisperASR > reset clears all state including structured error 3ms
+   ✓ useWhisperASR > AbortError (timeout) 映射为 NETWORK_TIMEOUT  710ms
+   ✓ useWhisperASR > Retry-After header 被解析并写入诊断  1003ms
+   × useWhisperASR > transcribe sends correct FormData 9ms
+     → expected '/api/whisper-asr' to contain '/functions/v1/whisper-asr'
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/__tests__/useCosyVoiceTTS.test.ts > useCosyVoiceTTS > speak in SFT mode sends JSON body
+AssertionError: expected '/api/tts/jobs' to contain '/functions/v1/cosyvoice-tts'
+
+Expected: "/functions/v1/cosyvoice-tts"
+Received: "/api/tts/jobs"
+
+ ❯ src/hooks/__tests__/useCosyVoiceTTS.test.ts:82:17
+     80|     expect(fetchMock).toHaveBeenCalledTimes(1);
+     81|     const [url, options] = fetchMock.mock.calls[0];
+     82|     expect(url).toContain('/functions/v1/cosyvoice-tts');
+       |                 ^
+     83|     expect(options.headers['Content-Type']).toBe('application/json');
+     84|     expect(JSON.parse(options.body)).toEqual({ text: '你好' });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/hooks/__tests__/useCosyVoiceTTS.test.ts > useCosyVoiceTTS > speak handles missing VITE_SUPABASE_URL
+AssertionError: expected 'Cannot read properties of undefined (…' to be '未配置后端地址' // Object.is equality
+
+Expected: "未配置后端地址"
+Received: "Cannot read properties of undefined (reading 'ok')"
+
+ ❯ src/hooks/__tests__/useCosyVoiceTTS.test.ts:125:34
+    123|     });
+    124| 
+    125|     expect(result.current.error).toBe('未配置后端地址');
+       |                                  ^
+    126|     import.meta.env.VITE_SUPABASE_URL = origUrl;
+    127|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/hooks/__tests__/useWhisperASR.test.ts > useWhisperASR > offline pre-flight short-circuits with NETWORK_OFFLINE
+AssertionError: expected "spy" to not be called at all, but actually been called 3 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+  2nd spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+  3rd spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+
+Number of calls: 3
+
+ ❯ src/hooks/__tests__/useWhisperASR.test.ts:145:27
+    143| 
+
+ Test Files  2 failed | 4 passed (6)
+    144|     expect(text).toBeNull();
+    145|     expect(fetchMock).not.toHaveBeenCalled();
+       |                           ^
+    146|     expect(result.current.error?.code).toBe('NETWORK_OFFLINE');
+    147|   });
+
+      Tests  4 failed | 49 passed (53)
+   Start at  12:36:54
+   Duration  4.92s (transform 416ms, setup 552ms, collect 1.82s, tests 4.10s, environment 3.01s, prepare 839ms)
+
+
+Error: AssertionError: expected '/api/tts/jobs' to contain '/functions/v1/cosyvoice-tts'
+
+Expected: "/functions/v1/cosyvoice-tts"
+Received: "/api/tts/jobs"
+
+ ❯ src/hooks/__tests__/useCosyVoiceTTS.test.ts:82:17
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+Error: AssertionError: expected 'Cannot read properties of undefined (…' to be '未配置后端地址' // Object.is equality
+
+Expected: "未配置后端地址"
+Received: "Cannot read properties of undefined (reading 'ok')"
+
+ ❯ src/hooks/__tests__/useCosyVoiceTTS.test.ts:125:34
+
+
+
+Error: AssertionError: expected "spy" to not be called at all, but actually been called 3 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+  2nd spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+  3rd spy call:
+
+    Array [
+      "/api/whisper-asr",
+      Object {
+        "body": FormData {},
+        "method": "POST",
+        "signal": AbortSignal {},
+      },
+    ]
+
+
+Number of calls: 3
+
+ ❯ src/hooks/__tests__/useWhisperASR.test.ts:145:27
+
+
+
+
+Error: AssertionError: expected '/api/whisper-asr' to contain '/functions/v1/whisper-asr'
+
+Expected: "/functions/v1/whisper-asr"
+Received: "/api/whisper-asr"
+
+ ❯ src/hooks/__tests__/useWhisperASR.test.ts:220:17
+
+
+ FAIL  src/hooks/__tests__/useWhisperASR.test.ts > useWhisperASR > transcribe sends correct FormData
+AssertionError: expected '/api/whisper-asr' to contain '/functions/v1/whisper-asr'
+
+Expected: "/functions/v1/whisper-asr"
+Received: "/api/whisper-asr"
+
+ ❯ src/hooks/__tests__/useWhisperASR.test.ts:220:17
+    218|     expect(fetchMock).toHaveBeenCalledTimes(1);
+    219|     const [url, options] = fetchMock.mock.calls[0];
+    220|     expect(url).toContain('/functions/v1/whisper-asr');
+       |                 ^
+    221|     expect(options.method).toBe('POST');
+    222|     expect(options.body).toBeInstanceOf(FormData);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+/home/runner/work/web-app/web-app/frontend:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  vite_react_shadcn_ts@0.0.0 test: `vitest run`
+Exit status 1
+Error: Process completed with exit code 1.

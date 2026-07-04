@@ -19,25 +19,12 @@
   },
 
   // ---------------------------------------------------------------------------
-  // VPC 服务绑定（内网微服务 —— Whisper/CosyVoice 已弃用，保留以兼容旧路由）
+  // VPC 服务绑定
+  // 注意：以下 service_id 仅在上游 revoice-resonance 账号中存在。
+  // SaaS 部署时需替换为自有 Cloudflare 账号中对应的 VPC 服务 ID，或注释掉。
+  // COSYVOICE_VPC / WHISPER_VPC 已废弃（改用 CloudSpeech），MinIO 改用本地 Podman/Docker。
   // ---------------------------------------------------------------------------
-  "vpc_services": [
-    {
-      "binding": "COSYVOICE_VPC",
-      "service_id": "019d8637-dc3a-78b1-a77a-170b7ba1daa5",
-      "remote": true
-    },
-    {
-      "binding": "WHISPER_VPC",
-      "service_id": "019d8636-cd3c-78f1-aa3e-1995010552df",
-      "remote": true
-    },
-    {
-      "binding": "MINIO_VPC",
-      "service_id": "019da135-5b1e-7c41-a592-bf81ada13ac9",
-      "remote": true
-    }
-  ],
+  "vpc_services": [],
 
   // ---------------------------------------------------------------------------
   // 环境变量（只放公开/非敏感值，Secret 通过 `wrangler secret put` 注入）
