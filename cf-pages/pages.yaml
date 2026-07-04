@@ -1,0 +1,5 @@
+# Cloudflare Pages Configuration
+# This project serves as a proxy to route traffic to the Worker
+
+/ _worker.js  # All routes go to worker
+/api/* _worker.js

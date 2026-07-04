@@ -1,0 +1,203 @@
+# Engineering Delivery Rules
+
+These rules are mandatory for all work in this repository. They define an autonomous,
+agent-driven software development lifecycle (SDLC): every change moves through spec →
+review → implementation → code review → testing → security → delivery, with quality
+gates between phases.
+
+> Installed by **claude-kit**. This file is the entry point and is loaded into context every
+> session, so it is kept lean — the full pipeline, gating rules, agent roles, and rule details
+> live on-demand in `.claude/rules/`, `.claude/agents/`, and `.claude/skills/` (cited inline below).
+
+---
+
+## Coding Behavior (applies to ALL implementation work)
+
+**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+
+### Think Before Coding
+
+**Don't assume. Don't hide confusion. Surface tradeoffs.**
+
+Before implementing:
+- State your assumptions explicitly. If uncertain, ask.
+- If multiple interpretations exist, present them — don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+### Simplicity First
+
+**Minimum code that solves the problem. Nothing speculative.**
+
+- No features beyond what was asked.
+- No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it.
+
+Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+
+### Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+- Don't "improve" adjacent code, comments, or formatting.
+- Don't refactor things that aren't broken.
+- Match existing style, even if you'd do it differently.
+- If you notice unrelated dead code, mention it — don't delete it.
+
+When your changes create orphans:
+- Remove imports/variables/functions that YOUR changes made unused.
+- Don't remove pre-existing dead code unless asked.
+
+When you replace code:
+- Delete the path you superseded — don't leave a backwards-compat shim "just in case." Keep one only
+  when backward compatibility is an actual, stated requirement (and say why).
+- Validate inputs at the boundary (entry point / public function), not redundantly in every internal
+  layer that already received validated data.
+- Comments explain *why*, never narrate *what just changed* ("// added this") — see
+  `.claude/rules/documentation.md` §6. Reference code as `path:line` in notes and handoffs.
+
+The test: Every changed line should trace directly to the user's request.
+
+### Goal-Driven Execution
+
+**Define success criteria. Loop until verified.**
+
+Transform tasks into verifiable goals:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+- "Refactor X" → "Ensure tests pass before and after"
+
+For multi-step tasks, state a brief plan with a verification check per step.
+
+Strong success criteria let you loop independently. Weak criteria ("make it work")
+require constant clarification.
+
+---
+
+## The SDLC pipeline
+
+Every non-trivial change moves through these phases, each **gated** (a gate passes only with zero open
+Critical/High/Medium findings). This is the map only — the **full** step-by-step pipeline (agent roles,
+gating rules, parallel-lane handling, the defect-loop protocol) lives in
+`.claude/rules/mandatory-workflow.md`, and the severity/review/gate model lives in
+`.claude/rules/quality-gates.md`. Read those before driving a phase.
+
+1. **Spec first** — no implementation code until a written spec exists; update the spec if the task
+   changes. (Spec & Doc Writer; for UI work the UI Designer drafts a design spec first — screen states,
+   interactions, empty/loading/error states, responsive behavior, accessibility.)
+2. **Review chain** — Senior Developer → Technical Architect → Engineering Manager review the spec
+   before any code. Independent work streams (the canonical example is a backend lane and a frontend
+   lane, but it applies to any split) run their review chains **in parallel**, joined by a Merge
+   Reviewer at shared-contract / integration points.
+3. **Implementation** — only after reviews pass; one isolated worktree per parallel stream, each with
+   its own Code Reviewer.
+4. **Testing** — Tester → Senior Tester (parallel lanes for multi-stream work), then a test-coverage
+   merge review confirming every acceptance criterion is covered with no gaps.
+5. **Security** — the `security-reviewer` dispatches `secret-scanner`, `dependency-scanner`,
+   `owasp-reviewer`, and `policy-validator`, and gates **Security Clear**.
+6. **Delivery & operability** — for deployable/observable changes, `devops-engineer` (Pipeline Green)
+   and `observability-engineer` (Observability Ready) run after testing and before the PR Raiser.
+
+**Defect loop:** on any failure / regression / spec-mismatch, document and classify it by work stream,
+update the spec if expected behavior is unclear, then re-run **only the affected stream(s)** through
+their chain → merge review → Tester → Senior Tester. Don't patch defects outside the process; don't
+re-run unaffected lanes.
+
+**Roles** map to agents in `.claude/agents/` (Spec & Doc Writer, UI Designer, Senior Developer,
+Technical Architect, Engineering Manager, Developer, Code Reviewer, Tester, Senior Tester, Unit/E2E
+Tester, Security Reviewer + sub-scanners, Devil's Advocate, Merge Reviewer, DevOps Engineer,
+Observability Engineer, PR Raiser, Orchestrator). The Orchestrator coordinates and gates — it never
+writes code. State which role is being simulated at each stage when it helps clarity.
+
+**Fast-track:** for bug fixes, typos, single-component changes, or config updates (< 5 files), skip the
+spec/design/review chain and go straight to Developer → Code Reviewer → Tester → PR Raiser. If asked
+for speed on larger work, you may compress the process but must preserve the sequence and outputs.
+
+## Quality bar & documentation
+
+- **Optimize for:** simplicity, correctness, scalability, reliability, maintainability, observability,
+  testability, security, and user experience.
+- **Documentation is mandatory** for every change: a module/file header on every new/modified source
+  file, a docstring on every public function (arguments, return value, errors), full type annotations
+  on public signatures, named typed structures over opaque maps, API metadata on every endpoint where
+  applicable, and a README update when endpoints, env vars, structure, or architecture change. See
+  `.claude/rules/documentation.md`.
+
+## Working memory, self-check & gates
+
+- **Working memory:** read/write `.claude/CONTINUITY.md` every turn and at each stage transition so
+  work survives context compaction and new sessions. Distinct from `.claude/agent-memory/` (durable
+  learnings). See `.claude/rules/continuity.md`.
+- **RARV:** every agent runs Reason → Act → Reflect → Verify and shows a green Verify before handoff.
+  See `.claude/rules/rarv-cycle.md`.
+- **Severity & review:** classify every finding Critical/High/Medium/Low/Cosmetic; a gate passes only
+  with zero Critical/High/Medium open. A unanimous PASS triggers the `devils-advocate` agent before the
+  gate counts. See `.claude/rules/quality-gates.md`.
+- **DevOps & Observability gates** run after testing and before the PR for deployable/observable
+  surfaces. See `.claude/rules/devops-observability.md`.
+
+## Compact instructions
+
+When compacting this conversation, preserve: the current phase and which gate is open, the contents of
+`.claude/CONTINUITY.md` (working memory), unresolved Critical/High/Medium findings, the active spec and
+its acceptance criteria, and any in-flight defect loop. Keep auto-compaction enabled — the
+working-memory protocol above is what lets a compacted or fresh session resume exactly where the last
+one left off.
+
+---
+
+## Project-specific rules
+
+Configured by **claude-kit** for a **React** (typescript) frontend and a
+**net/http (stdlib)** (Go) backend on **PostgreSQL**, SDLC profile
+**Standard — full SDLC, parallel lanes, security gate**. The agnostic pipeline rules above apply unchanged; the conventions below make
+them concrete for this stack.
+
+### Stack & conventions
+
+- **Frontend** — React (typescript). Conventions:
+  `.claude/rules/react-patterns.md`.
+- **Backend** — net/http (stdlib) (Go). Conventions:
+  `.claude/rules/go-patterns.md`.
+- **Database** — PostgreSQL. Conventions: `.claude/rules/postgres-patterns.md`.
+
+Match your repository's actual layout — claude-kit configures the workflow, not your directory
+structure. Point each agent at the overlay rule for the lane it works in.
+
+### Commands (the source of truth for every agent)
+
+Backend:
+- Install: `go mod download`
+- Run: `go run ./...`
+- Test: `go test ./...`
+- Lint + types: `go vet ./... && gofmt -l .`
+- Format: `gofmt -w .`
+- Build: `go build ./...`
+
+Frontend:
+- Install: `pnpm install`
+- Run: `pnpm run dev`
+- Test: `npm run test`
+- Lint: `npm run lint` · Types: `npm run typecheck`
+- Build: `pnpm run build`
+
+> Replace any command above that doesn't match your project's actual scripts — these are the
+> defaults for the selected stack and are what the agents will run.
+
+### Two independent lanes
+
+Backend and frontend are the canonical parallel lanes from
+`.claude/rules/mandatory-workflow.md`. When a feature spans both, the **API is the shared
+contract**: backend response/request schemas and frontend types must agree. The Merge Reviewer
+verifies this at the join point.
+
+### Adding a feature
+
+Follow the resource recipes in the overlays — `.claude/rules/go-patterns.md`
+(model → schema → repository → service → router → migration → tests) and
+`.claude/rules/react-patterns.md` (types → api → hook → component → tests). Keep the API
+contract in sync across both lanes, and follow `.claude/rules/postgres-patterns.md` for schema and
+migration changes.

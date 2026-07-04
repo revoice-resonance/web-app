@@ -1,0 +1,58 @@
+name: Deploy
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm build
+
+      - name: Typecheck frontend
+        run: pnpm --filter ./frontend typecheck
+
+      - name: Lint frontend
+        run: pnpm --filter ./frontend lint
+        continue-on-error: true
+
+      - name: Test frontend
+        run: pnpm --filter ./frontend test
+
+      - name: Typecheck worker
+        run: pnpm --filter ./worker typecheck
+
+      - name: Deploy worker
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+# =============================================================================
+# 部署前需在 GitHub Secrets 配置：
+#
+#   CLOUDFLARE_API_TOKEN   — Cloudflare API Token（Workers 写权限）
+#   CLOUDFLARE_ACCOUNT_ID  — Cloudflare Account ID
+#
+# Worker Secret（通过 CLI 注入，不在 GitHub Secrets）：
+#   wrangler secret put CLOUD_SPEECH_API_KEY   # 从 platform.cloud-speech.com 获取
+#
+# 首次部署步骤：
+#   1. 连接仓库到 GitHub
+#   2. Settings → Secrets and variables → Actions 添加 CLOUDFLARE_API_TOKEN
+#   3. 本地运行: wrangler secret put CLOUD_SPEECH_API_KEY
+#   4. Push master 分支 → 自动部署
+# =============================================================================

@@ -1,0 +1,55 @@
+{
+  // ===========================================================================
+  // Project Resonance — Cloudflare Worker 配置
+  // ===========================================================================
+  // 部署命令：pnpm build && cd worker && wrangler deploy
+  // 本地开发：cd worker && wrangler dev
+  //
+  // Secret（务必在首次部署前通过 CLI 注入，永远不写进本文件）：
+  //   wrangler secret put CLOUD_SPEECH_API_KEY   # ASR + TTS 共用，从 platform.cloud-speech.com 获取
+  // ===========================================================================
+
+  "name": "project-resonance-api",
+  "main": "./worker/src/index.ts",
+  "compatibility_date": "2025-04-28",
+
+  // 静态资源：Vite 构建产物
+  "assets": {
+    "directory": "./frontend/dist"
+  },
+
+  // ---------------------------------------------------------------------------
+  // VPC 服务绑定（内网微服务 —— Whisper/CosyVoice 已弃用，保留以兼容旧路由）
+  // ---------------------------------------------------------------------------
+  "vpc_services": [
+    {
+      "binding": "COSYVOICE_VPC",
+      "service_id": "019d8637-dc3a-78b1-a77a-170b7ba1daa5",
+      "remote": true
+    },
+    {
+      "binding": "WHISPER_VPC",
+      "service_id": "019d8636-cd3c-78f1-aa3e-1995010552df",
+      "remote": true
+    },
+    {
+      "binding": "MINIO_VPC",
+      "service_id": "019da135-5b1e-7c41-a592-bf81ada13ac9",
+      "remote": true
+    }
+  ],
+
+  // ---------------------------------------------------------------------------
+  // 环境变量（只放公开/非敏感值，Secret 通过 `wrangler secret put` 注入）
+  //
+  // 必配 Secret：
+  //   CLOUD_SPEECH_API_KEY      — CloudSpeech ASR + TTS API Key
+  //
+  // 可选覆盖（通过 secret put 注入同名变量即可覆盖默认值）：
+  //   CLOUD_SPEECH_BASE_URL           — 默认 https://api.cloud-speech.com/v1
+  //   CLOUD_SPEECH_ASR_DEFAULT_MODEL  — 默认 stepaudio-2.5-asr
+  //   CLOUD_SPEECH_DEFAULT_MODEL      — 默认 step-tts-mini
+  //   CLOUD_SPEECH_DEFAULT_VOICE      — 默认 wenrounvsheng
+  // ---------------------------------------------------------------------------
+  "vars": {}
+}

@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: resonance-server
+  labels:
+    app: resonance-server
+data:
+  MINIO_ENDPOINT: "http://minio:9000"
+  MINIO_REGION: "us-east-1"
+  MINIO_USE_SSL: "false"
+  # 限制 CORS 允许的来源（生产应设为前端实际域名，如 https://app.example.com）
+  ALLOWED_ORIGIN: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: resonance-server-secrets
+type: Opaque
+stringData:
+  MINIO_ACCESS_KEY: "your-access-key"
+  MINIO_SECRET_KEY: "your-secret-key"
+  MINIO_BUCKET_NAME: "resonance"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resonance-server
+  labels:
+    app: resonance-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: resonance-server
+  template:
+    metadata:
+      labels:
+        app: resonance-server
+    spec:
+      containers:
+      - name: server
+        image: resonance-server:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: grpc
+        env:
+        - name: MINIO_ENDPOINT
+          valueFrom:
+            configMapKeyRef:
+              name: resonance-server
+              key: MINIO_ENDPOINT
+        - name: MINIO_REGION
+          valueFrom:
+            configMapKeyRef:
+              name: resonance-server
+              key: MINIO_REGION
+        - name: MINIO_USE_SSL
+          valueFrom:
+            configMapKeyRef:
+              name: resonance-server
+              key: MINIO_USE_SSL
+        - name: ALLOWED_ORIGIN
+          valueFrom:
+            configMapKeyRef:
+              name: resonance-server
+              key: ALLOWED_ORIGIN
+        # API_KEY：写接口共享密钥。optional:true → 未注入时鉴权关闭（仅本地/开发）。
+        # 生产应在 resonance-server-secrets 中注入真实 API_KEY（kubectl secret 等），并让前端发送 X-API-Key。
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: resonance-server-secrets
+              key: API_KEY
+              optional: true
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: resonance-server-secrets
+              key: MINIO_ACCESS_KEY
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: resonance-server-secrets
+              key: MINIO_SECRET_KEY
+        - name: MINIO_BUCKET_NAME
+          valueFrom:
+            secretKeyRef:
+              name: resonance-server-secrets
+              key: MINIO_BUCKET_NAME
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 0
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: resonance-server
+              topologyKey: kubernetes.io/hostname

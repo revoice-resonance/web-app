@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  resonance-server:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: resonance-server:latest
+    container_name: resonance-server
+    ports:
+      - "8080:8080"
+    environment:
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT:-minio:9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME:-resonance}
+      - MINIO_REGION=${MINIO_REGION:-us-east-1}
+      - MINIO_USE_SSL=${MINIO_USE_SSL:-false}
+      # CORS 允许来源（生产设为前端域名）；留空则回显请求 Origin
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-}
+      # 写接口共享密钥；留空=不鉴权（仅开发）。生产设置后前端须发送 X-API-Key
+      - API_KEY=${API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - resonance-net
+
+networks:
+  resonance-net:
+    driver: bridge
