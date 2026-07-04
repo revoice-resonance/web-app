@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mic, RotateCcw } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import { useCloudSpeechASR } from '@/hooks/useCloudSpeechASR';
+import { useCloudASR } from '@/hooks/useCloudASR';
 import { useWechatBridge, getWechatDebugInfo } from '@/hooks/useWechatBridge';
 import AudioRecorderButton from '@/components/AudioRecorderButton';
 import ASRStreamingResult from '@/components/ASRStreamingResult';
@@ -15,7 +15,7 @@ interface UsagePageProps {
   onSpeak: (text: string) => Promise<void>;
   onStop: () => void;
   isSpeaking: boolean;
-  /** Currently selected CloudSpeech voice ID (e.g. "wenrounvsheng"). */
+  /** Currently selected voice ID (e.g. "wenrounvsheng"). */
   selectedVoice?: string;
   /** Called to change the selected voice. */
   onVoiceChange?: (voice: string) => void;
@@ -24,7 +24,7 @@ interface UsagePageProps {
 
 type FlowState = 'idle' | 'recording' | 'processing' | 'result';
 
-/** CloudSpeech voice IDs mapped to user-facing Chinese labels. */
+/** Voice IDs mapped to user-facing Chinese labels. */
 const VOICE_LABELS: Record<string, string> = {
   wenrounvsheng: '温柔女声',
   wenrounansheng: '温柔男声',
@@ -54,7 +54,7 @@ export default function UsagePage({
     error: asrError,
     transcribe,
     reset: resetASR,
-  } = useCloudSpeechASR();
+  } = useCloudASR();
 
   // Handle transcript received from WeChat native recording
   useEffect(() => {
@@ -100,7 +100,6 @@ export default function UsagePage({
       setLastTranscript(text);
     }
 
-    // Go straight to result — no auto-speak
     setFlowState('result');
   }, [stopRecording, transcribe]);
 
@@ -110,8 +109,6 @@ export default function UsagePage({
     resetASR();
   }, [resetASR]);
 
-  // 错误横幅一键重试：沿用 last WAV 对应的 webmBlob 不好保留，
-  // 最稳妥的自助动作是引导用户再录一次 → 回到 idle 并清错误
   const handleErrorRetry = useCallback(() => {
     resetASR();
     setFlowState('idle');
@@ -278,7 +275,7 @@ export default function UsagePage({
         </motion.div>
       )}
 
-      {/* Results — user chooses action */}
+      {/* Results */}
       {flowState === 'result' && (
         <>
           {displayText ? (

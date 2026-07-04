@@ -1,10 +1,10 @@
 /**
- * CloudSpeech ASR hook — primary speech recognition engine.
+ * Cloud ASR hook — primary speech recognition engine.
  *
  * Replaces the deprecated `useWhisperASR`. Sends base64-encoded audio to
- * the Worker proxy endpoint `POST /api/asr/cloud-speech` with automatic retry
+ * the Worker proxy endpoint `POST /api/asr/recognize` with automatic retry
  * and a 2-tier fallback chain:
- *   CloudSpeech (cloud) → Browser Web Speech API (local)
+ *   Cloud → Browser Web Speech API (local)
  *
  * Return interface matches `useWhisperASR` for drop-in compatibility.
  */
@@ -18,7 +18,7 @@ import {
 } from '@/types/asrError';
 
 /** Return interface — identical shape to useWhisperASR for drop-in replacement. */
-interface UseCloudSpeechASRReturn {
+interface UseCloudASRReturn {
   finalText: string;
   isProcessing: boolean;
   /** Structured error object (user message + diagnostics). */
@@ -140,7 +140,7 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-export function useCloudSpeechASR(): UseCloudSpeechASRReturn {
+export function useCloudASR(): UseCloudASRReturn {
   const [finalText, setFinalText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<ASRError | null>(null);
@@ -225,7 +225,7 @@ export function useCloudSpeechASR(): UseCloudSpeechASRReturn {
         );
 
         try {
-          const response = await fetch('/api/asr/cloud-speech', {
+          const response = await fetch('/api/asr/recognize', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
@@ -241,8 +241,6 @@ export function useCloudSpeechASR(): UseCloudSpeechASRReturn {
           const data = await response.json().catch(() => ({}));
 
           if (response.ok && data.ok !== false) {
-            // The Worker returns `{ ok: true, data: { text, model, elapsed_ms } }`
-            // Also handle raw `{ text }` shape for flexibility
             const text =
               (data.data?.text?.trim() || data.text?.trim() || '') || null;
 
@@ -310,7 +308,6 @@ export function useCloudSpeechASR(): UseCloudSpeechASRReturn {
 
       if (fallbackText) {
         setFinalText(fallbackText);
-        // Fallback success is informational (FALLBACK_ACTIVE is a notice, not an error)
         const notice = buildASRError(
           'FALLBACK_ACTIVE',
           {

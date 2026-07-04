@@ -2,7 +2,7 @@ import { ServiceManager } from '../services/ServiceManager';
 import { createCorsResponse, createErrorResponse } from '../utils';
 import type { Env } from '../types/env';
 
-interface CloudSpeechTTSBody {
+interface CloudTTSBody {
   text: string;
   voice?: string;
   model?: string;
@@ -13,12 +13,12 @@ interface CloudSpeechTTSBody {
   instruction?: string;
 }
 
-const CLOUD_SPEECH_DEFAULT_BASE = 'https://api.cloud-speech.com/v1';
-const CLOUD_SPEECH_DEFAULT_MODEL = 'step-tts-mini';
-const CLOUD_SPEECH_DEFAULT_VOICE = 'wenrounvsheng';
+const DEFAULT_BASE = 'https://api.cloud-speech.com/v1';
+const DEFAULT_MODEL = 'step-tts-mini';
+const DEFAULT_VOICE = 'wenrounvsheng';
 const MAX_INPUT_CHARS = 1000;
 
-export async function handleCloudSpeechTTSRequest(
+export async function handleCloudTTSRequest(
   request: Request,
   serviceManager: ServiceManager,
   env: Env,
@@ -29,13 +29,13 @@ export async function handleCloudSpeechTTSRequest(
 
   const apiKey = env.CLOUD_SPEECH_API_KEY;
   if (!apiKey) {
-    await serviceManager.getLoggingService().error('CloudSpeech TTS misconfigured: CLOUD_SPEECH_API_KEY missing', {});
-    return createCorsResponse(createErrorResponse('CloudSpeech TTS 未配置 API Key'), 503);
+    await serviceManager.getLoggingService().error('TTS misconfigured: API key missing', {});
+    return createCorsResponse(createErrorResponse('语音合成服务未配置'), 503);
   }
 
-  let body: CloudSpeechTTSBody;
+  let body: CloudTTSBody;
   try {
-    body = await request.json() as CloudSpeechTTSBody;
+    body = await request.json() as CloudTTSBody;
   } catch {
     return createCorsResponse(createErrorResponse('请求体必须是 JSON'), 400);
   }
@@ -48,22 +48,22 @@ export async function handleCloudSpeechTTSRequest(
     return createCorsResponse(createErrorResponse(`合成文本过长（最多 ${MAX_INPUT_CHARS} 字符）`), 400);
   }
 
-  const baseUrl = (env.CLOUD_SPEECH_BASE_URL || CLOUD_SPEECH_DEFAULT_BASE).replace(/\/+$/, '');
-  const model = body.model || env.CLOUD_SPEECH_DEFAULT_MODEL || CLOUD_SPEECH_DEFAULT_MODEL;
-  const voice = body.voice || env.CLOUD_SPEECH_DEFAULT_VOICE || CLOUD_SPEECH_DEFAULT_VOICE;
+  const baseUrl = (env.CLOUD_SPEECH_BASE_URL || DEFAULT_BASE).replace(/\/+$/, '');
+  const model = body.model || env.CLOUD_SPEECH_DEFAULT_MODEL || DEFAULT_MODEL;
+  const voice = body.voice || env.CLOUD_SPEECH_DEFAULT_VOICE || DEFAULT_VOICE;
   const responseFormat = body.response_format || 'mp3';
 
-  const cloud-speechBody: Record<string, unknown> = {
+  const upstreamBody: Record<string, unknown> = {
     model,
     input: text,
     voice,
     response_format: responseFormat,
   };
-  if (typeof body.speed === 'number') cloud-speechBody.speed = body.speed;
-  if (typeof body.volume === 'number') cloud-speechBody.volume = body.volume;
-  if (typeof body.sample_rate === 'number') cloud-speechBody.sample_rate = body.sample_rate;
+  if (typeof body.speed === 'number') upstreamBody.speed = body.speed;
+  if (typeof body.volume === 'number') upstreamBody.volume = body.volume;
+  if (typeof body.sample_rate === 'number') upstreamBody.sample_rate = body.sample_rate;
   if (body.instruction && model === 'stepaudio-2.5-tts') {
-    cloud-speechBody.instruction = body.instruction;
+    upstreamBody.instruction = body.instruction;
   }
 
   const startedAt = Date.now();
@@ -75,20 +75,20 @@ export async function handleCloudSpeechTTSRequest(
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(cloud-speechBody),
+      body: JSON.stringify(upstreamBody),
     });
   } catch (err) {
-    await serviceManager.getLoggingService().error('CloudSpeech TTS upstream fetch failed', {
+    await serviceManager.getLoggingService().error('TTS upstream fetch failed', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return createCorsResponse(createErrorResponse('CloudSpeech 上游请求失败'), 502);
+    return createCorsResponse(createErrorResponse('语音合成服务暂时不可用'), 502);
   }
 
   const elapsed = Date.now() - startedAt;
 
   if (!upstream.ok) {
     const errText = await upstream.text().catch(() => '');
-    await serviceManager.getLoggingService().error('CloudSpeech TTS upstream error', {
+    await serviceManager.getLoggingService().error('TTS upstream error', {
       status: upstream.status,
       body: errText.slice(0, 500),
       model,
@@ -97,16 +97,16 @@ export async function handleCloudSpeechTTSRequest(
       elapsedMs: elapsed,
     });
     const safeMessage = upstream.status === 401
-      ? 'CloudSpeech API Key 无效或已吊销'
+      ? '语音合成服务未授权'
       : upstream.status === 429
-        ? 'CloudSpeech 请求频率受限，请稍后重试'
-        : `CloudSpeech 返回 ${upstream.status}`;
+        ? '请求频率受限，请稍后重试'
+        : `语音合成服务返回 ${upstream.status}`;
     return createCorsResponse(createErrorResponse(safeMessage), upstream.status >= 500 ? 502 : upstream.status);
   }
 
   const audioBuffer = await upstream.arrayBuffer();
 
-  await serviceManager.getLoggingService().info('CloudSpeech TTS synthesized', {
+  await serviceManager.getLoggingService().info('TTS synthesized', {
     model,
     voice,
     textLength: text.length,

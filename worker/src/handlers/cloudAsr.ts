@@ -1,16 +1,16 @@
 /**
- * CloudSpeech ASR proxy handler
+ * Cloud ASR proxy handler
  *
- * Proxies audio-to-text requests from the frontend to the CloudSpeech SSE ASR API.
- * Receives base64-encoded audio, forwards it to CloudSpeech's streaming endpoint,
+ * Proxies audio-to-text requests from the frontend to the upstream SSE ASR API.
+ * Receives base64-encoded audio, forwards it to the streaming endpoint,
  * aggregates the SSE text stream, and returns the full transcript as JSON.
  *
  * Also includes a lightweight health check endpoint that verifies the
- * CLOUD_SPEECH_API_KEY is configured (no outbound call to CloudSpeech).
+ * API key is configured (no outbound call to upstream).
  *
  * Exports:
- *   handleCloudSpeechASRRequest   — POST /api/asr/cloud-speech
- *   handleCloudSpeechHealthRequest — GET /api/cloud-speech/health
+ *   handleCloudASRRequest   — POST /api/asr/recognize
+ *   handleCloudHealthRequest — GET /api/asr/health
  */
 
 import { ServiceManager } from '../services/ServiceManager';
@@ -19,7 +19,7 @@ import type { Env } from '../types/env';
 
 // ---------------------------------------------------------------------------
 // Configurable SSE parser constants
-// Tuned against the CloudSpeech SSE ASR protocol; change these when the
+// Tuned against the upstream SSE ASR protocol; change these when the
 // upstream event names or JSON payload structure change — no logic rewrite.
 // ---------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ const SSE_DATA_PATH = 'data.data';
 // Audio format defaults
 // ---------------------------------------------------------------------------
 
-/** Format descriptor sent to CloudSpeech when the client-provided mimeType is
+/** Format descriptor sent to upstream when the client-provided mimeType is
  *  missing or unrecognised.  Assumes Chrome MediaRecorder webm/opus default. */
 const DEFAULT_AUDIO_FORMAT = {
   type: 'ogg',
@@ -45,7 +45,7 @@ const DEFAULT_AUDIO_FORMAT = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// MIME type → CloudSpeech format block mapping
+// MIME type → upstream format block mapping
 // ---------------------------------------------------------------------------
 
 interface AudioFormatBlock {
@@ -56,7 +56,7 @@ interface AudioFormatBlock {
   channel: number;
 }
 
-/** Map known browser MediaRecorder mimeTypes to CloudSpeech format blocks.
+/** Map known browser MediaRecorder mimeTypes to upstream format blocks.
  *  Everything not listed falls back to DEFAULT_AUDIO_FORMAT. */
 function mimeTypeToFormat(mimeType: string | undefined): AudioFormatBlock {
   if (!mimeType) return { ...DEFAULT_AUDIO_FORMAT };
@@ -162,7 +162,7 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
 // Request body types
 // ---------------------------------------------------------------------------
 
-interface CloudSpeechASRBody {
+interface CloudASRBody {
   audio: string;
   mimeType?: string;
   model?: string;
@@ -174,12 +174,12 @@ interface CloudSpeechASRBody {
 // ---------------------------------------------------------------------------
 
 /**
- * CloudSpeech ASR proxy endpoint — POST /api/asr/cloud-speech
+ * Cloud ASR proxy endpoint — POST /api/asr/recognize
  *
- * Receives a JSON body with base64-encoded audio, forwards it to the CloudSpeech
+ * Receives a JSON body with base64-encoded audio, forwards it to the upstream
  * SSE ASR API, aggregates the transcript stream, and returns the result.
  */
-export async function handleCloudSpeechASRRequest(
+export async function handleCloudASRRequest(
   request: Request,
   serviceManager: ServiceManager,
   env: Env,
@@ -191,14 +191,14 @@ export async function handleCloudSpeechASRRequest(
   // --- API key guard ---
   const apiKey = env.CLOUD_SPEECH_API_KEY;
   if (!apiKey) {
-    console.log('[cloud-speech-asr] CLOUD_SPEECH_API_KEY missing → 503');
-    return createCorsResponse(createErrorResponse('CloudSpeech API Key 未配置'), 503);
+    console.log('[asr] API key missing → 503');
+    return createCorsResponse(createErrorResponse('语音识别服务未配置'), 503);
   }
 
   // --- Parse body ---
-  let body: CloudSpeechASRBody;
+  let body: CloudASRBody;
   try {
-    body = (await request.json()) as CloudSpeechASRBody;
+    body = (await request.json()) as CloudASRBody;
   } catch {
     return createCorsResponse(createErrorResponse('请求体必须是 JSON'), 400);
   }
@@ -215,8 +215,8 @@ export async function handleCloudSpeechASRRequest(
   const language = body.language || 'zh';
   const format = mimeTypeToFormat(body.mimeType);
 
-  // --- Build CloudSpeech request body ---
-  const cloud-speechBody = {
+  // --- Build upstream request body ---
+  const upstreamBody = {
     audio: {
       data: audio,
       input: {
@@ -225,19 +225,19 @@ export async function handleCloudSpeechASRRequest(
           language,
           enable_itn: true,
         },
-      },
-      format: {
-        type: format.type,
-        codec: format.codec,
-        rate: format.rate,
-        bits: format.bits,
-        channel: format.channel,
+        format: {
+          type: format.type,
+          codec: format.codec,
+          rate: format.rate,
+          bits: format.bits,
+          channel: format.channel,
+        },
       },
     },
   };
 
   const startedAt = Date.now();
-  console.log('[cloud-speech-asr] request', {
+  console.log('[asr] request', {
     model,
     language,
     audioLength: audio.length,
@@ -254,15 +254,15 @@ export async function handleCloudSpeechASRRequest(
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
       },
-      body: JSON.stringify(cloud-speechBody),
+      body: JSON.stringify(upstreamBody),
     });
   } catch (err) {
     const elapsed = Date.now() - startedAt;
-    console.log('[cloud-speech-asr] network error', {
+    console.log('[asr] network error', {
       error: err instanceof Error ? err.message : String(err),
       elapsedMs: elapsed,
     });
-    return createCorsResponse(createErrorResponse('CloudSpeech 上游请求失败'), 502);
+    return createCorsResponse(createErrorResponse('语音识别服务暂时不可用'), 502);
   }
 
   const elapsedMs = Date.now() - startedAt;
@@ -274,14 +274,14 @@ export async function handleCloudSpeechASRRequest(
     // Mask upstream 401 as 503 (don't leak auth state to the client).
     const status = upstream.status === 401 ? 503 : upstream.status;
     const errorMessage = status === 503
-      ? 'CloudSpeech API Key 无效或已吊销'
+      ? '语音识别服务未授权'
       : upstream.status === 429
-        ? 'CloudSpeech 请求频率受限，请稍后重试'
+        ? '请求频率受限，请稍后重试'
         : upstream.status >= 500
-          ? 'CloudSpeech 服务暂时不可用'
+          ? '语音识别服务暂时不可用'
           : '请求参数错误';
 
-    console.log('[cloud-speech-asr] upstream error', {
+    console.log('[asr] upstream error', {
       upstreamStatus: upstream.status,
       mappedStatus: status,
       elapsedMs,
@@ -295,7 +295,7 @@ export async function handleCloudSpeechASRRequest(
   const sseText = await upstream.text();
   const transcript = parseSSETranscript(sseText);
 
-  console.log('[cloud-speech-asr] success', {
+  console.log('[asr] success', {
     model,
     audioBytes: audio.length,
     transcriptLength: transcript.length,
@@ -313,16 +313,16 @@ export async function handleCloudSpeechASRRequest(
 }
 
 /**
- * CloudSpeech health check — GET /api/cloud-speech/health
+ * Cloud ASR health check — GET /api/asr/health
  *
  * Lightweight key-presence check only.  Does NOT send a probe request to
- * CloudSpeech's API — verifying the key is configured is sufficient for the
+ * the upstream API — verifying the key is configured is sufficient for the
  * frontend health indicator.
  */
-export function handleCloudSpeechHealthRequest(env: Env): Response {
+export function handleCloudHealthRequest(env: Env): Response {
   if (env.CLOUD_SPEECH_API_KEY) {
     return createCorsResponse(
-      { ok: true, provider: 'cloud-speech' },
+      { ok: true },
       200,
     );
   }

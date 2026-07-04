@@ -1,13 +1,8 @@
 /**
- * @deprecated Replaced by {@link VoiceSelector} which uses CloudSpeech system voices
- * instead of zero-shot audio cloning. This component is kept for backward
- * compatibility and should not be used in new code.
- *
- * VoiceClonePanel — CosyVoice zero-shot voice cloning UI.
+ * VoiceClonePanel — 自定义音色：录制参考音频 → 创建专属音色 ID
  *
  * Records or uploads a reference audio sample, submits it for voice cloning,
- * and provides test playback of the cloned voice. Superseded by the simpler
- * CloudSpeech voice-selection workflow.
+ * and provides test playback of the cloned voice.
  */
 
 import { useState, useCallback, useRef } from 'react';
@@ -28,10 +23,7 @@ interface VoiceClonePanelProps {
 }
 
 /**
- * @deprecated Use {@link VoiceSelector} for CloudSpeech voice selection instead.
- * VoiceClonePanel implements the CosyVoice zero-shot voice cloning workflow
- * (record/upload reference audio → clone → test playback), which is superseded
- * by CloudSpeech's system voice library.
+ * 自定义音色面板 — 录制参考音频生成专属声音
  */
 export default function VoiceClonePanel({
   voiceId,

@@ -1,17 +1,15 @@
 import { useCallback, useRef, useState } from 'react';
 
 /**
- * 阶跃星辰 (CloudSpeech) TTS hook
+ * Cloud TTS hook — primary speech synthesis engine.
  *
- * 与 useCosyVoiceTTS 并列存在：
- * - useCosyVoiceTTS  → 走 X1 本地 CosyVoice（VPC binding）
- * - useCloudSpeechTTS    → 走云端 CloudSpeech API（worker 代理）
- *
- * 前端永远不接触 API key。Key 在 worker 端通过 wrangler secret 注入。
+ * Sends text to the Worker proxy endpoint `POST /api/tts/speak`,
+ * receives audio, and plays it. The frontend never touches the
+ * upstream API key — auth is handled entirely on the Worker.
  */
 
-export type CloudSpeechVoice =
-  | 'wenrounvsheng'      // 温柔女声（默认，情感陪伴）
+export type CloudVoice =
+  | 'wenrounvsheng'      // 温柔女声（默认）
   | 'wenrounansheng'     // 温柔男声
   | 'linjiajiejie'       // 邻家姐姐
   | 'qinqienvsheng'      // 亲切女声
@@ -22,11 +20,11 @@ export type CloudSpeechVoice =
   | 'jingdiannvsheng'    // 经典女声
   | string;              // 也支持自定义复刻音色 ID
 
-export type CloudSpeechModel = 'step-tts-mini' | 'step-tts-2' | 'stepaudio-2.5-tts';
+export type CloudTtsModel = 'step-tts-mini' | 'step-tts-2' | 'stepaudio-2.5-tts';
 
-export interface CloudSpeechSpeakOptions {
-  voice?: CloudSpeechVoice;
-  model?: CloudSpeechModel;
+export interface CloudTtsSpeakOptions {
+  voice?: CloudVoice;
+  model?: CloudTtsModel;
   speed?: number;        // 0.5 ~ 2.0，默认 1.0
   volume?: number;       // 0.1 ~ 2.0，默认 1.0
   response_format?: 'mp3' | 'wav' | 'flac' | 'opus';
@@ -34,16 +32,16 @@ export interface CloudSpeechSpeakOptions {
   instruction?: string;  // 仅 stepaudio-2.5-tts 生效
 }
 
-interface UseCloudSpeechTTSReturn {
-  speak: (text: string, options?: CloudSpeechSpeakOptions) => Promise<void>;
+interface UseCloudTTSReturn {
+  speak: (text: string, options?: CloudTtsSpeakOptions) => Promise<void>;
   stop: () => void;
   isSpeaking: boolean;
   error: string | null;
 }
 
-const ENDPOINT = '/api/tts/cloud-speech';
+const ENDPOINT = '/api/tts/speak';
 
-export function useCloudSpeechTTS(defaults?: CloudSpeechSpeakOptions): UseCloudSpeechTTSReturn {
+export function useCloudTTS(defaults?: CloudTtsSpeakOptions): UseCloudTTSReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -63,7 +61,7 @@ export function useCloudSpeechTTS(defaults?: CloudSpeechSpeakOptions): UseCloudS
     setError(null);
   }, []);
 
-  const speak = useCallback(async (text: string, options?: CloudSpeechSpeakOptions) => {
+  const speak = useCallback(async (text: string, options?: CloudTtsSpeakOptions) => {
     const trimmed = (text || '').trim();
     if (!trimmed) return;
 
@@ -95,7 +93,7 @@ export function useCloudSpeechTTS(defaults?: CloudSpeechSpeakOptions): UseCloudS
       });
 
       if (!response.ok) {
-        let message = `CloudSpeech TTS 失败 (${response.status})`;
+        let message = `语音合成失败 (${response.status})`;
         try {
           const errBody = await response.json();
           if (errBody?.error) message = errBody.error;
@@ -108,7 +106,7 @@ export function useCloudSpeechTTS(defaults?: CloudSpeechSpeakOptions): UseCloudS
       const contentType = response.headers.get('content-type') || '';
       if (contentType.includes('application/json')) {
         const errBody = await response.json().catch(() => null);
-        throw new Error(errBody?.error || 'CloudSpeech 返回了非音频响应');
+        throw new Error(errBody?.error || '语音合成服务返回异常');
       }
 
       const audioBlob = await response.blob();
@@ -135,7 +133,7 @@ export function useCloudSpeechTTS(defaults?: CloudSpeechSpeakOptions): UseCloudS
         setIsSpeaking(false);
         return;
       }
-      const message = err instanceof Error ? err.message : 'CloudSpeech TTS 播放失败';
+      const message = err instanceof Error ? err.message : '语音合成播放失败';
       setError(message);
       setIsSpeaking(false);
     } finally {

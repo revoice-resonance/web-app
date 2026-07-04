@@ -17,14 +17,14 @@ const OPTIONS: EngineOption[] = [
     key: 'auto',
     title: '智能模式',
     subtitle: '推荐',
-    description: 'CloudSpeech → 浏览器，按顺序自动回退，最稳定',
+    description: '云端识别 → 浏览器，按顺序自动回退，最稳定',
     Icon: Sparkles,
   },
   {
-    key: 'cloud-speech',
-    title: '阶跃星辰',
+    key: 'cloud',
+    title: '云端引擎',
     subtitle: '云端主路',
-    description: '阶跃星辰 ASR，快速准确',
+    description: '云端识别引擎，快速准确',
     Icon: Cloud,
   },
   {
@@ -39,7 +39,7 @@ const OPTIONS: EngineOption[] = [
 /**
  * Large visual card for picking the ASR engine.
  *
- * - Header shows live CloudSpeech key-presence health check.
+ * - Header shows live cloud ASR key-presence health check.
  * - Body is a grid of engine choices, each a sizable
  *   tappable tile with icon + title + description (motor-accessible).
  */
@@ -53,19 +53,19 @@ export default function ASREngineCard() {
     const check = async () => {
       try {
         const apiBase = import.meta.env.VITE_WORKER_API_URL || '';
-        const res = await fetch(`${apiBase}/api/cloud-speech/health`);
+        const res = await fetch(`${apiBase}/api/asr/health`);
         if (cancelled) return;
         if (res.ok) {
           setStatus('online');
-          setStatusLabel('CloudSpeech 已配置');
+          setStatusLabel('云端引擎已配置');
         } else {
           setStatus('offline');
-          setStatusLabel('CloudSpeech 待配置');
+          setStatusLabel('云端引擎待配置');
         }
       } catch {
         if (!cancelled) {
           setStatus('offline');
-          setStatusLabel('CloudSpeech 暂不可用');
+          setStatusLabel('云端引擎暂不可用');
         }
       }
     };

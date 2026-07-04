@@ -25,11 +25,11 @@ export interface RecognitionResult {
 
 export interface ASRSettings {
   /** ASR provider */
-  provider: 'cloud-speech' | 'browser';
+  provider: 'cloud' | 'browser';
 }
 
 export const DEFAULT_ASR_SETTINGS: ASRSettings = {
-  provider: 'cloud-speech',
+  provider: 'cloud',
 };
 
 export interface AppSettings {

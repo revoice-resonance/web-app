@@ -1,11 +1,13 @@
 import { Routes, Route } from 'react-router-dom';
 import { useAppData } from '@/hooks/useAppData';
 import { useTTS } from '@/hooks/useTTS';
-import { useCloudSpeechTTS, type CloudSpeechVoice } from '@/hooks/useCloudSpeechTTS';
+import { useCloudTTS, type CloudVoice } from '@/hooks/useCloudTTS';
+import { useVoiceClone } from '@/hooks/useVoiceClone';
 import { useMemo, useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { DelayedSkeleton } from '@/components/DelayedSkeleton';
 import UsagePage from './pages/UsagePage';
 import VoiceSelector from '@/components/VoiceSelector';
+import VoiceClonePanel from '@/components/VoiceClonePanel';
 
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 const PhrasesPage = lazy(() => import('./pages/PhrasesPage'));
@@ -15,20 +17,36 @@ const WelcomePage = lazy(() => import('./pages/WelcomePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ONBOARDING_KEY = 'resonance_onboarding_done';
-const STORAGE_KEY = 'resonance_cloud-speech_voice';
+const STORAGE_KEY = 'resonance_tts_voice';
+const CLONE_KEY = 'resonance_cloned_voice_id';
 
-function loadInitialVoice(): CloudSpeechVoice {
+function loadInitialVoice(): CloudVoice {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) return saved as CloudSpeechVoice;
+    let saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      saved = localStorage.getItem('resonance_cloud-speech_voice');
+      if (saved) {
+        localStorage.setItem(STORAGE_KEY, saved);
+        localStorage.removeItem('resonance_cloud-speech_voice');
+      }
+    }
+    if (saved) return saved as CloudVoice;
   } catch { /* ignore */ }
   return 'wenrounvsheng';
+}
+
+function loadClonedVoice(): string {
+  try {
+    return localStorage.getItem(CLONE_KEY) || '';
+  } catch { /* ignore */ }
+  return '';
 }
 
 export default function AppRoutes() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeChecked, setWelcomeChecked] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState<CloudSpeechVoice>(loadInitialVoice);
+  const [selectedVoice, setSelectedVoice] = useState<CloudVoice>(loadInitialVoice);
+  const [clonedVoiceId, setClonedVoiceId] = useState<string>(loadClonedVoice);
   const [isTestSpeaking, setIsTestSpeaking] = useState(false);
 
   const {
@@ -68,17 +86,40 @@ export default function AppRoutes() {
     settings.ttsVoice
   );
 
-  // CloudSpeech TTS as primary speech engine
-  const cloud-speech = useCloudSpeechTTS({ voice: 'wenrounvsheng' });
+  // Cloud TTS
+  const cloud = useCloudTTS({ voice: 'wenrounvsheng' });
+
+  // Voice clone
+  const { clone, isCloning, error: cloneError } = useVoiceClone();
 
   const handleTestVoice = useCallback(async (text: string) => {
     setIsTestSpeaking(true);
     try {
-      await cloud-speech.speak(text, { voice: selectedVoice });
+      await cloud.speak(text, { voice: selectedVoice });
     } finally {
       setIsTestSpeaking(false);
     }
-  }, [cloud-speech, selectedVoice]);
+  }, [cloud, selectedVoice]);
+
+  const handleClone = useCallback(async (audioBlob: Blob, referenceText?: string): Promise<string | null> => {
+    const voiceId = await clone(audioBlob, referenceText);
+    if (voiceId) {
+      try {
+        localStorage.setItem(CLONE_KEY, voiceId);
+      } catch { /* ignore */ }
+      setClonedVoiceId(voiceId);
+      setSelectedVoice(voiceId);
+      return voiceId;
+    }
+    return null;
+  }, [clone]);
+
+  const handleClearVoice = useCallback(() => {
+    setClonedVoiceId('');
+    try {
+      localStorage.removeItem(CLONE_KEY);
+    } catch { /* ignore */ }
+  }, []);
 
   const trainedCount = useMemo(
     () => phrases.filter((p) => p.enabled && p.recordingCount >= 2).length,
@@ -106,6 +147,19 @@ export default function AppRoutes() {
     <Suspense fallback={<DelayedSkeleton variant="page" />}>
       <div className="space-y-5">
         <section className="max-w-lg mx-auto">
+          <VoiceClonePanel
+            voiceId={clonedVoiceId}
+            isCloning={isCloning}
+            error={cloneError}
+            onClone={handleClone}
+            onSpeak={cloud.speak}
+            onClearVoice={handleClearVoice}
+            isSpeaking={isSpeaking}
+            onStop={cloud.stop}
+          />
+        </section>
+
+        <section className="max-w-lg mx-auto">
           <VoiceSelector
             selectedVoice={selectedVoice}
             onVoiceChange={setSelectedVoice}
@@ -119,12 +173,12 @@ export default function AppRoutes() {
             path="/"
             element={
               <UsagePage
-                onSpeak={cloud-speech.speak}
-                onStop={cloud-speech.stop}
-                isSpeaking={cloud-speech.isSpeaking}
+                onSpeak={cloud.speak}
+                onStop={cloud.stop}
+                isSpeaking={cloud.isSpeaking}
                 selectedVoice={selectedVoice}
                 onVoiceChange={setSelectedVoice}
-                ttsError={cloud-speech.error}
+                ttsError={cloud.error}
               />
             }
           />

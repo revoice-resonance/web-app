@@ -1,7 +1,7 @@
 /**
  * Whisper ASR hook (deprecated).
  *
- * @deprecated Use {@link useCloudSpeechASR} instead. This hook sends FormData
+ * @deprecated Use {@link useCloudASR} instead. This hook sends FormData
  * to `/api/whisper-asr` (which returns 501 NOT_IMPLEMENTED) and falls back
  * to the browser Web Speech API on every call. Kept for backward
  * compatibility — no logic changes.
@@ -110,7 +110,7 @@ function browserSpeechFallback(): Promise<string | null> {
   });
 }
 
-/** @deprecated Use {@link useCloudSpeechASR} instead. */
+/** @deprecated Use {@link useCloudASR} instead. */
 export function useWhisperASR(): UseWhisperASRReturn {
   const [finalText, setFinalText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);

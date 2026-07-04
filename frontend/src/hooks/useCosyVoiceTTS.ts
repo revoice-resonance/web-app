@@ -1,6 +1,6 @@
 /**
- * @deprecated Superseded by {@link useCloudSpeechTTS} which uses the CloudSpeech API
- * with system voice selection. CosyVoice's zero-shot cloning workflow
+ * @deprecated Superseded by {@link useCloudTTS} with system voice selection.
+ * CosyVoice's zero-shot cloning workflow
  * (record audio → submit clone job → play) is replaced by direct voice
  * selection via the {@link VoiceSelector} component.
  *
@@ -12,7 +12,7 @@
  * TTS requests. Prompt audio is persisted to localStorage for cross-session use.
  *
  * This hook is kept for backward compatibility and should not be used in new code.
- * Use {@link useCloudSpeechTTS} and the {@link VoiceSelector} component instead.
+ * Use {@link useCloudTTS} and the {@link VoiceSelector} component instead.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -34,8 +34,8 @@ interface UseCosyVoiceTTSReturn {
 }
 
 /**
- * @deprecated Use {@link useCloudSpeechTTS} with {@link VoiceSelector} for voice
- * selection. CosyVoice zero-shot cloning is superseded by CloudSpeech system voices.
+ * @deprecated Use {@link useCloudTTS} with {@link VoiceSelector} for voice
+ * selection. CosyVoice zero-shot cloning is superseded by cloud system voices.
  */
 export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);

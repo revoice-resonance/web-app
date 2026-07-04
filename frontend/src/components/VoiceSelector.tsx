@@ -5,17 +5,16 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
 /**
- * VoiceSelector — CloudSpeech TTS voice selection component.
+ * VoiceSelector — voice selection component for TTS.
  *
  * Renders a radio group of system voices with Chinese labels, per-voice test-playback
- * buttons, and a custom voice ID input. Replaces the deprecated VoiceClonePanel
- * audio-cloning workflow with direct voice selection from the CloudSpeech voice library.
+ * buttons, and a custom voice ID input.
  *
  * Voice data is static (compile-time constant) — no async fetch, no Loading/Empty states.
- * Selected voice is persisted to localStorage under key 'resonance_cloud-speech_voice'.
+ * Selected voice is persisted to localStorage under key 'resonance_tts_voice'.
  */
 
-/** Voice entry: internal CloudSpeech voice ID + user-facing Chinese label. */
+/** Voice entry: internal voice ID + user-facing Chinese label. */
 interface VoiceEntry {
   id: string;
   label: string;
@@ -27,7 +26,7 @@ interface VoiceSelectorProps {
   selectedVoice: string;
   /** Called when the user selects a system voice or applies a custom voice ID. */
   onVoiceChange: (voice: string) => void;
-  /** Called to play a test utterance; parent wires to CloudSpeech TTS speak. */
+  /** Called to play a test utterance. */
   onTestVoice: (text: string) => Promise<void>;
   /** Whether a test playback is currently in progress. */
   isTestSpeaking: boolean;
@@ -35,7 +34,7 @@ interface VoiceSelectorProps {
   className?: string;
 }
 
-/** System voice definitions — CloudSpeech voice IDs with Chinese display labels. */
+/** System voice definitions with Chinese display labels. */
 const SYSTEM_VOICES: VoiceEntry[] = [
   { id: 'wenrounvsheng', label: '温柔女声' },
   { id: 'wenrounansheng', label: '温柔男声' },
@@ -52,7 +51,7 @@ const SYSTEM_VOICES: VoiceEntry[] = [
 const TEST_TEXT = '你好，这是音色试听';
 
 /** localStorage key for persisting selected voice across sessions. */
-const STORAGE_KEY = 'resonance_cloud-speech_voice';
+const STORAGE_KEY = 'resonance_tts_voice';
 
 /**
  * Persist a voice ID to localStorage.
@@ -66,7 +65,7 @@ function persistVoice(voiceId: string): void {
   }
 }
 
-/** VoiceSelector component — renders the CloudSpeech voice picker UI. */
+/** VoiceSelector component — renders the voice picker UI. */
 export default function VoiceSelector({
   selectedVoice,
   onVoiceChange,
@@ -94,11 +93,7 @@ export default function VoiceSelector({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
   }, []);
 
-  /**
-   * Select a voice: persist to localStorage and notify parent.
-   *
-   * @param voiceId - The CloudSpeech voice ID to select (system or custom).
-   */
+  /** Select a voice: persist to localStorage and notify parent. */
   const handleVoiceSelect = useCallback(
     (voiceId: string) => {
       persistVoice(voiceId);
@@ -107,15 +102,9 @@ export default function VoiceSelector({
     [onVoiceChange],
   );
 
-  /**
-   * Preview the given voice by selecting it and playing the test text.
-   *
-   * @param voiceId - The voice to test-preview.
-   */
+  /** Preview the given voice by selecting it and playing the test text. */
   const handleTest = useCallback(
     async (voiceId: string) => {
-      // Select this voice so the parent's onTestVoice uses it for playback.
-      // Persist + notify before speaking so the TTS call uses the right voice.
       persistVoice(voiceId);
       onVoiceChange(voiceId);
       setTestingVoiceId(voiceId);

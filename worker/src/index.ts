@@ -13,8 +13,9 @@ import { createCorsResponse, createErrorResponse } from './utils';
 import { handleAudioUploadRequest } from './handlers/audio';
 import { handleASRJobSubmitRequest, handleASRJobStatusRequest, handleWhisperASRRequest } from './handlers/asr';
 import { handleTTSJobSubmitRequest, handleVoiceCloneJobSubmitRequest, handleTTSJobStatusRequest } from './handlers/tts';
-import { handleCloudSpeechTTSRequest } from './handlers/cloud-speechTts';
-import { handleCloudSpeechASRRequest, handleCloudSpeechHealthRequest } from './handlers/cloud-speechAsr';
+import { handleCloudTTSRequest } from './handlers/cloudTts';
+import { handleCloudASRRequest, handleCloudHealthRequest } from './handlers/cloudAsr';
+import { handleVoiceCloneRequest } from './handlers/voiceClone';
 import { handleLogsRequest, handleClientLogsUploadRequest, handleLogsQueryRequest, handleLogsStatsRequest } from './handlers/logs';
 import { handleCorpusUploadRequest, handleCorpusBatchUploadRequest, handleCorpusQueryRequest, handleCorpusStatsRequest } from './handlers/corpus';
 import { handleHealthCheck, handleStatsRequest } from './handlers/health';
@@ -109,19 +110,24 @@ export default {
         return new Response(null, { status: 204, headers: corsHeaderMap(allowedOrigin) });
       }
 
-      // CloudSpeech TTS 直连通道（需要访问 env.CLOUD_SPEECH_API_KEY，故在 router 之前 short-circuit）
-      if (request.method === 'POST' && url.pathname === '/api/tts/cloud-speech') {
-        return withCors(allowedOrigin, await handleCloudSpeechTTSRequest(request, serviceManager, env));
+      // Cloud TTS (speech synthesis)
+      if (request.method === 'POST' && url.pathname === '/api/tts/speak') {
+        return withCors(allowedOrigin, await handleCloudTTSRequest(request, serviceManager, env));
       }
 
-      // CloudSpeech ASR 直连通道
-      if (request.method === 'POST' && url.pathname === '/api/asr/cloud-speech') {
-        return withCors(allowedOrigin, await handleCloudSpeechASRRequest(request, serviceManager, env));
+      // Cloud voice cloning (upload reference audio → custom voice ID)
+      if (request.method === 'POST' && url.pathname === '/api/tts/voices/clone') {
+        return withCors(allowedOrigin, await handleVoiceCloneRequest(request, serviceManager, env));
       }
 
-      // CloudSpeech 平台状态探测（仅检查 KEY 存在，不发 probe 请求）
-      if (request.method === 'GET' && url.pathname === '/api/cloud-speech/health') {
-        return withCors(allowedOrigin, handleCloudSpeechHealthRequest(env));
+      // Cloud ASR (speech recognition)
+      if (request.method === 'POST' && url.pathname === '/api/asr/recognize') {
+        return withCors(allowedOrigin, await handleCloudASRRequest(request, serviceManager, env));
+      }
+
+      // Cloud ASR health check (key-presence only, no probe)
+      if (request.method === 'GET' && url.pathname === '/api/asr/health') {
+        return withCors(allowedOrigin, handleCloudHealthRequest(env));
       }
 
       // 路由匹配

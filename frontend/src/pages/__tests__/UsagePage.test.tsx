@@ -30,8 +30,8 @@ vi.mock('@/hooks/useAudioRecorder', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useCloudSpeechASR', () => ({
-  useCloudSpeechASR: () => ({
+vi.mock('@/hooks/useCloudASR', () => ({
+  useCloudASR: () => ({
     finalText: mockFinalText,
     isProcessing: false,
     error: mockAsrError,
@@ -113,7 +113,6 @@ describe('UsagePage', () => {
 
   it('does not show voice name in header when no voice selected', () => {
     const { queryByText } = render(<UsagePage {...defaultProps} selectedVoice="" />);
-    // 温柔女声 should not appear when no voice is selected
     expect(queryByText('温柔女声')).not.toBeInTheDocument();
   });
 

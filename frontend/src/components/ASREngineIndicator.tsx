@@ -7,7 +7,7 @@ interface ASREngineIndicatorProps {
   className?: string;
 }
 
-type LayerKey = 'cloud-speech' | 'browser';
+type LayerKey = 'cloud' | 'browser';
 
 interface LayerSpec {
   key: LayerKey;
@@ -17,7 +17,7 @@ interface LayerSpec {
 }
 
 const LAYERS: LayerSpec[] = [
-  { key: 'cloud-speech', label: '阶跃星辰', hint: '云端主路', Icon: Cloud },
+  { key: 'cloud', label: '云端', hint: '云端主路', Icon: Cloud },
   { key: 'browser', label: '浏览器', hint: '本机兜底', Icon: Globe },
 ];
 
@@ -39,7 +39,7 @@ function getLayerState(
   if (stage === 'success' && engine) {
     if (layer === engine) return 'done';
     // Layers tried before the winner = failed; layers after = skipped
-    const order: LayerKey[] = ['cloud-speech', 'browser'];
+    const order: LayerKey[] = ['cloud', 'browser'];
     return order.indexOf(layer) < order.indexOf(engine) ? 'failed' : 'skipped';
   }
 
@@ -47,11 +47,11 @@ function getLayerState(
     return 'failed';
   }
 
-  if (stage === 'cloud-speech-trying') {
-    return layer === 'cloud-speech' ? 'active' : 'pending';
+  if (stage === 'cloud-trying') {
+    return layer === 'cloud' ? 'active' : 'pending';
   }
   if (stage === 'browser-trying') {
-    if (layer === 'cloud-speech') return 'failed';
+    if (layer === 'cloud') return 'failed';
     if (layer === 'browser') return 'active';
     return 'pending';
   }

@@ -13,8 +13,8 @@ const OPTIONS: Array<{
   hint: string;
   Icon: typeof Sparkles;
 }> = [
-  { key: 'auto', label: '智能', hint: 'CloudSpeech → 浏览器，自动回退', Icon: Sparkles },
-  { key: 'cloud-speech', label: 'CloudSpeech', hint: '阶跃星辰 ASR，快速准确', Icon: Cloud },
+  { key: 'auto', label: '智能', hint: '云端引擎 → 浏览器，自动回退', Icon: Sparkles },
+  { key: 'cloud', label: '云端', hint: '云端识别引擎，快速准确', Icon: Cloud },
   { key: 'browser', label: '浏览器', hint: '只用本机引擎', Icon: Globe },
 ];
 
