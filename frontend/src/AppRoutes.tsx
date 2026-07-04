@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { useAppData } from '@/hooks/useAppData';
+import { useAuth } from '@/hooks/useAuth';
 import { useTTS } from '@/hooks/useTTS';
 import { useCloudTTS, type CloudVoice } from '@/hooks/useCloudTTS';
 import { useVoiceClone } from '@/hooks/useVoiceClone';
@@ -14,6 +15,7 @@ const PhrasesPage = lazy(() => import('./pages/PhrasesPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 
 const WelcomePage = lazy(() => import('./pages/WelcomePage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ONBOARDING_KEY = 'resonance_onboarding_done';
@@ -48,6 +50,8 @@ export default function AppRoutes() {
   const [selectedVoice, setSelectedVoice] = useState<CloudVoice>(loadInitialVoice);
   const [clonedVoiceId, setClonedVoiceId] = useState<string>(loadClonedVoice);
   const [isTestSpeaking, setIsTestSpeaking] = useState(false);
+
+  const auth = useAuth();
 
   const {
     phrases,
@@ -139,6 +143,19 @@ export default function AppRoutes() {
     return (
       <Suspense fallback={<DelayedSkeleton variant="page" />}>
         <WelcomePage onComplete={handleOnboardingComplete} />
+      </Suspense>
+    );
+  }
+
+  // Auth gate: show skeleton while checking session, LoginPage for guests
+  if (auth.status === 'loading') {
+    return <DelayedSkeleton variant="page" />;
+  }
+
+  if (auth.status === 'guest') {
+    return (
+      <Suspense fallback={<DelayedSkeleton variant="page" />}>
+        <LoginPage />
       </Suspense>
     );
   }

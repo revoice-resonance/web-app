@@ -9,6 +9,7 @@ import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Mic, MicOff, Volume2, Check, Loader2, AlertCircle, Trash2, Upload } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useUserVoices } from '@/hooks/useUserVoices';
 import { toast } from 'sonner';
 
 interface VoiceClonePanelProps {
@@ -40,6 +41,7 @@ export default function VoiceClonePanel({
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { addVoice } = useUserVoices();
 
   const handleStartRecording = useCallback(async () => {
     setRecordedBlob(null);
@@ -84,8 +86,12 @@ export default function VoiceClonePanel({
       toast.success('音色复刻成功！');
       setRecordedBlob(null);
       setUploadedFileName(null);
+      // Persist the cloned voice (API when authenticated, localStorage when guest)
+      addVoice(vid, referenceText || undefined).catch(() => {
+        /* non-critical — clone itself succeeded */
+      });
     }
-  }, [recordedBlob, referenceText, onClone]);
+  }, [recordedBlob, referenceText, onClone, addVoice]);
 
   const handleTest = useCallback(async () => {
     if (isSpeaking) {

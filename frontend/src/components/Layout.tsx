@@ -16,7 +16,8 @@ interface LayoutProps {
 
 const tabs = [
   { path: '/', label: '使用', icon: BookOpen, shortcutKey: '1' },
-  { path: '/settings', label: '设置', icon: Settings, shortcutKey: '2' },
+  { path: '/training', label: '训练', icon: Mic, shortcutKey: '2' },
+  { path: '/settings', label: '设置', icon: Settings, shortcutKey: '3' },
 ];
 
 

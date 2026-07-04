@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AppSettings, DEFAULT_SETTINGS } from '@/types';
 import { useTTS } from '@/hooks/useTTS';
 import AccessibilitySettings from '@/components/AccessibilitySettings';
@@ -7,13 +6,8 @@ import AccessibleStepper from '@/components/AccessibleStepper';
 import ASREngineCard from '@/components/ASREngineCard';
 import DiagnosticsPanel from '@/components/DiagnosticsPanel';
 import {
-  ChevronDown,
   Volume2,
   RotateCcw,
-  FlaskConical,
-  List,
-  Mic,
-  ChevronRight,
 } from 'lucide-react';
 
 interface SettingsPageProps {
@@ -24,19 +18,12 @@ interface SettingsPageProps {
 /**
  * Settings page — restructured into:
  *   1. Basic settings (always visible): ASR engine, TTS voice, Accessibility
- *   2. Advanced settings (collapsed by default): Privacy/Diagnostics
- *   3. Experimental (collapsed): unfinished features (Phrases, Training)
- *   4. Reset (footer)
- *
- * Old "识别参数" (Top-K / threshold / template count) was removed because
- * the current Whisper/Gemini ASR pipeline does not consume those values
- * — they were leftovers from an early template-matching engine.
+ *   2. Advanced settings (collapsed by default): Privacy/Diagnostics, TTS pitch
+ *   3. Reset (footer)
  */
 export default function SettingsPage({ settings, onUpdate }: SettingsPageProps) {
   const { voices, hasChineseVoice } = useTTS();
-  const navigate = useNavigate();
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [experimentalOpen, setExperimentalOpen] = useState(false);
 
   const update = (key: keyof AppSettings, value: number | string) => {
     onUpdate({ ...settings, [key]: value });
@@ -166,56 +153,6 @@ export default function SettingsPage({ settings, onUpdate }: SettingsPageProps) 
 
           {/* Privacy + diagnostics */}
           <DiagnosticsPanel />
-        </div>
-      </details>
-
-      {/* ============ EXPERIMENTAL ============ */}
-      <details
-        open={experimentalOpen}
-        onToggle={(e) => setExperimentalOpen((e.target as HTMLDetailsElement).open)}
-        className="group rounded-2xl border border-dashed border-border bg-card/50 overflow-hidden"
-      >
-        <summary className="a11y-target flex items-center justify-between cursor-pointer px-5 py-4 hover:bg-muted/30 transition-colors list-none">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-              <FlaskConical className="h-4 w-4" aria-hidden="true" />
-            </div>
-            <div>
-              <div className="text-sm font-semibold text-foreground flex items-center gap-2">
-                实验功能
-                <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-medium text-warning-foreground">
-                  暂未启用
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground">尚未接入识别管线，仅供探索</div>
-            </div>
-          </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
-        </summary>
-
-        <div className="border-t border-border divide-y divide-border">
-          <button
-            onClick={() => navigate('/phrases')}
-            className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-muted/40 transition-colors a11y-target"
-          >
-            <List className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-foreground">词表管理</div>
-              <p className="text-xs text-muted-foreground">添加、编辑、导入导出短语（不影响当前识别）</p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
-          </button>
-          <button
-            onClick={() => navigate('/training')}
-            className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-muted/40 transition-colors a11y-target"
-          >
-            <Mic className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-foreground">录音训练</div>
-              <p className="text-xs text-muted-foreground">为短语录制语音样本（个性化识别上线后启用）</p>
-            </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
-          </button>
         </div>
       </details>
 

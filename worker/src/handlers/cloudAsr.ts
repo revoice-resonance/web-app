@@ -167,6 +167,15 @@ interface CloudASRBody {
   mimeType?: string;
   model?: string;
   language?: string;
+  /**
+   * Optional list of text phrases the user has trained.
+   * Passed through to the upstream ASR API verbatim — the Worker does
+   * zero processing on these values.
+   *
+   * If the upstream model does not support phrase hints, this field is
+   * a silent no-op (upstream ignores unknown keys in the JSON body).
+   */
+  phrase_hints?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -216,7 +225,7 @@ export async function handleCloudASRRequest(
   const format = mimeTypeToFormat(body.mimeType);
 
   // --- Build upstream request body ---
-  const upstreamBody = {
+  const upstreamBody: Record<string, unknown> = {
     audio: {
       data: audio,
       input: {
@@ -235,6 +244,13 @@ export async function handleCloudASRRequest(
       },
     },
   };
+
+  // Pass phrase hints through to upstream if the client provided them.
+  // The Worker does zero processing — upstream ignores the key if
+  // unsupported by the chosen model.
+  if (body.phrase_hints && body.phrase_hints.length > 0) {
+    upstreamBody.phrase_hints = body.phrase_hints;
+  }
 
   const startedAt = Date.now();
   console.log('[asr] request', {

@@ -28,7 +28,7 @@ interface UseCloudASRReturn {
    * New code should use `error.userMessage` / `error.code`.
    */
   errorMessage: string | null;
-  transcribe: (audioBlob: Blob) => Promise<string | null>;
+  transcribe: (audioBlob: Blob, options?: { phraseHints?: string[] }) => Promise<string | null>;
   reset: () => void;
 }
 
@@ -146,7 +146,7 @@ export function useCloudASR(): UseCloudASRReturn {
   const [error, setError] = useState<ASRError | null>(null);
 
   const transcribe = useCallback(
-    async (audioBlob: Blob): Promise<string | null> => {
+    async (audioBlob: Blob, options?: { phraseHints?: string[] }): Promise<string | null> => {
       // Edge case: null or empty blob — return immediately, no network request
       if (!audioBlob || audioBlob.size === 0) {
         return null;
@@ -198,12 +198,19 @@ export function useCloudASR(): UseCloudASRReturn {
         return null;
       }
 
-      const payload = {
+      const payload: Record<string, unknown> = {
         audio: base64,
         mimeType,
         model: 'stepaudio-2.5-asr',
         language: 'zh',
       };
+
+      // Include phrase hints when provided by the caller (e.g. trained phrases
+      // from the user's phrase list).  The Worker passes them through verbatim;
+      // the upstream model ignores the key if it does not support it.
+      if (options?.phraseHints && options.phraseHints.length > 0) {
+        payload.phrase_hints = options.phraseHints;
+      }
 
       const deadline = startTime + TOTAL_DEADLINE_MS;
       let lastStatus: number | null = null;

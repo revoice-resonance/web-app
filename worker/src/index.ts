@@ -11,11 +11,11 @@ import { createCorsResponse, createErrorResponse } from './utils';
 
 // Import all handlers
 import { handleAudioUploadRequest } from './handlers/audio';
-import { handleASRJobSubmitRequest, handleASRJobStatusRequest, handleWhisperASRRequest } from './handlers/asr';
-import { handleTTSJobSubmitRequest, handleVoiceCloneJobSubmitRequest, handleTTSJobStatusRequest } from './handlers/tts';
 import { handleCloudTTSRequest } from './handlers/cloudTts';
 import { handleCloudASRRequest, handleCloudHealthRequest } from './handlers/cloudAsr';
 import { handleVoiceCloneRequest } from './handlers/voiceClone';
+import { handleSendCode, handleVerifyCode, handleSession, handleLogout } from './handlers/auth';
+import { handleCreateVoice, handleListVoices, handleSyncVoices } from './handlers/user';
 import { handleLogsRequest, handleClientLogsUploadRequest, handleLogsQueryRequest, handleLogsStatsRequest } from './handlers/logs';
 import { handleCorpusUploadRequest, handleCorpusBatchUploadRequest, handleCorpusQueryRequest, handleCorpusStatsRequest } from './handlers/corpus';
 import { handleHealthCheck, handleStatsRequest } from './handlers/health';
@@ -25,16 +25,6 @@ const router = new Router();
 
 // 注册路由 - 音频相关
 router.route('POST', '/api/audio/upload', withErrorHandling(handleAudioUploadRequest));
-
-// ASR相关
-router.route('POST', '/api/asr/jobs', withErrorHandling(handleASRJobSubmitRequest));
-router.route('POST', '/api/whisper-asr', withErrorHandling(handleWhisperASRRequest)); // 旧路径：同步 multipart 转录
-router.route('GET', '/api/asr/jobs/status', withErrorHandling(handleASRJobStatusRequest));
-
-// TTS相关
-router.route('POST', '/api/tts/jobs', withErrorHandling(handleTTSJobSubmitRequest));
-router.route('POST', '/api/tts/voice-clone', withErrorHandling(handleVoiceCloneJobSubmitRequest));
-router.route('GET', '/api/tts/jobs/status', withErrorHandling(handleTTSJobStatusRequest));
 
 // 日志相关
 router.route('GET', '/api/client-logs', withErrorHandling(handleLogsRequest));
@@ -99,7 +89,8 @@ export default {
 
     try {
       // 鉴权：配置了 API_KEY 时，所有 /api/* 写操作必须携带匹配的 X-API-Key
-      if (env.API_KEY && MUTATING_METHODS.has(request.method) && url.pathname.startsWith('/api/')) {
+      // 跳过公开端点：/api/auth/*（登录注册）、/api/user/*（前端直接调用，JWT 鉴权）
+      if (env.API_KEY && MUTATING_METHODS.has(request.method) && url.pathname.startsWith('/api/') && !url.pathname.startsWith('/api/auth/') && !url.pathname.startsWith('/api/user/')) {
         if (request.headers.get('X-API-Key') !== env.API_KEY) {
           return withCors(allowedOrigin, createCorsResponse(createErrorResponse('Unauthorized'), 401));
         }
@@ -128,6 +119,31 @@ export default {
       // Cloud ASR health check (key-presence only, no probe)
       if (request.method === 'GET' && url.pathname === '/api/asr/health') {
         return withCors(allowedOrigin, handleCloudHealthRequest(env));
+      }
+
+      // Auth routes — no API_KEY guard (public endpoints)
+      if (request.method === 'POST' && url.pathname === '/api/auth/send-code') {
+        return withCors(allowedOrigin, await handleSendCode(request, env));
+      }
+      if (request.method === 'POST' && url.pathname === '/api/auth/verify-code') {
+        return withCors(allowedOrigin, await handleVerifyCode(request, env));
+      }
+      if (request.method === 'GET' && url.pathname === '/api/auth/session') {
+        return withCors(allowedOrigin, await handleSession(request, env));
+      }
+      if (request.method === 'POST' && url.pathname === '/api/auth/logout') {
+        return withCors(allowedOrigin, await handleLogout(request, env));
+      }
+
+      // User voice routes — JWT auth required (handlers enforce)
+      if (request.method === 'POST' && url.pathname === '/api/user/voices') {
+        return withCors(allowedOrigin, await handleCreateVoice(request, env));
+      }
+      if (request.method === 'GET' && url.pathname === '/api/user/voices') {
+        return withCors(allowedOrigin, await handleListVoices(request, env));
+      }
+      if (request.method === 'POST' && url.pathname === '/api/user/voices/sync') {
+        return withCors(allowedOrigin, await handleSyncVoices(request, env));
       }
 
       // 路由匹配

@@ -1,13 +1,4 @@
 export interface Env {
-  // VPC 绑定（已废弃 —— 改用 CloudSpeech 云端 API + MinIO HTTP 直连）
-  // WHISPER_VPC / COSYVOICE_VPC / MINIO_VPC 不再在主配置中声明。
-  // ASRService / TTSService / MinioStorage 各自的 Env 类型仍保留对应字段以维持 API 兼容，
-  // 但所有使用点均已做空值检查（if (!this.env.WHISPER_VPC) return fallback）。
-
-  // Gemini ASR 配置
-  GEMINI_ASR_URL?: string;
-  GEMINI_ASR_KEY?: string;
-
   // Minio 对象存储配置（用于语料收集）
   MINIO_ENDPOINT?: string;
   MINIO_PORT?: string;
@@ -27,6 +18,19 @@ export interface Env {
 
   // CloudSpeech ASR（语音识别）
   CLOUD_SPEECH_ASR_DEFAULT_MODEL?: string;  // 可选覆盖，默认 stepaudio-2.5-asr
+
+  // PostgreSQL Hyperdrive 绑定（Worker 通过 VPC 访问 PG）
+  // 在 Cloudflare 控制台创建 Hyperdrive 配置后，wrangler.jsonc 中添加 binding
+  RESONANCE_DB: Hyperdrive;
+
+  // JWT 签名密钥（HS256），通过 `wrangler secret put JWT_SECRET` 注入
+  JWT_SECRET?: string;
+
+  // 阿里云 SMS 配置
+  ALIBABA_ACCESS_KEY_ID?: string;
+  ALIBABA_ACCESS_KEY_SECRET?: string;
+  ALIBABA_SMS_SIGN_NAME?: string;
+  ALIBABA_SMS_TEMPLATE_CODE?: string;
 
   // 静态资源
   ASSETS: Fetcher;
