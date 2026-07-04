@@ -50,6 +50,7 @@ export default function AppRoutes() {
   const [selectedVoice, setSelectedVoice] = useState<CloudVoice>(loadInitialVoice);
   const [clonedVoiceId, setClonedVoiceId] = useState<string>(loadClonedVoice);
   const [isTestSpeaking, setIsTestSpeaking] = useState(false);
+  const [guestSkipped, setGuestSkipped] = useState(false);
 
   const auth = useAuth();
 
@@ -152,10 +153,10 @@ export default function AppRoutes() {
     return <DelayedSkeleton variant="page" />;
   }
 
-  if (auth.status === 'guest') {
+  if (auth.status === 'guest' && !guestSkipped) {
     return (
       <Suspense fallback={<DelayedSkeleton variant="page" />}>
-        <LoginPage />
+        <LoginPage onSkip={() => setGuestSkipped(true)} />
       </Suspense>
     );
   }

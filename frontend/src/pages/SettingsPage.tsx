@@ -6,6 +6,7 @@ import AccessibleStepper from '@/components/AccessibleStepper';
 import ASREngineCard from '@/components/ASREngineCard';
 import DiagnosticsPanel from '@/components/DiagnosticsPanel';
 import {
+  ChevronRight,
   Volume2,
   RotateCcw,
 } from 'lucide-react';

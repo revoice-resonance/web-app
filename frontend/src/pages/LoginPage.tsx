@@ -62,8 +62,8 @@ function Spinner({ className }: { className?: string }) {
 // LoginPage
 // ---------------------------------------------------------------------------
 
-export default function LoginPage() {
-  const { sendCode, verifyCode, logout } = useAuth();
+export default function LoginPage({ onSkip }: { onSkip: () => void }) {
+  const { sendCode, verifyCode } = useAuth();
 
   // Step state
   const [loginStep, setLoginStep] = useState<LoginStep>('phone');
@@ -174,10 +174,10 @@ export default function LoginPage() {
     }
   }, [phone, sendCode]);
 
-  /** Skip login — transition to guest mode. */
+  /** Skip login — enter guest mode, bypass the auth gate. */
   const handleSkip = useCallback(() => {
-    logout();
-  }, [logout]);
+    onSkip();
+  }, [onSkip]);
 
   /** Go back to phone input step. */
   const handleBackToPhone = useCallback(() => {
