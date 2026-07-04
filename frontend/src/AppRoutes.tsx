@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { useAppData } from '@/hooks/useAppData';
 import { useAuth } from '@/hooks/useAuth';
+import { useDeviceId } from '@/hooks/useDeviceId';
 import { useTTS } from '@/hooks/useTTS';
 import { useCloudTTS, type CloudVoice } from '@/hooks/useCloudTTS';
 import { useVoiceClone } from '@/hooks/useVoiceClone';
@@ -50,9 +51,9 @@ export default function AppRoutes() {
   const [selectedVoice, setSelectedVoice] = useState<CloudVoice>(loadInitialVoice);
   const [clonedVoiceId, setClonedVoiceId] = useState<string>(loadClonedVoice);
   const [isTestSpeaking, setIsTestSpeaking] = useState(false);
-  const [guestSkipped, setGuestSkipped] = useState(false);
 
-  const auth = useAuth();
+  const { deviceId, isLoading: deviceLoading } = useDeviceId();
+  const auth = useAuth(deviceId);
 
   const {
     phrases,
@@ -148,15 +149,15 @@ export default function AppRoutes() {
     );
   }
 
-  // Auth gate: show skeleton while checking session, LoginPage for guests
-  if (auth.status === 'loading') {
+  // Auth gate: show skeleton while checking session or loading deviceId
+  if (auth.status === 'loading' || deviceLoading) {
     return <DelayedSkeleton variant="page" />;
   }
 
-  if (auth.status === 'guest' && !guestSkipped) {
+  if (auth.status === 'guest') {
     return (
       <Suspense fallback={<DelayedSkeleton variant="page" />}>
-        <LoginPage onSkip={() => setGuestSkipped(true)} />
+        <LoginPage onBindPhone={auth.bindPhone} />
       </Suspense>
     );
   }

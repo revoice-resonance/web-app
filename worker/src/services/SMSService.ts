@@ -9,7 +9,20 @@
  * Signature algorithm: Alibaba Cloud API v3 (AK/SK via Authorization header).
  */
 
-import type { Env } from '../types/env';
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal SMS configuration — the subset of Env that sendSms needs.
+ * Kept small so callers (AuthService) don't need the full Env object.
+ */
+export interface SmsConfig {
+  ALIBABA_ACCESS_KEY_ID?: string;
+  ALIBABA_ACCESS_KEY_SECRET?: string;
+  ALIBABA_SMS_SIGN_NAME?: string;
+  ALIBABA_SMS_TEMPLATE_CODE?: string;
+}
 
 // ---------------------------------------------------------------------------
 // Config
@@ -36,12 +49,12 @@ const FETCH_TIMEOUT_MS = 10_000;
 export async function sendSms(
   phone: string,
   code: string,
-  env: Env,
+  config: SmsConfig,
 ): Promise<void> {
-  const accessKeyId = env.ALIBABA_ACCESS_KEY_ID;
-  const accessKeySecret = env.ALIBABA_ACCESS_KEY_SECRET;
-  const signName = env.ALIBABA_SMS_SIGN_NAME;
-  const templateCode = env.ALIBABA_SMS_TEMPLATE_CODE;
+  const accessKeyId = config.ALIBABA_ACCESS_KEY_ID;
+  const accessKeySecret = config.ALIBABA_ACCESS_KEY_SECRET;
+  const signName = config.ALIBABA_SMS_SIGN_NAME;
+  const templateCode = config.ALIBABA_SMS_TEMPLATE_CODE;
 
   if (!accessKeyId || !accessKeySecret || !signName || !templateCode) {
     throw new Error('短信服务未配置');

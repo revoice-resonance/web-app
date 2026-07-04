@@ -19,9 +19,19 @@ export interface Env {
   // CloudSpeech ASR（语音识别）
   CLOUD_SPEECH_ASR_DEFAULT_MODEL?: string;  // 可选覆盖，默认 stepaudio-2.5-asr
 
-  // PostgreSQL Hyperdrive 绑定（Worker 通过 VPC 访问 PG）
-  // 在 Cloudflare 控制台创建 Hyperdrive 配置后，wrangler.jsonc 中添加 binding
-  RESONANCE_DB: Hyperdrive;
+  // ── Storage backend selection ──────────────────────────────────────
+  // STORAGE_BACKEND: 'pg' (Hyperdrive/PostgreSQL) or 'd1' (SQLite via D1).
+  // Defaults to 'd1' when unset.
+  STORAGE_BACKEND?: 'pg' | 'd1';
+
+  // PostgreSQL Hyperdrive 绑定（仅 STORAGE_BACKEND = 'pg' 时需要）
+  RESONANCE_DB?: Hyperdrive;
+
+  // D1Database 绑定（仅 STORAGE_BACKEND = 'd1' 时需要）
+  RESONANCE_D1?: D1Database;
+
+  // KVNamespace 绑定（D1 速率限制使用，可选）
+  RESONANCE_KV?: KVNamespace;
 
   // JWT 签名密钥（HS256），通过 `wrangler secret put JWT_SECRET` 注入
   JWT_SECRET?: string;

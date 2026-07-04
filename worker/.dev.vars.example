@@ -39,6 +39,12 @@ MINIO_SECRET_KEY=minioadmin
 # MINIO_REGION=
 
 # -----------------------------------------------------------------------------
+# 存储后端: "pg" (Hyperdrive/PostgreSQL) 或 "d1" (Cloudflare D1 + KV, 默认)
+# STORAGE_BACKEND=d1
+
+# JWT 签名密钥（HS256），生产环境通过 `wrangler secret put JWT_SECRET` 注入
+# JWT_SECRET=dev-secret-change-me
+
 # 安全配置（可选）
 # -----------------------------------------------------------------------------
 # ALLOWED_ORIGIN=

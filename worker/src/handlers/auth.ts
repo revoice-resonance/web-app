@@ -15,6 +15,7 @@
 import { AuthService } from '../services/AuthService';
 import { createCorsResponse, createErrorResponse, createSuccessResponse } from '../utils';
 import { parseAuthCookie, setTokenCookie } from '../utils/cookie';
+import { getStorageAdapter } from '../db/client';
 import type { Env } from '../types/env';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +25,15 @@ import type { Env } from '../types/env';
 /** Extract client IP from CF-Connecting-IP header, falling back to an empty string. */
 function clientIp(request: Request): string {
   return request.headers.get('CF-Connecting-IP') || '';
+}
+
+/** Get a configured AuthService instance for a request. */
+function getAuthService(env: Env): AuthService {
+  return new AuthService(
+    getStorageAdapter(env),
+    env.JWT_SECRET || 'dev-secret',
+    env,
+  );
 }
 
 /**
@@ -68,7 +78,7 @@ export async function handleSendCode(request: Request, env: Env): Promise<Respon
   const ip = clientIp(request);
 
   try {
-    const auth = new AuthService(env);
+    const auth = getAuthService(env);
     await auth.sendCode(phone, ip);
   } catch (err) {
     const status = errorStatus(err);
@@ -124,7 +134,7 @@ export async function handleVerifyCode(request: Request, env: Env): Promise<Resp
   }
 
   try {
-    const auth = new AuthService(env);
+    const auth = getAuthService(env);
     const { userId, token } = await auth.verifyCode(phone, code);
 
     const headers = new Headers();
@@ -161,7 +171,7 @@ export async function handleSession(request: Request, env: Env): Promise<Respons
     );
   }
 
-  const auth = new AuthService(env);
+  const auth = getAuthService(env);
   const session = await auth.getSession(token);
 
   if (!session) {

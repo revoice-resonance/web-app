@@ -48,6 +48,20 @@ export interface VerifyCodeResponse {
 export interface SessionResponse {
   phone: string | null;
   userId: string | null;
+  /** Whether SMS login is available. Absent = unknown (treat as available). false = SMS not configured, auto-anonymous possible. */
+  smsAvailable?: boolean;
+}
+
+/** POST /api/auth/anonymous */
+export interface AnonymousSessionResponse {
+  ok: boolean;
+  userId: string;
+}
+
+/** POST /api/auth/bind-phone */
+export interface BindPhoneResponse {
+  ok: boolean;
+  userId: string;
 }
 
 // ---------------------------------------------------------------------------

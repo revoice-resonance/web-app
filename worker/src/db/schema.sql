@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_code_requests_ip_ts   ON code_requests (ip, creat
 -- Registered users. userId = "u_" + SHA256(phone + JWT_SECRET).
 CREATE TABLE IF NOT EXISTS users (
     user_id    VARCHAR(80) PRIMARY KEY,
-    phone_hash VARCHAR(128) NOT NULL,
+    phone_hash VARCHAR(128),  -- NULL for anonymous users; set on bind-phone
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

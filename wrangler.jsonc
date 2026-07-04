@@ -38,5 +38,14 @@
   //   CLOUD_SPEECH_DEFAULT_MODEL      — 默认 step-tts-mini
   //   CLOUD_SPEECH_DEFAULT_VOICE      — 默认 wenrounvsheng
   // ---------------------------------------------------------------------------
+  // D1 数据库绑定（STORAGE_BACKEND=d1 时取消注释）：
+  // "d1_databases": [
+  //   { "binding": "RESONANCE_D1", "database_name": "resonance-db", "database_id": "<your-d1-database-id>" }
+  // ],
+  // KV 命名空间绑定（STORAGE_BACKEND=d1 时用于 rate-limit 计数器）：
+  // "kv_namespaces": [
+  //   { "binding": "RESONANCE_KV", "id": "<your-kv-namespace-id>" }
+  // ],
+  // ---------------------------------------------------------------------------
   "vars": {}
 }

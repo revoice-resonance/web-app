@@ -2,11 +2,15 @@
  * LoginPage — multi-step phone SMS login wizard.
  *
  * Three-step flow controlled by local loginStep state:
- *   'phone'   → phone input + "获取验证码" button + guest skip
+ *   'phone'   → phone input + "获取验证码" button
  *   'code'    → 6-digit code input with 60s countdown + resend + back
  *   'success' → brief checkmark indicator (parent AppRoutes handles redirect)
  *
- * Uses the useAuth() hook (S8) for all API interactions. The hook handles
+ * Secondary mode: anonymous users can bind their phone number to upgrade
+ * their device-based identity to a phone-bound account. Toggled by the
+ * "绑定手机号" link from the phone step.
+ *
+ * Uses the useAuth() hook for all API interactions. The hook handles
  * toast error messages; this page handles inline validation errors and the
  * countdown timer.
  */
@@ -62,11 +66,21 @@ function Spinner({ className }: { className?: string }) {
 // LoginPage
 // ---------------------------------------------------------------------------
 
-export default function LoginPage({ onSkip }: { onSkip: () => void }) {
+interface LoginPageProps {
+  /**
+   * Called when an anonymous user successfully binds their phone number.
+   * Returns true on success (parent updates auth state), false on failure
+   * (toast already shown by the hook).
+   */
+  onBindPhone?: (phone: string, code: string) => Promise<boolean>;
+}
+
+export default function LoginPage({ onBindPhone }: LoginPageProps) {
   const { sendCode, verifyCode } = useAuth();
 
   // Step state
   const [loginStep, setLoginStep] = useState<LoginStep>('phone');
+  const [isBinding, setIsBinding] = useState(false); // true = bind-phone mode, false = normal login
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -127,23 +141,31 @@ export default function LoginPage({ onSkip }: { onSkip: () => void }) {
     }
   }, [phone, sendCode]);
 
-  /** Verify the 6-digit code. Only called when code reaches 6 characters. */
+  /** Verify the 6-digit code. Uses bindPhone if in binding mode, verifyCode otherwise. */
   const handleVerifyCode = useCallback(
     async (codeValue: string) => {
       if (codeValue.length !== 6) return;
       setIsVerifying(true);
       setCodeError('');
       try {
-        const nextStep = await verifyCode(phone, codeValue);
-        if (nextStep === 'success') {
-          setLoginStep('success');
+        if (isBinding && onBindPhone) {
+          const ok = await onBindPhone(phone, codeValue);
+          if (ok) {
+            setLoginStep('success');
+          }
+          // onBindPhone already shows toast on failure
+        } else {
+          const nextStep = await verifyCode(phone, codeValue);
+          if (nextStep === 'success') {
+            setLoginStep('success');
+          }
+          // If verifyCode returns 'code', the hook already showed a toast — stay on code step
         }
-        // If verifyCode returns 'code', the hook already showed a toast — stay on code step
       } finally {
         setIsVerifying(false);
       }
     },
-    [phone, verifyCode],
+    [phone, verifyCode, isBinding, onBindPhone],
   );
 
   /** Handle code input change — strip non-digits, cap at 6, auto-submit. */
@@ -174,15 +196,30 @@ export default function LoginPage({ onSkip }: { onSkip: () => void }) {
     }
   }, [phone, sendCode]);
 
-  /** Skip login — enter guest mode, bypass the auth gate. */
-  const handleSkip = useCallback(() => {
-    onSkip();
-  }, [onSkip]);
-
   /** Go back to phone input step. */
   const handleBackToPhone = useCallback(() => {
     setLoginStep('phone');
     setCode('');
+    setCodeError('');
+    setCountdown(0);
+  }, []);
+
+  /** Enter bind-phone mode from the phone step. */
+  const handleEnterBindMode = useCallback(() => {
+    setIsBinding(true);
+    setPhone('');
+    setCode('');
+    setPhoneError('');
+    setCodeError('');
+    setCountdown(0);
+  }, []);
+
+  /** Exit bind-phone mode back to normal login. */
+  const handleExitBindMode = useCallback(() => {
+    setIsBinding(false);
+    setPhone('');
+    setCode('');
+    setPhoneError('');
     setCodeError('');
     setCountdown(0);
   }, []);
@@ -219,7 +256,7 @@ export default function LoginPage({ onSkip }: { onSkip: () => void }) {
               共鸣
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              登录以同步你的音色数据
+              {isBinding ? '绑定手机号以保护你的数据' : '登录以同步你的音色数据'}
             </p>
           </div>
 
@@ -270,15 +307,31 @@ export default function LoginPage({ onSkip }: { onSkip: () => void }) {
                 )}
               </Button>
 
-              <div className="text-center">
-                <Button
-                  variant="ghost"
-                  className="text-sm text-muted-foreground hover:text-foreground min-h-[44px]"
-                  onClick={handleSkip}
-                >
-                  跳过登录，先体验
-                </Button>
-              </div>
+              {/* Bind-phone toggle — only shown in normal login mode when onBindPhone exists */}
+              {!isBinding && onBindPhone && (
+                <div className="flex items-center justify-between text-sm">
+                  <button
+                    type="button"
+                    className="text-muted-foreground hover:text-foreground transition-colors min-h-[44px] flex items-center"
+                    onClick={handleEnterBindMode}
+                  >
+                    已有匿名账号？绑定手机号
+                  </button>
+                </div>
+              )}
+
+              {/* Back to normal login from bind mode */}
+              {isBinding && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors min-h-[44px]"
+                    onClick={handleExitBindMode}
+                  >
+                    返回正常登录
+                  </button>
+                </div>
+              )}
             </>
           )}
 
@@ -380,7 +433,9 @@ export default function LoginPage({ onSkip }: { onSkip: () => void }) {
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                 <Check className="h-6 w-6 text-green-600" aria-hidden="true" />
               </div>
-              <p className="text-lg font-semibold text-foreground">登录成功</p>
+              <p className="text-lg font-semibold text-foreground">
+                {isBinding ? '绑定成功' : '登录成功'}
+              </p>
               <p className="text-sm text-muted-foreground">正在跳转...</p>
             </div>
           )}
