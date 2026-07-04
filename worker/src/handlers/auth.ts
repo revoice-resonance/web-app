@@ -251,30 +251,65 @@ export async function handleVerifyCode(request: Request, env: Env): Promise<Resp
  *
  * Reads the JWT from the Cookie header, verifies it, and returns the
  * current session.  Never returns 401 — unauthenticated callers get
- * { phone: null, userId: null } (guest mode).
+ * { phone: null, userId: null, smsAvailable } (guest mode).
+ *
+ * When no cookie is present but X-Device-Id is sent AND SMS is not
+ * configured, the handler auto-creates an anonymous session so the
+ * frontend can skip the login screen entirely.
  */
 export async function handleSession(request: Request, env: Env): Promise<Response> {
   const token = parseAuthCookie(request);
+  const smsAvailable = !!env.ALIBABA_ACCESS_KEY_ID;
 
-  if (!token) {
-    return createCorsResponse(
-      createSuccessResponse({ phone: null, userId: null }),
-      200,
-    );
+  // Has valid JWT — return session
+  if (token) {
+    const auth = makeAuth(env);
+    const session = await auth.getSession(token);
+    if (session) {
+      return createCorsResponse(
+        createSuccessResponse({
+          phone: session.phone,
+          userId: session.userId,
+          smsAvailable,
+        }),
+        200,
+      );
+    }
   }
 
-  const auth = makeAuth(env);
-  const session = await auth.getSession(token);
+  // No valid session — try auto-anonymous if SMS is unavailable and
+  // the frontend sent a device fingerprint.
+  if (!smsAvailable) {
+    const deviceId = request.headers.get('X-Device-Id');
+    if (deviceId) {
+      try {
+        const sub = 'd_' + await sha256Hex(deviceId + (env.JWT_SECRET || 'dev-secret'));
+        const adapter = getStorageAdapter(env);
+        await adapter.upsertUser(sub); // anonymous user, phoneHash = undefined
+        const jwt = await signJWT(
+          { sub, iat: Math.floor(Date.now() / 1000) },
+          env.JWT_SECRET || 'dev-secret',
+          24 * 3600,
+        );
 
-  if (!session) {
-    return createCorsResponse(
-      createSuccessResponse({ phone: null, userId: null }),
-      200,
-    );
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/json');
+        headers.set('Access-Control-Allow-Origin', '*');
+        headers.set('Set-Cookie', setTokenCookie(jwt, 86400));
+
+        return new Response(
+          JSON.stringify({ ok: true, phone: null, userId: sub, smsAvailable }),
+          { status: 200, headers },
+        );
+      } catch (err) {
+        console.error('[auth] auto-anonymous failed', err);
+      }
+    }
   }
 
+  // Return guest — SMS available or deviceId not provided
   return createCorsResponse(
-    createSuccessResponse({ phone: session.phone, userId: session.userId }),
+    createSuccessResponse({ phone: null, userId: null, smsAvailable }),
     200,
   );
 }

@@ -20,7 +20,12 @@ import { toast } from 'sonner';
 export function useAuth(deviceId: string | null = null) {
   const [state, setState] = useState<AuthState>({ status: 'loading' });
 
-  // On mount: check existing session (with X-Device-Id header if available)
+  // On mount: check session. If SMS is not configured and we have a
+  // deviceId, the Worker auto-creates an anonymous session and returns
+  // Set-Cookie — so this single call covers all three paths:
+  //   1. valid JWT cookie → authenticated
+  //   2. no cookie + X-Device-Id + !sms → auto-anonymous → authenticated
+  //   3. no cookie + SMS available → guest (LoginPage shown)
   useEffect(() => {
     let cancelled = false;
 
@@ -35,37 +40,14 @@ export function useAuth(deviceId: string | null = null) {
         (data: { phone: string | null; userId: string | null; smsAvailable?: boolean }) => {
           if (cancelled) return;
           if (data.userId) {
+            // Path 1 or 2: authenticated (JWT or auto-anonymous)
             setState({
               status: 'authenticated',
               userId: data.userId,
               phone: data.phone || undefined,
             });
-          } else if (data.smsAvailable === false && deviceId) {
-            // SMS not configured and we have a deviceId — auto-anonymous
-            fetch('/api/auth/anonymous', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ deviceId }),
-              credentials: 'include',
-            })
-              .then((res) => res.json())
-              .then((anon: { ok: boolean; userId: string }) => {
-                if (cancelled) return;
-                if (anon.ok) {
-                  setState({
-                    status: 'authenticated',
-                    userId: anon.userId,
-                  });
-                } else {
-                  setState({ status: 'guest' });
-                }
-              })
-              .catch(() => {
-                if (cancelled) return;
-                setState({ status: 'guest' });
-              });
           } else {
-            // SMS available (or no deviceId) — show LoginPage
+            // Path 3: SMS available, user must log in
             setState({ status: 'guest' });
           }
         },
