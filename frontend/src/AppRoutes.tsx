@@ -1,10 +1,11 @@
 import { Routes, Route } from 'react-router-dom';
 import { useAppData } from '@/hooks/useAppData';
 import { useTTS } from '@/hooks/useTTS';
-import { useCosyVoiceTTS } from '@/hooks/useCosyVoiceTTS';
-import { useMemo, useState, useEffect, lazy, Suspense } from 'react';
+import { useCloudSpeechTTS, type CloudSpeechVoice } from '@/hooks/useCloudSpeechTTS';
+import { useMemo, useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { DelayedSkeleton } from '@/components/DelayedSkeleton';
 import UsagePage from './pages/UsagePage';
+import VoiceSelector from '@/components/VoiceSelector';
 
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 const PhrasesPage = lazy(() => import('./pages/PhrasesPage'));
@@ -14,10 +15,21 @@ const WelcomePage = lazy(() => import('./pages/WelcomePage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ONBOARDING_KEY = 'resonance_onboarding_done';
+const STORAGE_KEY = 'resonance_cloud-speech_voice';
+
+function loadInitialVoice(): CloudSpeechVoice {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return saved as CloudSpeechVoice;
+  } catch { /* ignore */ }
+  return 'wenrounvsheng';
+}
 
 export default function AppRoutes() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeChecked, setWelcomeChecked] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState<CloudSpeechVoice>(loadInitialVoice);
+  const [isTestSpeaking, setIsTestSpeaking] = useState(false);
 
   const {
     phrases,
@@ -56,15 +68,17 @@ export default function AppRoutes() {
     settings.ttsVoice
   );
 
-  const {
-    speak: cosySpeak,
-    stop: cosyStop,
-    isSpeaking: cosyIsSpeaking,
-    setPromptAudio,
-    clearPromptAudio,
-    hasPromptAudio,
-    error: ttsError,
-  } = useCosyVoiceTTS();
+  // CloudSpeech TTS as primary speech engine
+  const cloud-speech = useCloudSpeechTTS({ voice: 'wenrounvsheng' });
+
+  const handleTestVoice = useCallback(async (text: string) => {
+    setIsTestSpeaking(true);
+    try {
+      await cloud-speech.speak(text, { voice: selectedVoice });
+    } finally {
+      setIsTestSpeaking(false);
+    }
+  }, [cloud-speech, selectedVoice]);
 
   const trainedCount = useMemo(
     () => phrases.filter((p) => p.enabled && p.recordingCount >= 2).length,
@@ -90,54 +104,64 @@ export default function AppRoutes() {
 
   return (
     <Suspense fallback={<DelayedSkeleton variant="page" />}>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <UsagePage
-              onSpeak={cosySpeak}
-              onStop={cosyStop}
-              isSpeaking={cosyIsSpeaking}
-              hasPromptAudio={hasPromptAudio}
-              ttsError={ttsError}
-              onSetPromptAudio={setPromptAudio}
-              onClearPromptAudio={clearPromptAudio}
-            />
-          }
-        />
-        <Route
-          path="/training"
-          element={
-            <TrainingPage
-              phrases={phrases}
-              onAddRecording={addRecording}
-              onDeleteRecording={deleteRecording}
-            />
-          }
-        />
-        <Route
-          path="/phrases"
-          element={
-            <PhrasesPage
-              phrases={phrases}
-              onUpdate={updatePhrase}
-              onAdd={addPhrase}
-              onDelete={deletePhrase}
-              onExport={exportData}
-              onImport={importData}
-            />
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <SettingsPage settings={settings} onUpdate={setSettings} />
-          }
-        />
-        
-        
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <div className="space-y-5">
+        <section className="max-w-lg mx-auto">
+          <VoiceSelector
+            selectedVoice={selectedVoice}
+            onVoiceChange={setSelectedVoice}
+            onTestVoice={handleTestVoice}
+            isTestSpeaking={isTestSpeaking}
+          />
+        </section>
+
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <UsagePage
+                onSpeak={cloud-speech.speak}
+                onStop={cloud-speech.stop}
+                isSpeaking={cloud-speech.isSpeaking}
+                selectedVoice={selectedVoice}
+                onVoiceChange={setSelectedVoice}
+                ttsError={cloud-speech.error}
+              />
+            }
+          />
+          <Route
+            path="/training"
+            element={
+              <TrainingPage
+                phrases={phrases}
+                onAddRecording={addRecording}
+                onDeleteRecording={deleteRecording}
+              />
+            }
+          />
+          <Route
+            path="/phrases"
+            element={
+              <PhrasesPage
+                phrases={phrases}
+                onUpdate={updatePhrase}
+                onAdd={addPhrase}
+                onDelete={deletePhrase}
+                onExport={exportData}
+                onImport={importData}
+              />
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <SettingsPage settings={settings} onUpdate={setSettings} />
+            }
+          />
+
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
     </Suspense>
   );
 }
