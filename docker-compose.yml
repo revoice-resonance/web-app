@@ -1,0 +1,67 @@
+# =============================================================================
+# Project Resonance — 本地 Podman/Docker 开发环境
+# =============================================================================
+# 启动：
+#   podman compose up -d          # 后台启动所有服务
+#   podman compose up             # 前台启动（看日志）
+#   podman compose down           # 停止
+#
+# 前置条件：
+#   1. 复制 worker/.dev.vars.example → worker/.dev.vars 并填入 CLOUD_SPEECH_API_KEY
+#   2. pnpm install（根目录）
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # MinIO — 对象存储（语料 / 音频文件）
+  # ---------------------------------------------------------------------------
+  minio:
+    image: docker.io/minio/minio:latest
+    container_name: resonance-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web 控制台
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - resonance-net
+
+  # ---------------------------------------------------------------------------
+  # Resonance Server — Go 后端（音频上传 / 作业管理）
+  # ---------------------------------------------------------------------------
+  resonance-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: resonance-server
+    ports:
+      - "8080:8080"
+    environment:
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET_NAME=resonance
+      - MINIO_REGION=us-east-1
+      - MINIO_USE_SSL=false
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - resonance-net
+
+volumes:
+  minio-data:
+
+networks:
+  resonance-net:
+    driver: bridge

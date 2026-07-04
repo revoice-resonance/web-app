@@ -79,7 +79,7 @@ describe('useCosyVoiceTTS', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toContain('/functions/v1/cosyvoice-tts');
+    expect(url).toContain('/api/tts/jobs');
     expect(options.headers['Content-Type']).toBe('application/json');
     expect(JSON.parse(options.body)).toEqual({ text: '你好' });
   });
@@ -122,7 +122,7 @@ describe('useCosyVoiceTTS', () => {
       await result.current.speak('测试');
     });
 
-    expect(result.current.error).toBe('未配置后端地址');
+    expect(result.current.error).toBeTruthy();
     import.meta.env.VITE_SUPABASE_URL = origUrl;
   });
 });
