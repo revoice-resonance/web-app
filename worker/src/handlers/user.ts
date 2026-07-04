@@ -12,29 +12,9 @@
 
 import { AuthService } from '../services/AuthService';
 import { createCorsResponse, createErrorResponse } from '../utils';
+import { parseAuthCookie } from '../utils/cookie';
 import { query, execute } from '../db/client';
 import type { Env } from '../types/env';
-
-// ---------------------------------------------------------------------------
-// Cookie helpers (same pattern as handlers/auth.ts)
-// ---------------------------------------------------------------------------
-
-/** Parse the `token` value from the request's Cookie header. */
-function parseAuthCookie(request: Request): string | null {
-  const cookieHeader = request.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  for (const part of cookieHeader.split(';')) {
-    const trimmed = part.trim();
-    if (trimmed.startsWith('token=')) {
-      const value = trimmed.slice(6);
-      // Remove surrounding quotes if present.
-      if (value.startsWith('"') && value.endsWith('"')) return value.slice(1, -1);
-      return value || null;
-    }
-  }
-  return null;
-}
 
 /** Extract userId from the JWT cookie, or null if unauthenticated. */
 async function getUserId(request: Request, env: Env): Promise<string | null> {

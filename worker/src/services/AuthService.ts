@@ -71,7 +71,7 @@ export class AuthService {
       [phone, ip]);
 
     // Send SMS (phone logged masked)
-    const masked = phone.slice(0, 3) + '****' + phone.slice(-4);
+    const masked = '***' + phone.slice(-4);
     console.log('[auth] sendCode', { phone: masked, ip });
     await sendSms(phone, code, this.env);
   }

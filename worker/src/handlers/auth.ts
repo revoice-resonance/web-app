@@ -14,33 +14,8 @@
 
 import { AuthService } from '../services/AuthService';
 import { createCorsResponse, createErrorResponse, createSuccessResponse } from '../utils';
+import { parseAuthCookie, setTokenCookie } from '../utils/cookie';
 import type { Env } from '../types/env';
-
-// ---------------------------------------------------------------------------
-// Cookie helpers
-// ---------------------------------------------------------------------------
-
-/** Parse the `token` value from the request's Cookie header. */
-function parseAuthCookie(request: Request): string | null {
-  const cookieHeader = request.headers.get('Cookie');
-  if (!cookieHeader) return null;
-
-  for (const part of cookieHeader.split(';')) {
-    const trimmed = part.trim();
-    if (trimmed.startsWith('token=')) {
-      const value = trimmed.slice(6);
-      // Remove surrounding quotes if present.
-      if (value.startsWith('"') && value.endsWith('"')) return value.slice(1, -1);
-      return value || null;
-    }
-  }
-  return null;
-}
-
-/** Build a Set-Cookie header value for the JWT token. */
-function setTokenCookie(token: string, maxAge: number): string {
-  return `token=${token}; HttpOnly; Secure; SameSite=Lax; Path=/api; Max-Age=${maxAge}`;
-}
 
 // ---------------------------------------------------------------------------
 // Helpers

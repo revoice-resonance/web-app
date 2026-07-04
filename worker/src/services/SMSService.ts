@@ -107,9 +107,41 @@ export async function sendSms(
   }
 
   if (result.Code !== 'OK') {
-    const message = result.Message || result.Code || '短信发送失败';
-    throw new Error(message);
+    throw new Error(mapSmsError(result.Code || '', result.Message));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Error mapping
+// ---------------------------------------------------------------------------
+
+/**
+ * Map Alibaba Cloud SMS error codes to user-facing Chinese messages.
+ * Unknown codes return a generic failure message — never leak internal API
+ * error details to the client.
+ */
+function mapSmsError(code: string, message?: string): string {
+  const known: Record<string, string> = {
+    'isv.BUSINESS_LIMIT_CONTROL': '短信发送过于频繁，请稍后再试',
+    'isv.MOBILE_NUMBER_ILLEGAL': '手机号格式错误',
+    'isv.SMS_SIGNATURE_ILLEGAL': '短信服务配置错误',
+    'isv.SMS_TEMPLATE_ILLEGAL': '短信服务配置错误',
+    'isv.OUT_OF_SERVICE': '短信服务暂不可用',
+    'isv.AMOUNT_NOT_ENOUGH': '短信服务余额不足',
+  };
+
+  if (known[code]) return known[code];
+
+  // Credential-related codes — don't leak which credential is wrong.
+  if (
+    code.includes('InvalidAccessKeyId') ||
+    code.includes('SignatureDoesNotMatch') ||
+    code.includes('InvalidAccessKeySecret')
+  ) {
+    return '短信服务配置错误';
+  }
+
+  return '短信发送失败，请稍后重试';
 }
 
 // ---------------------------------------------------------------------------
