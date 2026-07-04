@@ -37,14 +37,16 @@ export function useAuth(deviceId: string | null = null) {
     fetch('/api/auth/session', { credentials: 'include', headers })
       .then((res) => res.json())
       .then(
-        (data: { phone: string | null; userId: string | null; smsAvailable?: boolean }) => {
+        (envelope: { ok: boolean; data: { phone: string | null; userId: string | null; smsAvailable?: boolean } }) => {
           if (cancelled) return;
-          if (data.userId) {
+          // All API responses use ResponseEnvelope: { ok, data: { ... } }
+          const session = envelope.data;
+          if (session.userId) {
             // Path 1 or 2: authenticated (JWT or auto-anonymous)
             setState({
               status: 'authenticated',
-              userId: data.userId,
-              phone: data.phone || undefined,
+              userId: session.userId,
+              phone: session.phone || undefined,
             });
           } else {
             // Path 3: SMS available, user must log in
