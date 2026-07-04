@@ -14,7 +14,7 @@ import { handleAudioUploadRequest } from './handlers/audio';
 import { handleCloudTTSRequest } from './handlers/cloudTts';
 import { handleCloudASRRequest, handleCloudHealthRequest } from './handlers/cloudAsr';
 import { handleVoiceCloneRequest } from './handlers/voiceClone';
-import { handleSendCode, handleVerifyCode, handleSession, handleLogout } from './handlers/auth';
+import { handleSendCode, handleVerifyCode, handleSession, handleLogout, handleAnonymous, handleBindPhone } from './handlers/auth';
 import { handleCreateVoice, handleListVoices, handleSyncVoices } from './handlers/user';
 import { handleLogsRequest, handleClientLogsUploadRequest, handleLogsQueryRequest, handleLogsStatsRequest } from './handlers/logs';
 import { handleCorpusUploadRequest, handleCorpusBatchUploadRequest, handleCorpusQueryRequest, handleCorpusStatsRequest } from './handlers/corpus';
@@ -133,6 +133,12 @@ export default {
       }
       if (request.method === 'POST' && url.pathname === '/api/auth/logout') {
         return withCors(allowedOrigin, await handleLogout(request, env));
+      }
+      if (request.method === 'POST' && url.pathname === '/api/auth/anonymous') {
+        return withCors(allowedOrigin, await handleAnonymous(request, env));
+      }
+      if (request.method === 'POST' && url.pathname === '/api/auth/bind-phone') {
+        return withCors(allowedOrigin, await handleBindPhone(request, env));
       }
 
       // User voice routes — JWT auth required (handlers enforce)

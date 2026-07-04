@@ -31,7 +31,7 @@ async function getUserId(request: Request, env: Env): Promise<string | null> {
   const token = parseAuthCookie(request);
   if (!token) return null;
   const adapter = getStorageAdapter(env);
-  const auth = new AuthService(adapter, env.JWT_SECRET || 'dev-secret', env);
+  const auth = new AuthService(adapter, env.JWT_SECRET || 'dev-secret');
   const session = await auth.getSession(token);
   return session?.userId ?? null;
 }
