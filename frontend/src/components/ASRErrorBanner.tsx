@@ -38,7 +38,22 @@ export function ASRErrorBanner({ error, onRetry, onDismiss }: Props) {
   const ariaLive = isFallback ? 'polite' : 'assertive';
 
   const [copied, setCopied] = useState(false);
-  const diagnosticsText = `[${error.code}] status=${error.diagnostics.status ?? 'n/a'} attempts=${error.diagnostics.attempts} duration=${error.diagnostics.totalDurationMs}ms${error.diagnostics.requestId ? ` req=${error.diagnostics.requestId}` : ''} at=${error.diagnostics.timestamp}`;
+  const d = error.diagnostics;
+  const diagnosticsLines = [
+    `code=${error.code}`,
+    `status=${d.status ?? 'n/a'}`,
+    d.statusText ? `statusText=${d.statusText}` : null,
+    `attempts=${d.attempts}`,
+    `clientDuration=${d.totalDurationMs}ms`,
+    d.serverElapsedMs != null ? `serverDuration=${d.serverElapsedMs}ms` : null,
+    d.model ? `model=${d.model}` : null,
+    d.mimeType ? `mimeType=${d.mimeType}` : null,
+    d.requestId ? `requestId=${d.requestId}` : null,
+    d.originalError ? `error="${d.originalError}"` : null,
+    d.retryAfterMs != null ? `retryAfter=${d.retryAfterMs}ms` : null,
+    `timestamp=${d.timestamp}`,
+  ].filter(Boolean) as string[];
+  const diagnosticsText = diagnosticsLines.join('\n');
 
   const handleCopyDiagnostics = async () => {
     try {

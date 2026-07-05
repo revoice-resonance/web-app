@@ -264,6 +264,9 @@ export function useCloudASR(): UseCloudASRReturn {
                   requestId: lastRequestId,
                   originalError: '服务返回空识别结果',
                   timestamp: new Date().toISOString(),
+                  model: data.data?.model || data.model || undefined,
+                  serverElapsedMs: data.data?.elapsed_ms ?? data.elapsed_ms ?? undefined,
+                  mimeType,
                 },
                 false,
               );

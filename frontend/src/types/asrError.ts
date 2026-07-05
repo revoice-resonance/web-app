@@ -25,6 +25,12 @@ export interface ASRErrorDiagnostics {
   originalError?: string;
   retryAfterMs?: number | null;
   timestamp: string;
+  /** Upstream model ID (e.g. "stepaudio-2.5-asr"). */
+  model?: string;
+  /** Server-side processing time reported by the upstream API (ms). */
+  serverElapsedMs?: number;
+  /** Audio MIME type sent to the API (e.g. "audio/webm;codecs=opus"). */
+  mimeType?: string;
 }
 
 export interface ASRError {
