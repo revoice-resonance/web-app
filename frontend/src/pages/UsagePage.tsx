@@ -86,15 +86,18 @@ export default function UsagePage({
   const handleStop = useCallback(async () => {
     setFlowState('processing');
 
-    const result = await stopRecording();
+    const result = await stopRecording({ includeWav: true });
     if (!result) {
       setFlowState('idle');
       return;
     }
 
-    const { webmBlob } = result;
+    // Prefer WAV (PCM) for ASR — CloudSpeech stepaudio-2.5-asr returns empty
+    // transcript for webm/opus.  WAV conversion uses AudioContext.decodeAudioData
+    // and is already verified in the voice-clone path.
+    const audioBlob = result.wavBlob ?? result.webmBlob;
 
-    const text = await transcribe(webmBlob);
+    const text = await transcribe(audioBlob);
 
     if (text) {
       setLastTranscript(text);
