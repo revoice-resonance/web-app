@@ -18,20 +18,7 @@ import { createCorsResponse, createErrorResponse, createSuccessResponse } from '
 import type { Env } from '../types/env';
 
 // ---------------------------------------------------------------------------
-// Configurable SSE parser constants
-// Tuned against the upstream SSE ASR protocol; change these when the
-// upstream event names or JSON payload structure change — no logic rewrite.
-// ---------------------------------------------------------------------------
-
-/** SSE event name that carries a transcript fragment. */
-const SSE_EVENT_RESULT = 'result';
-
-/** Dot-delimited path into the parsed JSON payload to extract transcript text.
- *  "data.data" means parsed.data.data  */
-const SSE_DATA_PATH = 'data.data';
-
-// ---------------------------------------------------------------------------
-// Audio format defaults
+// Configurable constants
 // ---------------------------------------------------------------------------
 
 /** Format descriptor sent to upstream when the client-provided mimeType is
@@ -90,73 +77,6 @@ function mimeTypeToFormat(mimeType: string | undefined): AudioFormatBlock {
 // ---------------------------------------------------------------------------
 
 const ASR_DEFAULT_MODEL = 'stepaudio-2.5-asr';
-
-// ---------------------------------------------------------------------------
-// SSE stream parsing
-// ---------------------------------------------------------------------------
-
-/**
- * Parse a raw SSE text body and extract the aggregated transcript.
- *
- * SSE format assumption (configurable via constants above):
- *   data: {"event":"result","data":"你好"}\n\n
- *
- * Only events whose `event` field equals SSE_EVENT_RESULT contribute to the
- * final text.  The transcript fragment is read from the JSON path defined by
- * SSE_DATA_PATH.
- */
-function parseSSETranscript(body: string): string {
-  const parts: string[] = [];
-
-  // Split on double-newline — the SSE event boundary.
-  const chunks = body.split('\n\n');
-
-  for (const chunk of chunks) {
-    const trimmed = chunk.trim();
-    if (!trimmed) continue;
-
-    // Collect all data: lines within this event block.
-    const dataLines: string[] = [];
-    for (const line of trimmed.split('\n')) {
-      if (line.startsWith('data:')) {
-        dataLines.push(line.slice(5).trim());
-      }
-    }
-    if (dataLines.length === 0) continue;
-
-    const joined = dataLines.join('\n');
-
-    try {
-      const parsed = JSON.parse(joined);
-
-      // Check if this event is the "result" type we care about.
-      const eventName: string | undefined = parsed.event;
-      if (eventName !== SSE_EVENT_RESULT) continue;
-
-      // Walk the configured data path to reach the transcript text.
-      const text = getNestedValue(parsed, SSE_DATA_PATH);
-      if (typeof text === 'string' && text.length > 0) {
-        parts.push(text);
-      }
-    } catch {
-      // Malformed SSE data line — skip and continue to next event.
-    }
-  }
-
-  return parts.join('');
-}
-
-/** Walk a dot-delimited path (e.g. "data.data") into a nested object.
- *  Returns undefined for any non-existent intermediate key. */
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  const keys = path.split('.');
-  let current: unknown = obj;
-  for (const key of keys) {
-    if (current == null || typeof current !== 'object') return undefined;
-    current = (current as Record<string, unknown>)[key];
-  }
-  return current;
-}
 
 // ---------------------------------------------------------------------------
 // Request body types
@@ -263,12 +183,12 @@ export async function handleCloudASRRequest(
   // --- Upstream fetch ---
   let upstream: Response;
   try {
-    upstream = await fetch(`${baseUrl}/audio/asr/sse`, {
+    upstream = await fetch(`${baseUrl}/audio/asr`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
+        Accept: 'application/json',
       },
       body: JSON.stringify(upstreamBody),
     });
@@ -307,9 +227,10 @@ export async function handleCloudASRRequest(
     return createCorsResponse(createErrorResponse(errorMessage), status);
   }
 
-  // --- Parse SSE stream ---
-  const sseText = await upstream.text();
-  const transcript = parseSSETranscript(sseText);
+  // --- Parse batch response ---
+  const resp = (await upstream.json().catch(() => ({}))) as Record<string, unknown>;
+  const respData = resp.data as Record<string, unknown> | undefined;
+  const transcript = (typeof respData?.text === 'string' ? respData.text : typeof resp.text === 'string' ? resp.text : '').trim();
 
   console.log('[asr] success', {
     model,
