@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Mic, MicOff, Volume2, Check, Loader2, AlertCircle, Trash2, Upload } from 'lucide-react';
+import { Mic, MicOff, Check, Loader2, AlertCircle, Trash2, Upload } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useUserVoices } from '@/hooks/useUserVoices';
 import { toast } from 'sonner';
@@ -17,10 +17,7 @@ interface VoiceClonePanelProps {
   isCloning: boolean;
   error: string | null;
   onClone: (audioBlob: Blob, referenceText?: string) => Promise<string | null>;
-  onSpeak: (text: string) => Promise<void>;
   onClearVoice: () => void;
-  isSpeaking: boolean;
-  onStop: () => void;
 }
 
 /**
@@ -31,10 +28,7 @@ export default function VoiceClonePanel({
   isCloning,
   error,
   onClone,
-  onSpeak,
   onClearVoice,
-  isSpeaking,
-  onStop,
 }: VoiceClonePanelProps) {
   const { isRecording, duration, startRecording, stopRecording, audioLevel } = useAudioRecorder();
   const [referenceText, setReferenceText] = useState('');
@@ -50,9 +44,11 @@ export default function VoiceClonePanel({
   }, [startRecording]);
 
   const handleStopRecording = useCallback(async () => {
-    const result = await stopRecording();
-    if (result?.blob) {
-      setRecordedBlob(result.blob);
+    const result = await stopRecording({ includeWav: true });
+    if (result?.wavBlob) {
+      setRecordedBlob(result.wavBlob);
+    } else if (result?.webmBlob) {
+      toast.error('WAV 转换失败，请重试或上传文件');
     }
   }, [stopRecording]);
 
@@ -93,14 +89,6 @@ export default function VoiceClonePanel({
     }
   }, [recordedBlob, referenceText, onClone, addVoice]);
 
-  const handleTest = useCallback(async () => {
-    if (isSpeaking) {
-      onStop();
-    } else {
-      await onSpeak('你好，这是你的专属数字声音。');
-    }
-  }, [isSpeaking, onSpeak, onStop]);
-
   // Already has a cloned voice
   if (voiceId) {
     return (
@@ -128,14 +116,6 @@ export default function VoiceClonePanel({
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
-
-        <button
-          onClick={handleTest}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          <Volume2 className="h-4 w-4" />
-          {isSpeaking ? '停止试听' : '试听克隆音色'}
-        </button>
       </div>
     );
   }

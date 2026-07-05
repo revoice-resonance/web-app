@@ -2,14 +2,12 @@ import { Routes, Route } from 'react-router-dom';
 import { useAppData } from '@/hooks/useAppData';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeviceId } from '@/hooks/useDeviceId';
-import { useTTS } from '@/hooks/useTTS';
 import { useCloudTTS, type CloudVoice } from '@/hooks/useCloudTTS';
 import { useVoiceClone } from '@/hooks/useVoiceClone';
 import { useMemo, useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { DelayedSkeleton } from '@/components/DelayedSkeleton';
 import UsagePage from './pages/UsagePage';
 import VoiceSelector from '@/components/VoiceSelector';
-import VoiceClonePanel from '@/components/VoiceClonePanel';
 
 const TrainingPage = lazy(() => import('./pages/TrainingPage'));
 const PhrasesPage = lazy(() => import('./pages/PhrasesPage'));
@@ -21,7 +19,6 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 const ONBOARDING_KEY = 'resonance_onboarding_done';
 const STORAGE_KEY = 'resonance_tts_voice';
-const CLONE_KEY = 'resonance_cloned_voice_id';
 
 function loadInitialVoice(): CloudVoice {
   try {
@@ -38,18 +35,10 @@ function loadInitialVoice(): CloudVoice {
   return 'wenrounvsheng';
 }
 
-function loadClonedVoice(): string {
-  try {
-    return localStorage.getItem(CLONE_KEY) || '';
-  } catch { /* ignore */ }
-  return '';
-}
-
 export default function AppRoutes() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeChecked, setWelcomeChecked] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState<CloudVoice>(loadInitialVoice);
-  const [clonedVoiceId, setClonedVoiceId] = useState<string>(loadClonedVoice);
   const [isTestSpeaking, setIsTestSpeaking] = useState(false);
 
   const { deviceId, isLoading: deviceLoading } = useDeviceId();
@@ -85,18 +74,11 @@ export default function AppRoutes() {
     setShowWelcome(false);
   };
 
-  const { speak, stop, isSpeaking } = useTTS(
-    settings.ttsRate,
-    settings.ttsVolume,
-    settings.ttsPitch,
-    settings.ttsVoice
-  );
-
   // Cloud TTS
   const cloud = useCloudTTS({ voice: 'wenrounvsheng' });
 
   // Voice clone
-  const { clone, isCloning, error: cloneError } = useVoiceClone();
+  const { clone, isCloning } = useVoiceClone();
 
   const handleTestVoice = useCallback(async (text: string) => {
     setIsTestSpeaking(true);
@@ -110,22 +92,11 @@ export default function AppRoutes() {
   const handleClone = useCallback(async (audioBlob: Blob, referenceText?: string): Promise<string | null> => {
     const voiceId = await clone(audioBlob, referenceText);
     if (voiceId) {
-      try {
-        localStorage.setItem(CLONE_KEY, voiceId);
-      } catch { /* ignore */ }
-      setClonedVoiceId(voiceId);
       setSelectedVoice(voiceId);
       return voiceId;
     }
     return null;
   }, [clone]);
-
-  const handleClearVoice = useCallback(() => {
-    setClonedVoiceId('');
-    try {
-      localStorage.removeItem(CLONE_KEY);
-    } catch { /* ignore */ }
-  }, []);
 
   const trainedCount = useMemo(
     () => phrases.filter((p) => p.enabled && p.recordingCount >= 2).length,
@@ -166,19 +137,6 @@ export default function AppRoutes() {
     <Suspense fallback={<DelayedSkeleton variant="page" />}>
       <div className="space-y-5">
         <section className="max-w-lg mx-auto">
-          <VoiceClonePanel
-            voiceId={clonedVoiceId}
-            isCloning={isCloning}
-            error={cloneError}
-            onClone={handleClone}
-            onSpeak={cloud.speak}
-            onClearVoice={handleClearVoice}
-            isSpeaking={isSpeaking}
-            onStop={cloud.stop}
-          />
-        </section>
-
-        <section className="max-w-lg mx-auto">
           <VoiceSelector
             selectedVoice={selectedVoice}
             onVoiceChange={setSelectedVoice}
@@ -198,6 +156,8 @@ export default function AppRoutes() {
                 selectedVoice={selectedVoice}
                 onVoiceChange={setSelectedVoice}
                 ttsError={cloud.error}
+                onClone={handleClone}
+                isCloning={isCloning}
               />
             }
           />

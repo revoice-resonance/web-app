@@ -22,8 +22,20 @@ export function useVoiceClone(): UseVoiceCloneReturn {
     setError(null);
 
     try {
+      // Determine filename from blob MIME type — CloudSpeech /v1/files requires
+      // a recognised audio extension.  Default to .wav (PCM) which is always
+      // accepted; browser recordings should use includeWav:true.
+      const mime = audioBlob.type || '';
+      const ext = mime.includes('wav') || mime.includes('wave') ? 'wav'
+        : mime.includes('mp3') || mime.includes('mpeg') ? 'mp3'
+        : mime.includes('flac') ? 'flac'
+        : mime.includes('ogg') || mime.includes('opus') ? 'ogg'
+        : mime.includes('webm') ? 'webm'
+        : mime.includes('aac') || mime.includes('mp4') ? 'm4a'
+        : 'wav'; // fallback — WAV is universally accepted
+
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'reference.webm');
+      formData.append('audio', audioBlob, `reference.${ext}`);
       if (referenceText) {
         formData.append('text', referenceText);
       }

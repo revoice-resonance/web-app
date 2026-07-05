@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Check, Copy, Volume2, VolumeX } from 'lucide-react';
+import { Check, Copy, Mic, Volume2, VolumeX } from 'lucide-react';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { toast } from 'sonner';
 
@@ -9,6 +9,10 @@ interface ASRStreamingResultProps {
   onSpeak: (text: string) => void | Promise<void>;
   onStop: () => void;
   isSpeaking: boolean;
+  /** Called when the user taps "保存音色" to clone the recorded audio. */
+  onSaveVoice?: () => void;
+  /** Whether voice cloning is currently in progress. */
+  isCloning?: boolean;
 }
 
 export default function ASRStreamingResult({
@@ -17,6 +21,8 @@ export default function ASRStreamingResult({
   onSpeak,
   onStop,
   isSpeaking,
+  onSaveVoice,
+  isCloning,
 }: ASRStreamingResultProps) {
   const { isMotionReduced } = useAccessibility();
 
@@ -84,6 +90,19 @@ export default function ASRStreamingResult({
             {isSpeaking ? '停止' : '朗读'}
             <kbd className="kbd-hint border-primary-foreground/30 text-primary-foreground/70" aria-hidden="true">T</kbd>
           </button>
+
+          {/* Save Voice — clones the recorded audio as a custom voice */}
+          {onSaveVoice && (
+            <button
+              onClick={onSaveVoice}
+              disabled={isCloning}
+              className="a11y-target inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-50"
+              aria-label="保存音色"
+            >
+              <Mic className="h-4 w-4" aria-hidden="true" />
+              {isCloning ? '保存中...' : '保存音色'}
+            </button>
+          )}
 
           {/* Copy */}
           <button

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useCloudTTS, type CloudVoice } from '@/hooks/useCloudTTS';
+import { useVoiceClone } from '@/hooks/useVoiceClone';
 import UsagePage from './UsagePage';
 import VoiceSelector from '@/components/VoiceSelector';
 
@@ -37,6 +38,16 @@ const Index = () => {
   // Cloud TTS as primary speech engine
   const cloud = useCloudTTS({ voice: 'wenrounvsheng' });
 
+  // Voice clone — saves recorded audio as a custom voice
+  const { clone, isCloning } = useVoiceClone();
+
+  const handleClone = useCallback(async (audioBlob: Blob) => {
+    const voiceId = await clone(audioBlob);
+    if (voiceId) {
+      setSelectedVoice(voiceId);
+    }
+  }, [clone]);
+
   /** Test-play a sample text with the currently selected voice. */
   const handleTestVoice = useCallback(async (text: string) => {
     setIsTestSpeaking(true);
@@ -66,6 +77,8 @@ const Index = () => {
         selectedVoice={selectedVoice}
         onVoiceChange={setSelectedVoice}
         ttsError={cloud.error}
+        onClone={handleClone}
+        isCloning={isCloning}
       />
     </div>
   );

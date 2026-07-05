@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Mic, RotateCcw } from 'lucide-react';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -20,6 +20,10 @@ interface UsagePageProps {
   /** Called to change the selected voice. */
   onVoiceChange?: (voice: string) => void;
   ttsError: string | null;
+  /** Called when the user taps "保存音色" to clone the recorded audio. */
+  onClone?: (audioBlob: Blob) => void;
+  /** Whether voice cloning is currently in progress. */
+  isCloning?: boolean;
 }
 
 type FlowState = 'idle' | 'recording' | 'processing' | 'result';
@@ -43,11 +47,15 @@ export default function UsagePage({
   isSpeaking,
   selectedVoice,
   ttsError,
+  onClone,
+  isCloning,
 }: UsagePageProps) {
   const { isRecording, duration, startRecording, stopRecording, error: recError, audioLevel } = useAudioRecorder();
   const [flowState, setFlowState] = useState<FlowState>('idle');
   const [lastTranscript, setLastTranscript] = useState('');
   const { isWechat, startNativeRecording, transcript: wxTranscript, clearTranscript } = useWechatBridge();
+  /** Holds the recording blob (prefers WAV for voice cloning) after stop. */
+  const recordingBlobRef = useRef<Blob | null>(null);
 
   const {
     finalText,
@@ -94,6 +102,9 @@ export default function UsagePage({
 
     const { webmBlob } = result;
 
+    // Store the WAV blob (preferred for voice cloning) or fall back to webmBlob
+    recordingBlobRef.current = result.wavBlob || result.webmBlob;
+
     const text = await transcribe(webmBlob);
 
     if (text) {
@@ -106,6 +117,7 @@ export default function UsagePage({
   const handleReset = useCallback(() => {
     setFlowState('idle');
     setLastTranscript('');
+    recordingBlobRef.current = null;
     resetASR();
   }, [resetASR]);
 
@@ -119,6 +131,15 @@ export default function UsagePage({
       toast.success('已复制到剪贴板');
     });
   }, []);
+
+  const handleSaveVoice = useCallback(() => {
+    const blob = recordingBlobRef.current;
+    if (!blob) {
+      toast.error('没有可用的录音');
+      return;
+    }
+    onClone?.(blob);
+  }, [onClone]);
 
   const displayText = finalText || lastTranscript;
 
@@ -285,6 +306,8 @@ export default function UsagePage({
               onSpeak={onSpeak}
               onStop={onStop}
               isSpeaking={isSpeaking}
+              onSaveVoice={onClone ? handleSaveVoice : undefined}
+              isCloning={isCloning}
             />
           ) : (
             <motion.div
