@@ -20,10 +20,6 @@ interface UsagePageProps {
   /** Called to change the selected voice. */
   onVoiceChange?: (voice: string) => void;
   ttsError: string | null;
-  /** Called when the user taps "保存音色" to clone the recorded audio. */
-  onClone?: (audioBlob: Blob) => void;
-  /** Whether voice cloning is currently in progress. */
-  isCloning?: boolean;
 }
 
 type FlowState = 'idle' | 'recording' | 'processing' | 'result';
