@@ -3,7 +3,6 @@ import { useAppData } from '@/hooks/useAppData';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeviceId } from '@/hooks/useDeviceId';
 import { useCloudTTS, type CloudVoice } from '@/hooks/useCloudTTS';
-import { useVoiceClone } from '@/hooks/useVoiceClone';
 import { useMemo, useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { DelayedSkeleton } from '@/components/DelayedSkeleton';
 import UsagePage from './pages/UsagePage';
@@ -77,9 +76,6 @@ export default function AppRoutes() {
   // Cloud TTS
   const cloud = useCloudTTS({ voice: 'wenrounvsheng' });
 
-  // Voice clone
-  const { clone, isCloning } = useVoiceClone();
-
   const handleTestVoice = useCallback(async (text: string) => {
     setIsTestSpeaking(true);
     try {
@@ -88,15 +84,6 @@ export default function AppRoutes() {
       setIsTestSpeaking(false);
     }
   }, [cloud, selectedVoice]);
-
-  const handleClone = useCallback(async (audioBlob: Blob, referenceText?: string): Promise<string | null> => {
-    const voiceId = await clone(audioBlob, referenceText);
-    if (voiceId) {
-      setSelectedVoice(voiceId);
-      return voiceId;
-    }
-    return null;
-  }, [clone]);
 
   const trainedCount = useMemo(
     () => phrases.filter((p) => p.enabled && p.recordingCount >= 2).length,
@@ -156,8 +143,6 @@ export default function AppRoutes() {
                 selectedVoice={selectedVoice}
                 onVoiceChange={setSelectedVoice}
                 ttsError={cloud.error}
-                onClone={handleClone}
-                isCloning={isCloning}
               />
             }
           />
