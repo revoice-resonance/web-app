@@ -1,10 +1,10 @@
 /**
- * Cloud ASR hook — primary speech recognition engine.
+ * Whisper ASR hook — primary speech recognition engine.
  *
- * Replaces the deprecated `useWhisperASR`. Sends base64-encoded audio to
- * the Worker proxy endpoint `POST /api/asr/recognize` with automatic retry
- * and a 2-tier fallback chain:
- *   Cloud → Browser Web Speech API (local)
+ * Sends base64-encoded audio to the Worker proxy endpoint
+ * `POST /api/asr/recognize` with automatic retry and a 2-tier
+ * fallback chain:
+ *   Whisper Cloud → Browser Web Speech API (local)
  *
  * Return interface matches `useWhisperASR` for drop-in compatibility.
  */
@@ -201,7 +201,7 @@ export function useCloudASR(): UseCloudASRReturn {
       const payload: Record<string, unknown> = {
         audio: base64,
         mimeType,
-        model: 'stepaudio-2.5-asr',
+        model: 'whisper-1',
         language: 'zh',
       };
 

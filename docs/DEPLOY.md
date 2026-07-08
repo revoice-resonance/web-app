@@ -4,7 +4,7 @@
 
 - Node.js ≥ 18，pnpm 9
 - Cloudflare 账户（Workers + Pages）
-- CloudSpeech 账户（https://platform.cloud-speech.com）
+- Whisper ASR API 密钥 + CosyVoice TTS API 密钥
 
 ## 首次部署（3 步）
 
@@ -17,9 +17,11 @@ npm install -g wrangler
 # 登录 Cloudflare
 wrangler login
 
-# 注入 CloudSpeech API Key（ASR + TTS 共用）
-wrangler secret put CLOUD_SPEECH_API_KEY
-# 提示输入：sk-your-real-key-from-platform.cloud-speech.com
+# 注入 Whisper ASR API Key
+wrangler secret put WHISPER_API_KEY
+
+# 注入 CosyVoice TTS API Key
+wrangler secret put COSYVOICE_API_KEY
 ```
 
 ### 2. 连接 GitHub
@@ -28,7 +30,7 @@ wrangler secret put CLOUD_SPEECH_API_KEY
 git init
 git remote add origin https://github.com/revoice-resonance/web-app
 git add .
-git commit -m "feat: migrate ASR and TTS to CloudSpeech cloud API"
+git commit -m "feat: restore CosyVoice TTS and Whisper ASR support"
 git push -u origin master
 ```
 
@@ -50,7 +52,7 @@ pnpm install
 
 # 启动 Worker（模拟线上环境）
 cd worker
-cp .dev.vars.example .dev.vars   # 编辑填入 CLOUD_SPEECH_API_KEY
+cp .dev.vars.example .dev.vars   # 编辑填入 WHISPER_API_KEY + COSYVOICE_API_KEY
 wrangler dev
 
 # 启动前端
@@ -62,27 +64,29 @@ pnpm dev
 
 | 变量 | 方式 | 必须 | 默认值 |
 |------|------|------|--------|
-| `CLOUD_SPEECH_API_KEY` | `wrangler secret put` | ✅ | — |
-| `CLOUD_SPEECH_BASE_URL` | `wrangler secret put` | — | `https://api.cloud-speech.com/v1` |
-| `CLOUD_SPEECH_ASR_DEFAULT_MODEL` | `wrangler secret put` | — | `stepaudio-2.5-asr` |
-| `CLOUD_SPEECH_DEFAULT_MODEL` | `wrangler secret put` | — | `step-tts-mini` |
-| `CLOUD_SPEECH_DEFAULT_VOICE` | `wrangler secret put` | — | `wenrounvsheng` |
+| `WHISPER_API_KEY` | `wrangler secret put` | ✅ | — |
+| `COSYVOICE_API_KEY` | `wrangler secret put` | ✅ | — |
+| `WHISPER_BASE_URL` | `wrangler secret put` | — | `https://api.openai.com/v1` |
+| `WHISPER_ASR_DEFAULT_MODEL` | `wrangler secret put` | — | `whisper-1` |
+| `COSYVOICE_BASE_URL` | `wrangler secret put` | — | `https://api.openai.com/v1` |
+| `COSYVOICE_DEFAULT_MODEL` | `wrangler secret put` | — | `tts-1` |
+| `COSYVOICE_DEFAULT_VOICE` | `wrangler secret put` | — | `alloy` |
 
 ## 验证部署
 
 ```bash
 # 健康检查
-curl https://your-worker.workers.dev/api/cloud-speech/health
-# → {"ok":true,"provider":"cloud-speech"}
+curl https://your-worker.workers.dev/api/asr/health
+# → {"ok":true}
 
 # TTS 测试
-curl -X POST https://your-worker.workers.dev/api/tts/cloud-speech \
+curl -X POST https://your-worker.workers.dev/api/tts/speak \
   -H "Content-Type: application/json" \
-  -d '{"text":"你好世界","voice":"wenrounvsheng"}' \
+  -d '{"text":"你好世界","voice":"alloy"}' \
   --output test.mp3
 
 # ASR 测试
-curl -X POST https://your-worker.workers.dev/api/asr/cloud-speech \
+curl -X POST https://your-worker.workers.dev/api/asr/recognize \
   -H "Content-Type: application/json" \
   -d '{"audio":"<base64>","mimeType":"audio/webm","language":"zh"}'
 ```

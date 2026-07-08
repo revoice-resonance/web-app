@@ -69,9 +69,9 @@ export class ServiceManager {
     timestamp: string;
   }> {
     return {
-      // All legacy VPC/Gemini services removed (migrated to CloudSpeech)
-      asr: { whisper: false, gemini: false },
-      tts: true, // CloudSpeech TTS is always available when API key is set
+      // Legacy VPC/Gemini services removed; Whisper ASR + CosyVoice TTS via cloud API
+      asr: { whisper: !!this.env.WHISPER_API_KEY, gemini: false },
+      tts: !!this.env.COSYVOICE_API_KEY,
       corpus: !!(this.env.MINIO_ENDPOINT && this.env.MINIO_ACCESS_KEY && this.env.MINIO_SECRET_KEY && this.env.MINIO_BUCKET_NAME),
       storage: 'minio',
       timestamp: new Date().toISOString(),
@@ -87,14 +87,14 @@ export class ServiceManager {
     logStats: any;
   }> {
     const asrEngines = [];
-    if (this.env.CLOUD_SPEECH_API_KEY) asrEngines.push('cloud-speech');
+    if (this.env.WHISPER_API_KEY) asrEngines.push('whisper');
 
     const logStats = { total: 0, byLevel: { info: 0, warn: 0, error: 0 }, recentErrors: 0 };
 
     return {
       storageType: this.storageManager.getStorageType(),
       asrEngines,
-      ttsAvailable: !!this.env.CLOUD_SPEECH_API_KEY,
+      ttsAvailable: !!this.env.COSYVOICE_API_KEY,
       corpusAvailable: !!(this.env.MINIO_ENDPOINT && this.env.MINIO_ACCESS_KEY && this.env.MINIO_SECRET_KEY && this.env.MINIO_BUCKET_NAME),
       logStats,
     };

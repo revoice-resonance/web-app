@@ -21,17 +21,10 @@ const STORAGE_KEY = 'resonance_tts_voice';
 
 function loadInitialVoice(): CloudVoice {
   try {
-    let saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) {
-      saved = localStorage.getItem('resonance_cloud-speech_voice');
-      if (saved) {
-        localStorage.setItem(STORAGE_KEY, saved);
-        localStorage.removeItem('resonance_cloud-speech_voice');
-      }
-    }
+    const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) return saved as CloudVoice;
   } catch { /* ignore */ }
-  return 'wenrounvsheng';
+  return 'alloy';
 }
 
 export default function AppRoutes() {
@@ -74,7 +67,7 @@ export default function AppRoutes() {
   };
 
   // Cloud TTS
-  const cloud = useCloudTTS({ voice: 'wenrounvsheng' });
+  const cloud = useCloudTTS({ voice: 'alloy' });
 
   const handleTestVoice = useCallback(async (text: string) => {
     setIsTestSpeaking(true);

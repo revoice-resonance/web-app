@@ -22,7 +22,7 @@ export function useVoiceClone(): UseVoiceCloneReturn {
     setError(null);
 
     try {
-      // Determine filename from blob MIME type — CloudSpeech /v1/files requires
+      // Determine filename from blob MIME type — the upstream /v1/files requires
       // a recognised audio extension.  Default to .wav (PCM) which is always
       // accepted; browser recordings should use includeWav:true.
       const mime = audioBlob.type || '';

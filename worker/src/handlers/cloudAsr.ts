@@ -1,9 +1,9 @@
 /**
- * Cloud ASR proxy handler
+ * Whisper ASR proxy handler
  *
- * Proxies audio-to-text requests from the frontend to the upstream SSE ASR API.
- * Receives base64-encoded audio, forwards it to the streaming endpoint,
- * aggregates the SSE text stream, and returns the full transcript as JSON.
+ * Proxies audio-to-text requests from the frontend to the upstream Whisper ASR API.
+ * Accepts base64-encoded audio, forwards it to the Whisper endpoint,
+ * and returns the transcript as JSON.
  *
  * Also includes a lightweight health check endpoint that verifies the
  * API key is configured (no outbound call to upstream).
@@ -76,7 +76,7 @@ function mimeTypeToFormat(mimeType: string | undefined): AudioFormatBlock {
 // Model default
 // ---------------------------------------------------------------------------
 
-const ASR_DEFAULT_MODEL = 'stepaudio-2.5-asr';
+const ASR_DEFAULT_MODEL = 'whisper-1';
 
 // ---------------------------------------------------------------------------
 // Request body types
@@ -103,10 +103,10 @@ interface CloudASRBody {
 // ---------------------------------------------------------------------------
 
 /**
- * Cloud ASR proxy endpoint — POST /api/asr/recognize
+ * Whisper ASR proxy endpoint — POST /api/asr/recognize
  *
  * Receives a JSON body with base64-encoded audio, forwards it to the upstream
- * SSE ASR API, aggregates the transcript stream, and returns the result.
+ * Whisper ASR API, and returns the transcript.
  */
 export async function handleCloudASRRequest(
   request: Request,
@@ -118,7 +118,7 @@ export async function handleCloudASRRequest(
   }
 
   // --- API key guard ---
-  const apiKey = env.CLOUD_SPEECH_API_KEY;
+  const apiKey = env.WHISPER_API_KEY;
   if (!apiKey) {
     console.log('[asr] API key missing → 503');
     return createCorsResponse(createErrorResponse('语音识别服务未配置'), 503);
@@ -139,12 +139,12 @@ export async function handleCloudASRRequest(
   }
 
   // --- Config ---
-  const baseUrl = (env.CLOUD_SPEECH_BASE_URL || 'https://api.cloud-speech.com/v1').replace(/\/+$/, '');
-  const model = body.model || env.CLOUD_SPEECH_ASR_DEFAULT_MODEL || ASR_DEFAULT_MODEL;
+  const baseUrl = (env.WHISPER_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
+  const model = body.model || env.WHISPER_ASR_DEFAULT_MODEL || ASR_DEFAULT_MODEL;
   const language = body.language || 'zh';
   const format = mimeTypeToFormat(body.mimeType);
 
-  // --- Build upstream request body ---
+  // --- Build upstream request body (OpenAI Whisper API format) ---
   const upstreamBody: Record<string, unknown> = {
     audio: {
       data: audio,
@@ -250,14 +250,14 @@ export async function handleCloudASRRequest(
 }
 
 /**
- * Cloud ASR health check — GET /api/asr/health
+ * Whisper ASR health check — GET /api/asr/health
  *
  * Lightweight key-presence check only.  Does NOT send a probe request to
  * the upstream API — verifying the key is configured is sufficient for the
  * frontend health indicator.
  */
 export function handleCloudHealthRequest(env: Env): Response {
-  if (env.CLOUD_SPEECH_API_KEY) {
+  if (env.WHISPER_API_KEY) {
     return createCorsResponse(
       { ok: true },
       200,

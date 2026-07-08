@@ -26,15 +26,12 @@ type FlowState = 'idle' | 'recording' | 'processing' | 'result';
 
 /** Voice IDs mapped to user-facing Chinese labels. */
 const VOICE_LABELS: Record<string, string> = {
-  wenrounvsheng: '温柔女声',
-  wenrounansheng: '温柔男声',
-  linjiajiejie: '邻家姐姐',
-  qinqienvsheng: '亲切女声',
-  shenchennanyin: '深沉男音',
-  cixingnansheng: '磁性男声',
-  tianmeinvsheng: '甜美女声',
-  ruyananshi: '儒雅男士',
-  jingdiannvsheng: '经典女声',
+  alloy: '中性女声',
+  echo: '温和男声',
+  fable: '英式男声',
+  onyx: '深沉男声',
+  nova: '温柔女声',
+  shimmer: '清晰女声',
 };
 
 export default function UsagePage({
@@ -92,8 +89,8 @@ export default function UsagePage({
       return;
     }
 
-    // Prefer WAV (PCM) for ASR — CloudSpeech stepaudio-2.5-asr returns empty
-    // transcript for webm/opus.  WAV conversion uses AudioContext.decodeAudioData
+    // Prefer WAV (PCM) for ASR — Whisper returns better results with
+    // WAV format.  WAV conversion uses AudioContext.decodeAudioData
     // and is already verified in the voice-clone path.
     const audioBlob = result.wavBlob ?? result.webmBlob;
 

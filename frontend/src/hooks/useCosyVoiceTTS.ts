@@ -1,18 +1,10 @@
 /**
- * @deprecated Superseded by {@link useCloudTTS} with system voice selection.
- * CosyVoice's zero-shot cloning workflow
- * (record audio → submit clone job → play) is replaced by direct voice
- * selection via the {@link VoiceSelector} component.
- *
  * useCosyVoiceTTS — CosyVoice text-to-speech hook with zero-shot voice cloning.
  *
- * Manages TTS playback via the CosyVoice API endpoints (/api/tts/voice-clone
- * and /api/tts/jobs). Supports optional prompt-audio cloning: store a reference
+ * Manages TTS playback via the CosyVoice API endpoints (/api/tts/voices/clone
+ * and /api/tts/speak). Supports optional prompt-audio cloning: store a reference
  * audio blob (prompt audio) for zero-shot voice cloning, then send it alongside
  * TTS requests. Prompt audio is persisted to localStorage for cross-session use.
- *
- * This hook is kept for backward compatibility and should not be used in new code.
- * Use {@link useCloudTTS} and the {@link VoiceSelector} component instead.
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -34,8 +26,7 @@ interface UseCosyVoiceTTSReturn {
 }
 
 /**
- * @deprecated Use {@link useCloudTTS} with {@link VoiceSelector} for voice
- * selection. CosyVoice zero-shot cloning is superseded by cloud system voices.
+ * CosyVoice TTS hook — text-to-speech with optional zero-shot voice cloning.
  */
 export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -94,7 +85,6 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
   }, []);
 
   // 跨会话首次 speak 前预热：mount 后空闲时解码 localStorage 里的 prompt
-  // 避免用户点"朗读"后等 100-200ms 才发请求
   useEffect(() => {
     if (!hasPromptAudio) return;
     const schedule =
@@ -104,9 +94,7 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
       (typeof window !== 'undefined' && window.cancelIdleCallback) ||
       clearTimeout;
 
-    // 预热 blob
     const id = schedule(() => { void getPromptBlob(); });
-    // 预热 text（同步，便宜）
     try {
       promptTextRef.current = localStorage.getItem(PROMPT_TEXT_KEY) || '';
     } catch { /* ignore */ }
@@ -127,8 +115,6 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
     }
 
     try {
-      const authKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || '';
-
       setIsSpeaking(true);
 
       const promptBlob = await getPromptBlob();
@@ -146,13 +132,13 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
         formData.append('prompt_text', promptText);
         formData.append('prompt_wav', promptBlob, 'prompt.wav');
 
-        response = await fetch('/api/tts/voice-clone', {
+        response = await fetch('/api/tts/voices/clone', {
           method: 'POST',
           body: formData,
         });
       } else {
-        // Default SFT mode
-        response = await fetch('/api/tts/jobs', {
+        // Default mode
+        response = await fetch('/api/tts/speak', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -173,7 +159,6 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
         if (errData.ok === false) {
           throw new Error(errData.error || 'TTS 服务暂时不可用');
         }
-        // Shouldn't reach here for valid audio, but just in case
         throw new Error(errData.error || '未知错误');
       }
 

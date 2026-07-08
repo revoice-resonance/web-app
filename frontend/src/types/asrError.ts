@@ -25,7 +25,7 @@ export interface ASRErrorDiagnostics {
   originalError?: string;
   retryAfterMs?: number | null;
   timestamp: string;
-  /** Upstream model ID (e.g. "stepaudio-2.5-asr"). */
+  /** Upstream model ID (e.g. "whisper-1"). */
   model?: string;
   /** Server-side processing time reported by the upstream API (ms). */
   serverElapsedMs?: number;

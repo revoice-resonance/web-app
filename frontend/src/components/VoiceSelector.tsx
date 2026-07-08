@@ -36,15 +36,12 @@ interface VoiceSelectorProps {
 
 /** System voice definitions with Chinese display labels. */
 const SYSTEM_VOICES: VoiceEntry[] = [
-  { id: 'wenrounvsheng', label: '温柔女声' },
-  { id: 'wenrounansheng', label: '温柔男声' },
-  { id: 'linjiajiejie', label: '邻家姐姐' },
-  { id: 'qinqienvsheng', label: '亲切女声' },
-  { id: 'shenchennanyin', label: '深沉男音' },
-  { id: 'cixingnansheng', label: '磁性男声' },
-  { id: 'tianmeinvsheng', label: '甜美女声' },
-  { id: 'ruyananshi', label: '儒雅男士' },
-  { id: 'jingdiannvsheng', label: '经典女声' },
+  { id: 'alloy', label: '中性女声' },
+  { id: 'echo', label: '温和男声' },
+  { id: 'fable', label: '英式男声' },
+  { id: 'onyx', label: '深沉男声' },
+  { id: 'nova', label: '温柔女声' },
+  { id: 'shimmer', label: '清晰女声' },
 ];
 
 /** Test utterance played by the 试听 (preview) button. */

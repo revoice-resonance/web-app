@@ -1,12 +1,5 @@
-import { ServiceManager } from '../services/ServiceManager';
-import { createCorsResponse, createErrorResponse, createSuccessResponse } from '../utils';
-import type { Env } from '../types/env';
-
-const DEFAULT_BASE = 'https://api.cloud-speech.com/v1';
-const DEFAULT_MODEL = 'step-tts-mini';
-
 /**
- * Voice cloning endpoint — POST /api/tts/voices/clone
+ * CosyVoice voice cloning handler
  *
  * Receives a reference audio blob (5-10s WAV/MP3) plus optional reference text,
  * uploads the file to the upstream file service, then calls the voice creation
@@ -17,6 +10,17 @@ const DEFAULT_MODEL = 'step-tts-mini';
  *   1. POST /v1/files (multipart, purpose=storage) → file_id
  *   2. POST /v1/audio/voices { file_id, model, text } → voice id
  */
+
+import { ServiceManager } from '../services/ServiceManager';
+import { createCorsResponse, createErrorResponse, createSuccessResponse } from '../utils';
+import type { Env } from '../types/env';
+
+const DEFAULT_BASE = 'https://api.openai.com/v1';
+const DEFAULT_MODEL = 'tts-1';
+
+/**
+ * Voice cloning endpoint — POST /api/tts/voices/clone
+ */
 export async function handleVoiceCloneRequest(
   request: Request,
   serviceManager: ServiceManager,
@@ -26,13 +30,13 @@ export async function handleVoiceCloneRequest(
     return createCorsResponse(createErrorResponse('Method not allowed'), 405);
   }
 
-  const apiKey = env.CLOUD_SPEECH_API_KEY;
+  const apiKey = env.COSYVOICE_API_KEY;
   if (!apiKey) {
     await serviceManager.getLoggingService().error('Voice clone misconfigured: API key missing', {});
     return createCorsResponse(createErrorResponse('语音合成服务未配置'), 503);
   }
 
-  const baseUrl = (env.CLOUD_SPEECH_BASE_URL || DEFAULT_BASE).replace(/\/+$/, '');
+  const baseUrl = (env.COSYVOICE_BASE_URL || DEFAULT_BASE).replace(/\/+$/, '');
 
   // Parse multipart body
   let formData: FormData;
@@ -44,7 +48,7 @@ export async function handleVoiceCloneRequest(
 
   const audioFile = formData.get('audio') as File | null;
   const referenceText = (formData.get('text') as string | null)?.trim() || '';
-  const model = (formData.get('model') as string | null) || env.CLOUD_SPEECH_DEFAULT_MODEL || DEFAULT_MODEL;
+  const model = (formData.get('model') as string | null) || env.COSYVOICE_DEFAULT_MODEL || DEFAULT_MODEL;
 
   if (!audioFile || audioFile.size === 0) {
     return createCorsResponse(createErrorResponse('缺少参考音频文件'), 400);

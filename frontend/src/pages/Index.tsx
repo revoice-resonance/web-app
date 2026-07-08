@@ -8,34 +8,24 @@ const STORAGE_KEY = 'resonance_tts_voice';
 
 /**
  * Read the persisted voice from localStorage on initial mount.
- * Falls back to 'wenrounvsheng' (温柔女声) when no value is stored.
- * Migrates from legacy key 'resonance_cloud-speech_voice'.
+ * Falls back to 'alloy' (中性女声) when no value is stored.
  */
 function loadInitialVoice(): CloudVoice {
   try {
-    // Try new key first
-    let saved = localStorage.getItem(STORAGE_KEY);
-    // Migrate from legacy key
-    if (!saved) {
-      saved = localStorage.getItem('resonance_cloud-speech_voice');
-      if (saved) {
-        localStorage.setItem(STORAGE_KEY, saved);
-        localStorage.removeItem('resonance_cloud-speech_voice');
-      }
-    }
+    const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) return saved as CloudVoice;
   } catch {
     /* storage unavailable — use default */
   }
-  return 'wenrounvsheng';
+  return 'alloy';
 }
 
 const Index = () => {
   const [selectedVoice, setSelectedVoice] = useState<CloudVoice>(loadInitialVoice);
   const [isTestSpeaking, setIsTestSpeaking] = useState(false);
 
-  // Cloud TTS as primary speech engine
-  const cloud = useCloudTTS({ voice: 'wenrounvsheng' });
+  // CosyVoice TTS as primary speech engine
+  const cloud = useCloudTTS({ voice: 'alloy' });
 
   /** Test-play a sample text with the currently selected voice. */
   const handleTestVoice = useCallback(async (text: string) => {

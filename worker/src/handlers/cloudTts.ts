@@ -1,3 +1,11 @@
+/**
+ * CosyVoice TTS proxy handler
+ *
+ * Proxies text-to-speech requests from the frontend to the upstream CosyVoice TTS API.
+ * Receives JSON with text + voice parameters, forwards to the CosyVoice endpoint,
+ * and returns the audio binary.
+ */
+
 import { ServiceManager } from '../services/ServiceManager';
 import { createCorsResponse, createErrorResponse } from '../utils';
 import type { Env } from '../types/env';
@@ -13,9 +21,9 @@ interface CloudTTSBody {
   instruction?: string;
 }
 
-const DEFAULT_BASE = 'https://api.cloud-speech.com/v1';
-const DEFAULT_MODEL = 'step-tts-mini';
-const DEFAULT_VOICE = 'wenrounvsheng';
+const DEFAULT_BASE = 'https://api.openai.com/v1';
+const DEFAULT_MODEL = 'tts-1';
+const DEFAULT_VOICE = 'alloy';
 const MAX_INPUT_CHARS = 1000;
 
 export async function handleCloudTTSRequest(
@@ -27,7 +35,7 @@ export async function handleCloudTTSRequest(
     return createCorsResponse(createErrorResponse('Method not allowed'), 405);
   }
 
-  const apiKey = env.CLOUD_SPEECH_API_KEY;
+  const apiKey = env.COSYVOICE_API_KEY;
   if (!apiKey) {
     await serviceManager.getLoggingService().error('TTS misconfigured: API key missing', {});
     return createCorsResponse(createErrorResponse('语音合成服务未配置'), 503);
@@ -48,9 +56,9 @@ export async function handleCloudTTSRequest(
     return createCorsResponse(createErrorResponse(`合成文本过长（最多 ${MAX_INPUT_CHARS} 字符）`), 400);
   }
 
-  const baseUrl = (env.CLOUD_SPEECH_BASE_URL || DEFAULT_BASE).replace(/\/+$/, '');
-  const model = body.model || env.CLOUD_SPEECH_DEFAULT_MODEL || DEFAULT_MODEL;
-  const voice = body.voice || env.CLOUD_SPEECH_DEFAULT_VOICE || DEFAULT_VOICE;
+  const baseUrl = (env.COSYVOICE_BASE_URL || DEFAULT_BASE).replace(/\/+$/, '');
+  const model = body.model || env.COSYVOICE_DEFAULT_MODEL || DEFAULT_MODEL;
+  const voice = body.voice || env.COSYVOICE_DEFAULT_VOICE || DEFAULT_VOICE;
   const responseFormat = body.response_format || 'mp3';
 
   const upstreamBody: Record<string, unknown> = {
@@ -62,7 +70,7 @@ export async function handleCloudTTSRequest(
   if (typeof body.speed === 'number') upstreamBody.speed = body.speed;
   if (typeof body.volume === 'number') upstreamBody.volume = body.volume;
   if (typeof body.sample_rate === 'number') upstreamBody.sample_rate = body.sample_rate;
-  if (body.instruction && model === 'stepaudio-2.5-tts') {
+  if (body.instruction) {
     upstreamBody.instruction = body.instruction;
   }
 

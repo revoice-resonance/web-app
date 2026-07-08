@@ -1,7 +1,7 @@
 import { ReactNode, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, BookOpen, Settings, Keyboard, List } from 'lucide-react';
+import { Keyboard } from 'lucide-react';
 import SkipToContent from './SkipToContent';
 import KeyboardShortcutsPanel from './KeyboardShortcutsPanel';
 import BuildBadge from './BuildBadge';
@@ -15,10 +15,8 @@ interface LayoutProps {
 }
 
 const tabs = [
-  { path: '/', label: '使用', icon: BookOpen, shortcutKey: '1' },
-  { path: '/training', label: '训练', icon: Mic, shortcutKey: '2' },
-  { path: '/phrases', label: '词表', icon: List, shortcutKey: '4' },
-  { path: '/settings', label: '设置', icon: Settings, shortcutKey: '3' },
+  { path: '/', label: '使用', shortcutKey: '1' },
+  { path: '/settings', label: '设置', shortcutKey: '2' },
 ];
 
 
@@ -74,42 +72,35 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Header */}
       <header
-        className="sticky top-0 z-50 border-b border-border/60 bg-card/90 backdrop-blur-xl"
+        className="sticky top-0 z-50 border-b border-white/10 bg-[#0f172a] text-white"
         role="banner"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="container flex h-12 md:h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-md shadow-primary/20" aria-hidden="true">
-              <Mic className="h-5 w-5 text-primary-foreground" />
+        <div className="container flex h-14 items-center justify-between px-4">
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col">
+              <h1 className="text-lg font-bold leading-tight tracking-tight">共鸣</h1>
+              <p className="text-[10px] text-white/50 tracking-widest uppercase">PROJECT RESONANCE</p>
             </div>
-            <div>
-              <h1 className="text-lg font-bold leading-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">共鸣</h1>
-              <p className="text-[10px] text-muted-foreground tracking-wider uppercase">Project Resonance</p>
-            </div>
-          </div>
-          <div className="hidden md:flex items-center gap-1">
-            <nav className="flex items-center gap-1" role="navigation" aria-label="主导航">
+            <nav className="hidden md:flex items-center gap-1" role="navigation" aria-label="主导航">
               {tabs.map((tab) => {
-                const isActive = location.pathname === tab.path;
+                const isActive = location.pathname === tab.path || (tab.path === '/' ? location.pathname === '/' : location.pathname.startsWith(tab.path));
                 return (
                   <button
                     key={tab.path}
                     onClick={() => navigate(tab.path)}
                     aria-current={isActive ? 'page' : undefined}
-                    className={`a11y-target relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`relative flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        ? 'text-white bg-white/10'
+                        : 'text-white/60 hover:text-white/90 hover:bg-white/5'
                     }`}
                   >
-                    <tab.icon className="h-4 w-4" aria-hidden="true" />
                     {tab.label}
-                    <span className="kbd-hint ml-1 hidden lg:inline-flex" aria-hidden="true">{tab.shortcutKey}</span>
                     {isActive && (
                       <motion.div
                         layoutId="activeTab"
-                        className="absolute inset-0 rounded-lg bg-primary/10"
+                        className="absolute inset-0 rounded-lg bg-white/10"
                         transition={tabIndicatorTransition}
                       />
                     )}
@@ -117,10 +108,12 @@ export default function Layout({ children }: LayoutProps) {
                 );
               })}
             </nav>
+          </div>
+          <div className="flex items-center gap-2">
             {/* Keyboard help toggle */}
             <button
               onClick={toggleShortcuts}
-              className="a11y-target rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-2"
+              className="a11y-target rounded-lg p-2 text-white/60 hover:text-white/90 hover:bg-white/10 transition-colors"
               aria-label="显示键盘快捷键帮助"
               title="键盘快捷键 (?)"
             >

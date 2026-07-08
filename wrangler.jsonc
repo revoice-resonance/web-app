@@ -6,7 +6,8 @@
   // 本地开发：cd worker && wrangler dev
   //
   // Secret（务必在首次部署前通过 CLI 注入，永远不写进本文件）：
-  //   wrangler secret put CLOUD_SPEECH_API_KEY   # ASR + TTS 共用，从 platform.cloud-speech.com 获取
+  //   wrangler secret put WHISPER_API_KEY    # Whisper ASR API Key
+  //   wrangler secret put COSYVOICE_API_KEY  # CosyVoice TTS API Key
   // ===========================================================================
 
   "name": "project-resonance-api",
@@ -19,10 +20,7 @@
   },
 
   // ---------------------------------------------------------------------------
-  // VPC 服务绑定
-  // 注意：以下 service_id 仅在上游 revoice-resonance 账号中存在。
-  // SaaS 部署时需替换为自有 Cloudflare 账号中对应的 VPC 服务 ID，或注释掉。
-  // COSYVOICE_VPC / WHISPER_VPC 已废弃（改用 CloudSpeech），MinIO 改用本地 Podman/Docker。
+  // VPC 服务绑定（已废弃，改用 Whisper ASR + CosyVoice TTS 云 API）
   // ---------------------------------------------------------------------------
   "vpc_services": [],
 
@@ -30,13 +28,15 @@
   // 环境变量（只放公开/非敏感值，Secret 通过 `wrangler secret put` 注入）
   //
   // 必配 Secret：
-  //   CLOUD_SPEECH_API_KEY      — CloudSpeech ASR + TTS API Key
+  //   WHISPER_API_KEY        — Whisper ASR API Key
+  //   COSYVOICE_API_KEY      — CosyVoice TTS API Key
   //
   // 可选覆盖（通过 secret put 注入同名变量即可覆盖默认值）：
-  //   CLOUD_SPEECH_BASE_URL           — 默认 https://api.cloud-speech.com/v1
-  //   CLOUD_SPEECH_ASR_DEFAULT_MODEL  — 默认 stepaudio-2.5-asr
-  //   CLOUD_SPEECH_DEFAULT_MODEL      — 默认 step-tts-mini
-  //   CLOUD_SPEECH_DEFAULT_VOICE      — 默认 wenrounvsheng
+  //   WHISPER_BASE_URL             — 默认 https://api.openai.com/v1
+  //   WHISPER_ASR_DEFAULT_MODEL    — 默认 whisper-1
+  //   COSYVOICE_BASE_URL           — 默认 https://api.openai.com/v1
+  //   COSYVOICE_DEFAULT_MODEL      — 默认 tts-1
+  //   COSYVOICE_DEFAULT_VOICE      — 默认 alloy
   // ---------------------------------------------------------------------------
   // D1 数据库绑定（STORAGE_BACKEND=d1 时取消注释）：
   // "d1_databases": [

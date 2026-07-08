@@ -1,132 +1,95 @@
-# CloudSpeech TTS 接入说明
+# CosyVoice TTS + Whisper ASR 接入说明
 
-本通道独立于现有 CosyVoice (X1 本地) 路径，为 Resonance 提供云端 TTS 兜底/可选方案。
-
----
-
-## 架构
+## 架构总览
 
 ```
-浏览器                Worker (CF)                       CloudSpeech
-─────                 ───────────                       ────────
-useCloudSpeechTTS  ──►   POST /api/tts/cloud-speech  ──►        POST https://api.cloud-speech.com/v1/audio/speech
-                     (handlers/cloud-speechTts.ts)          Authorization: Bearer ${CLOUD_SPEECH_API_KEY}
-                                                       ↓
-   audio.play()  ◄── audio/mpeg binary  ◄──            mp3 binary
+浏览器                Worker (CF)                       上游
+──────                ───────────                       ────
+
+useCloudTTS ──►   POST /api/tts/speak  ──►      POST /v1/audio/speech
+                   (handlers/cloudTts.ts)         Authorization: Bearer ${COSYVOICE_API_KEY}
+
+useCloudASR ──►   POST /api/asr/recognize  ──►   POST /v1/audio/asr
+                   (handlers/cloudAsr.ts)         Authorization: Bearer ${WHISPER_API_KEY}
 ```
 
-**Key 永远在 Worker 端，前端不接触。**
+## 快速开始
 
----
-
-## 一次性配置
-
-### 生产环境（Cloudflare Workers）
+### 1. 注入 API Key
 
 ```bash
-cd worker
-wrangler secret put CLOUD_SPEECH_API_KEY
-# 提示后粘贴 platform.cloud-speech.com 的 key
+# Whisper ASR API Key
+wrangler secret put WHISPER_API_KEY
+# 提示后粘贴 Whisper API Key
+
+# CosyVoice TTS API Key
+wrangler secret put COSYVOICE_API_KEY
+# 提示后粘贴 CosyVoice API Key
 ```
 
-可选覆盖（不设置走代码默认值）：
+### 2. 可选覆盖（通过 wrangler secret put）
+
 ```bash
-wrangler secret put CLOUD_SPEECH_DEFAULT_MODEL    # 默认 step-tts-mini
-wrangler secret put CLOUD_SPEECH_DEFAULT_VOICE    # 默认 wenrounvsheng
-wrangler secret put CLOUD_SPEECH_BASE_URL         # 默认 https://api.cloud-speech.com/v1
+wrangler secret put WHISPER_BASE_URL           # 默认 https://api.openai.com/v1
+wrangler secret put WHISPER_ASR_DEFAULT_MODEL  # 默认 whisper-1
+wrangler secret put COSYVOICE_BASE_URL         # 默认 https://api.openai.com/v1
+wrangler secret put COSYVOICE_DEFAULT_MODEL    # 默认 tts-1
+wrangler secret put COSYVOICE_DEFAULT_VOICE    # 默认 alloy
 ```
 
-### 本地开发（wrangler dev）
+### 3. 本地开发
 
 ```bash
 cp worker/.dev.vars.example worker/.dev.vars
-# 编辑 worker/.dev.vars 填入真实 key
-# .dev.vars 已加入 .gitignore，不会被提交
+# 编辑 worker/.dev.vars 填入实际值
+cd worker && wrangler dev
 ```
 
----
+### 4. 测试
 
-## 本地测试
-
-启动 worker：
 ```bash
-cd worker && pnpm wrangler dev
-```
-
-测试 endpoint：
-```bash
-curl -X POST http://localhost:8787/api/tts/cloud-speech \
+# TTS 测试
+curl -X POST http://localhost:8787/api/tts/speak \
   -H "Content-Type: application/json" \
-  -d '{"text":"你好，我是阶跃星辰语音合成测试"}' \
-  -o /tmp/cloud-speech-test.mp3 -v
+  -d '{"text":"你好世界","model":"tts-1","voice":"alloy","response_format":"mp3"}' \
+  -o /tmp/tts-test.mp3 -v
 
-afplay /tmp/cloud-speech-test.mp3   # macOS 试听
+# ASR 测试
+curl -X POST http://localhost:8787/api/asr/health
 ```
 
-预期：返回 audio/mpeg 二进制；mp3 文件能正常播放。
+### 5. 前端调用
 
----
+```ts
+import { useCloudTTS } from '@/hooks/useCloudTTS';
+import { useCloudASR } from '@/hooks/useCloudASR';
 
-## 前端用法
+const { speak, stop, isSpeaking, error } = useCloudTTS({
+  voice: 'alloy',
+  model: 'tts-1',
+});
 
-```tsx
-import { useCloudSpeechTTS } from '@/hooks/useCloudSpeechTTS';
-
-function MyComponent() {
-  const { speak, stop, isSpeaking, error } = useCloudSpeechTTS({
-    voice: 'wenrounvsheng',  // 默认值，可省
-    speed: 1.0,
-  });
-
-  return (
-    <>
-      <button onClick={() => speak('我替你说出来')} disabled={isSpeaking}>
-        朗读
-      </button>
-      <button onClick={stop}>停止</button>
-      {error && <span>错误: {error}</span>}
-    </>
-  );
-}
+const { transcribe, finalText, error } = useCloudASR();
 ```
 
----
+## TTS 系统音色
 
-## 推荐音色（Resonance 场景）
+| ID | 描述 |
+|----|------|
+| alloy | 中性女声 |
+| echo | 温和男声 |
+| fable | 英式男声 |
+| onyx | 深沉男声 |
+| nova | 温柔女声 |
+| shimmer | 清晰女声 |
 
-| voice ID | 中文名 | 适合 |
-|----------|--------|------|
-| `wenrounvsheng` | 温柔女声 | 默认，情感陪伴 |
-| `wenrounansheng` | 温柔男声 | 情感陪伴（男性用户） |
-| `linjiajiejie` | 邻家姐姐 | 亲和力强 |
-| `qinqienvsheng` | 亲切女声 | 温柔带甜 |
-| `shenchennanyin` | 深沉男音 | 陪伴感、有信心 |
-| `cixingnansheng` | 磁性男声 | 厚重深情 |
+## 安全
 
-完整列表见 https://platform.cloud-speech.com/docs/zh/api-reference/audio/system-voices
+- [x] API Key 通过 `wrangler secret put` 注入，不写进代码或配置文件
+- [x] 错误信息不回传上游原始响应体（避免泄露内部细节）
+- [x] 401 映射为 503（不泄露鉴权状态给客户端）
+- [x] Worker 日志仅记录无害摘要（model、textLength、audioBytes、elapsedMs）
 
----
+## 迁移说明
 
-## 安全检查清单
-
-- [x] API key 仅通过 wrangler secret / .dev.vars 注入
-- [x] worker/.gitignore 排除 `.dev.vars` / `.dev.vars.local`
-- [x] handler 代码不打印 key 到日志
-- [x] 错误信息不回传 CloudSpeech 原始响应体（避免泄露内部细节）
-- [x] 前端代码不包含任何 key 字段或环境变量
-- [ ] **首次部署后请确认：浏览器 DevTools Network 里看不到任何 sk- 开头的字符串**
-
----
-
-## 与现有 CosyVoice 通道的关系
-
-| 维度 | CosyVoice (现有) | CloudSpeech (新增) |
-|------|------------------|----------------|
-| Endpoint | `/api/tts/jobs` (异步 job) | `/api/tts/cloud-speech` (同步) |
-| Hook | `useCosyVoiceTTS` | `useCloudSpeechTTS` |
-| 后端 | X1 本地 VPC | CloudSpeech 云 API |
-| 零样本克隆 | ✅ | ❌（用 CloudSpeech 复刻音色 API 走另一接口） |
-| 计费 | 自有硬件 | CloudSpeech 按字符 |
-| 离线 | ✅ | ❌ |
-
-两者并存，前端可按场景选择或做兜底链路。
+当前栈为 **CosyVoice TTS + Whisper ASR**，通过 Cloudflare Worker 代理转发至标准 OpenAI 兼容 API。之前使用的第三方方案已不再维护，无需关注。

@@ -7,7 +7,7 @@
 #   podman compose down           # 停止
 #
 # 前置条件：
-#   1. 复制 worker/.dev.vars.example → worker/.dev.vars 并填入 CLOUD_SPEECH_API_KEY
+#   1. 复制 worker/.dev.vars.example → worker/.dev.vars 并填入 WHISPER_API_KEY + COSYVOICE_API_KEY
 #   2. pnpm install（根目录）
 # =============================================================================
 

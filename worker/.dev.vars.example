@@ -8,24 +8,27 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# CloudSpeech API Key（必须 —— ASR + TTS 共用）
-# 从 https://platform.cloud-speech.com 获取 → 个人中心 → API Keys
+# Whisper ASR API Key（必须）
 # -----------------------------------------------------------------------------
-CLOUD_SPEECH_API_KEY=sk-your-cloud-speech-key-here
+WHISPER_API_KEY=sk-your-whisper-key-here
 
 # -----------------------------------------------------------------------------
-# CloudSpeech 可选配置（不填走代码默认值）
+# Whisper 可选配置（不填走代码默认值）
 # -----------------------------------------------------------------------------
-# CLOUD_SPEECH_BASE_URL=https://api.cloud-speech.com/v1
-# CLOUD_SPEECH_DEFAULT_MODEL=step-tts-mini
-# CLOUD_SPEECH_DEFAULT_VOICE=wenrounvsheng
-# CLOUD_SPEECH_ASR_DEFAULT_MODEL=stepaudio-2.5-asr
+# WHISPER_BASE_URL=https://api.openai.com/v1
+# WHISPER_ASR_DEFAULT_MODEL=whisper-1
 
 # -----------------------------------------------------------------------------
-# Gemini ASR（已弃用，仅本地兼容老版本）
+# CosyVoice TTS API Key（必须）
 # -----------------------------------------------------------------------------
-# GEMINI_ASR_URL=
-# GEMINI_ASR_KEY=
+COSYVOICE_API_KEY=sk-your-cosyvoice-key-here
+
+# -----------------------------------------------------------------------------
+# CosyVoice 可选配置（不填走代码默认值）
+# -----------------------------------------------------------------------------
+# COSYVOICE_BASE_URL=https://api.openai.com/v1
+# COSYVOICE_DEFAULT_MODEL=tts-1
+# COSYVOICE_DEFAULT_VOICE=alloy
 
 # -----------------------------------------------------------------------------
 # MinIO 对象存储（语料收集）

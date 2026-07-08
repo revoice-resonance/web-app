@@ -10,8 +10,8 @@ const STORAGE_KEY = 'resonance_asr_engine_pref';
  * - 'cloud'   → only call cloud ASR (fail loudly, no fallback)
  * - 'browser' → only use the browser's Web Speech API (live recognition)
  *
- * Migration: stored values of 'whisper', 'gemini', or 'cloud-speech' (from
- * deprecated engine chains) are silently reset to 'auto'.
+ * Migration: stored values of 'whisper' or 'gemini' (from
+ * previous engine chains) are silently reset to 'auto'.
  */
 export function useASREnginePreference() {
   const [preference, setPreferenceState] = useState<ASREnginePreference>('auto');
@@ -22,8 +22,8 @@ export function useASREnginePreference() {
       // Accept current or legacy values and migrate
       if (stored === 'auto' || stored === 'cloud' || stored === 'browser') {
         setPreferenceState(stored);
-      } else if (stored === 'cloud-speech' || stored === 'whisper' || stored === 'gemini') {
-        // Old engines are deprecated — reset to auto so the user gets
+      } else if (stored === 'whisper' || stored === 'gemini') {
+        // Old engines — reset to auto so the user gets
         // the current fallback chain without disruption.
         setPreferenceState('auto');
         localStorage.setItem(STORAGE_KEY, 'auto');

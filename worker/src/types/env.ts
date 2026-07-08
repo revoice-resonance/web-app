@@ -8,16 +8,17 @@ export interface Env {
   MINIO_BUCKET_NAME: string;
   MINIO_REGION?: string;
 
-  // CloudSpeech TTS（云端兜底 / 独立合成通道）
-  // 注入方式：`wrangler secret put CLOUD_SPEECH_API_KEY`（生产）/ `worker/.dev.vars`（本地）
-  // 永远不要把 key 明文写进任何文件或 wrangler.jsonc
-  CLOUD_SPEECH_API_KEY?: string;
-  CLOUD_SPEECH_BASE_URL?: string;   // 可选覆盖，默认 https://api.cloud-speech.com/v1
-  CLOUD_SPEECH_DEFAULT_MODEL?: string;  // 可选覆盖，默认 step-tts-mini
-  CLOUD_SPEECH_DEFAULT_VOICE?: string;  // 可选覆盖，默认 wenrounvsheng
+  // CosyVoice TTS 配置
+  // 注入方式：`wrangler secret put COSYVOICE_API_KEY`（生产）/ `worker/.dev.vars`（本地）
+  COSYVOICE_API_KEY?: string;
+  COSYVOICE_BASE_URL?: string;   // 可选覆盖
+  COSYVOICE_DEFAULT_MODEL?: string;
+  COSYVOICE_DEFAULT_VOICE?: string;
 
-  // CloudSpeech ASR（语音识别）
-  CLOUD_SPEECH_ASR_DEFAULT_MODEL?: string;  // 可选覆盖，默认 stepaudio-2.5-asr
+  // Whisper ASR 配置
+  WHISPER_API_KEY?: string;
+  WHISPER_BASE_URL?: string;   // 可选覆盖
+  WHISPER_ASR_DEFAULT_MODEL?: string;
 
   // ── Storage backend selection ──────────────────────────────────────
   // STORAGE_BACKEND: 'pg' (Hyperdrive/PostgreSQL) or 'd1' (SQLite via D1).

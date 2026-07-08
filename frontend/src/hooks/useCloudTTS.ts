@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
 /**
- * Cloud TTS hook — primary speech synthesis engine.
+ * CosyVoice TTS hook — primary speech synthesis engine.
  *
  * Sends text to the Worker proxy endpoint `POST /api/tts/speak`,
  * receives audio, and plays it. The frontend never touches the
@@ -9,27 +9,24 @@ import { useCallback, useRef, useState } from 'react';
  */
 
 export type CloudVoice =
-  | 'wenrounvsheng'      // 温柔女声（默认）
-  | 'wenrounansheng'     // 温柔男声
-  | 'linjiajiejie'       // 邻家姐姐
-  | 'qinqienvsheng'      // 亲切女声
-  | 'shenchennanyin'     // 深沉男音
-  | 'cixingnansheng'     // 磁性男声
-  | 'tianmeinvsheng'     // 甜美女声
-  | 'ruyananshi'         // 儒雅男士
-  | 'jingdiannvsheng'    // 经典女声
-  | string;              // 也支持自定义复刻音色 ID
+  | 'alloy'       // 中性女声
+  | 'echo'        // 温和男声
+  | 'fable'       // 英式男声
+  | 'onyx'        // 深沉男声
+  | 'nova'        // 温柔女声
+  | 'shimmer'     // 清晰女声
+  | string;       // 也支持自定义音色 ID
 
-export type CloudTtsModel = 'step-tts-mini' | 'step-tts-2' | 'stepaudio-2.5-tts';
+export type CloudTtsModel = 'tts-1' | 'tts-1-hd';
 
 export interface CloudTtsSpeakOptions {
   voice?: CloudVoice;
   model?: CloudTtsModel;
-  speed?: number;        // 0.5 ~ 2.0，默认 1.0
+  speed?: number;        // 0.25 ~ 4.0，默认 1.0
   volume?: number;       // 0.1 ~ 2.0，默认 1.0
   response_format?: 'mp3' | 'wav' | 'flac' | 'opus';
   sample_rate?: 8000 | 16000 | 22050 | 24000 | 48000;
-  instruction?: string;  // 仅 stepaudio-2.5-tts 生效
+  instruction?: string;  // 可选语音指令
 }
 
 interface UseCloudTTSReturn {
