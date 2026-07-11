@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { api } from '@/lib/api';
 
 /**
  * CosyVoice TTS hook — primary speech synthesis engine.
@@ -35,8 +36,6 @@ interface UseCloudTTSReturn {
   isSpeaking: boolean;
   error: string | null;
 }
-
-const ENDPOINT = '/api/tts/speak';
 
 export function useCloudTTS(defaults?: CloudTtsSpeakOptions): UseCloudTTSReturn {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -82,31 +81,8 @@ export function useCloudTTS(defaults?: CloudTtsSpeakOptions): UseCloudTTSReturn 
     };
 
     try {
-      const response = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
+      const audioBlob = await api.tts.speak(payload, controller.signal);
 
-      if (!response.ok) {
-        let message = `语音合成失败 (${response.status})`;
-        try {
-          const errBody = await response.json();
-          if (errBody?.error) message = errBody.error;
-        } catch {
-          /* not json */
-        }
-        throw new Error(message);
-      }
-
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const errBody = await response.json().catch(() => null);
-        throw new Error(errBody?.error || '语音合成服务返回异常');
-      }
-
-      const audioBlob = await response.blob();
       if (controller.signal.aborted) return;
 
       const audioUrl = URL.createObjectURL(audioBlob);

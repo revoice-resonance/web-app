@@ -2,20 +2,17 @@ import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Mic, Check, ChevronDown, ChevronUp, Play, Trash2, ArrowLeft } from 'lucide-react';
-import { Phrase } from '@/types';
 import { CATEGORIES } from '@/types';
+import { usePhrases } from '@/hooks/usePhrases';
+import { useRecordings } from '@/hooks/useRecordings';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import AudioRecorderButton from '@/components/AudioRecorderButton';
 
-interface TrainingPageProps {
-  phrases: Phrase[];
-  onAddRecording: (phraseId: string, blob: Blob, duration: number) => void;
-  onDeleteRecording: (phraseId: string, recordingId: string) => void;
-}
-
-export default function TrainingPage({ phrases, onAddRecording, onDeleteRecording }: TrainingPageProps) {
+export default function TrainingPage() {
+  const { phrases } = usePhrases();
+  const { addRecording, deleteRecording } = useRecordings();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('全部');
@@ -46,10 +43,10 @@ export default function TrainingPage({ phrases, onAddRecording, onDeleteRecordin
   const handleStopRecording = useCallback(async () => {
     const result = await stopRecording();
     if (result && recordingPhraseId) {
-      onAddRecording(recordingPhraseId, result.blob, result.duration);
+      addRecording(recordingPhraseId, result.blob, result.duration);
     }
     setRecordingPhraseId(null);
-  }, [stopRecording, recordingPhraseId, onAddRecording]);
+  }, [stopRecording, recordingPhraseId, addRecording]);
 
   const playRecording = useCallback((blob: Blob) => {
     const url = URL.createObjectURL(blob);
@@ -284,7 +281,7 @@ export default function TrainingPage({ phrases, onAddRecording, onDeleteRecordin
                               <Play className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={() => onDeleteRecording(phrase.id, rec.id)}
+                              onClick={() => deleteRecording(phrase.id, rec.id)}
                               className="a11y-target rounded-md p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                               aria-label={`删除样本 ${i + 1}`}
                             >

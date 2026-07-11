@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { api } from '@/lib/api';
 
 /**
  * Silently collects speech corpus (audio + transcript) to the Tencent Cloud
@@ -13,7 +14,6 @@ import { useCallback } from 'react';
  * (managed in Settings page). When opted out, this hook becomes a no-op.
  */
 
-const CORPUS_API = `${import.meta.env.VITE_WORKER_API_URL || ''}/api/corpus`;
 export const CORPUS_OPTOUT_KEY = 'resonance_corpus_optout';
 
 export function isCorpusOptedOut(): boolean {
@@ -56,11 +56,10 @@ export function useCorpusCollection() {
         }),
       );
 
-      const res = await fetch(CORPUS_API, { method: 'POST', body: form });
-      const data = await res.json().catch(() => ({}));
+      const data = await api.corpus.collect(form);
 
-      if (!res.ok || !data?.ok) {
-        console.warn('[Corpus] Upload failed:', res.status, data);
+      if (!data?.ok) {
+        console.warn('[Corpus] Upload failed:', data);
         return;
       }
 

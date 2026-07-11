@@ -8,6 +8,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { api } from '@/lib/api';
 
 const PROMPT_AUDIO_KEY = 'resonance_prompt_audio';
 const PROMPT_TEXT_KEY = 'resonance_prompt_text';
@@ -123,7 +124,7 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
         localStorage.getItem(PROMPT_TEXT_KEY) ||
         '';
 
-      let response: Response;
+      let audioBlob: Blob;
 
       if (promptBlob) {
         // Zero-shot mode: send prompt audio with request
@@ -132,37 +133,12 @@ export function useCosyVoiceTTS(): UseCosyVoiceTTSReturn {
         formData.append('prompt_text', promptText);
         formData.append('prompt_wav', promptBlob, 'prompt.wav');
 
-        response = await fetch('/api/tts/voices/clone', {
-          method: 'POST',
-          body: formData,
-        });
+        audioBlob = await api.tts.speakWithCloneVoice(formData);
       } else {
         // Default mode
-        response = await fetch('/api/tts/speak', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ text }),
-        });
+        audioBlob = await api.tts.speak({ text });
       }
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `TTS 请求失败 (${response.status})`);
-      }
-
-      // Check for structured error in 200 response
-      const responseContentType = response.headers.get('content-type') || '';
-      if (responseContentType.includes('application/json')) {
-        const errData = await response.json();
-        if (errData.ok === false) {
-          throw new Error(errData.error || 'TTS 服务暂时不可用');
-        }
-        throw new Error(errData.error || '未知错误');
-      }
-
-      const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
       audioRef.current = audio;

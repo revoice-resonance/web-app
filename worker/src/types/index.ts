@@ -6,6 +6,11 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
+/** Fetcher interface — injectable fetch for testability. Prod uses global fetch. */
+export interface Fetcher {
+  fetch: (input: RequestInfo, init?: RequestInit) => Promise<Response>;
+}
+
 export interface AudioMetadata {
   duration: number;
   sampleRate: number;

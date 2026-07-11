@@ -79,7 +79,7 @@ describe('useCosyVoiceTTS', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toContain('/api/tts/jobs');
+    expect(url).toContain('/api/tts/speak');
     expect(options.headers['Content-Type']).toBe('application/json');
     expect(JSON.parse(options.body)).toEqual({ text: '你好' });
   });

@@ -2,25 +2,13 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Download, Upload, X, ArrowLeft } from 'lucide-react';
-import { Phrase, CATEGORIES } from '@/types';
+import { CATEGORIES } from '@/types';
+import { usePhrases } from '@/hooks/usePhrases';
+import { useSettings } from '@/hooks/useSettings';
 
-interface PhrasesPageProps {
-  phrases: Phrase[];
-  onUpdate: (id: string, updates: Partial<Phrase>) => void;
-  onAdd: (text: string, category: string) => void;
-  onDelete: (id: string) => void;
-  onExport: () => void;
-  onImport: (json: string) => boolean;
-}
-
-export default function PhrasesPage({
-  phrases,
-  onUpdate,
-  onAdd,
-  onDelete,
-  onExport,
-  onImport,
-}: PhrasesPageProps) {
+export default function PhrasesPage() {
+  const { phrases, addPhrase, updatePhrase, deletePhrase } = usePhrases();
+  const { exportData, importData } = useSettings();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('全部');
@@ -48,7 +36,7 @@ export default function PhrasesPage({
 
   const handleAdd = () => {
     if (newText.trim()) {
-      onAdd(newText.trim(), newCategory);
+      addPhrase(newText.trim(), newCategory);
       setNewText('');
       setShowAddForm(false);
     }
@@ -59,7 +47,7 @@ export default function PhrasesPage({
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      const success = onImport(reader.result as string);
+      const success = importData(reader.result as string);
       if (!success) alert('导入失败，请检查文件格式');
     };
     reader.readAsText(file);
@@ -83,7 +71,7 @@ export default function PhrasesPage({
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={onExport}
+            onClick={exportData}
             className="a11y-target inline-flex items-center gap-1.5 rounded-xl border border-border px-3.5 py-2 text-sm text-foreground hover:bg-muted transition-colors"
             aria-label="导出词表"
           >
@@ -213,14 +201,14 @@ export default function PhrasesPage({
                   onChange={(e) => setEditText(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      onUpdate(phrase.id, { text: editText });
+                      updatePhrase(phrase.id, { text: editText });
                       setEditingId(null);
                     } else if (e.key === 'Escape') {
                       setEditingId(null);
                     }
                   }}
                   onBlur={() => {
-                    onUpdate(phrase.id, { text: editText });
+                    updatePhrase(phrase.id, { text: editText });
                     setEditingId(null);
                   }}
                   className="w-full rounded border border-input bg-background px-2 py-1 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -245,7 +233,7 @@ export default function PhrasesPage({
                 <Edit2 className="h-4 w-4" aria-hidden="true" />
               </button>
               <button
-                onClick={() => onUpdate(phrase.id, { enabled: !phrase.enabled })}
+                onClick={() => updatePhrase(phrase.id, { enabled: !phrase.enabled })}
                 className="a11y-target rounded-md p-2 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 aria-label={phrase.enabled ? `禁用「${phrase.text}」` : `启用「${phrase.text}」`}
                 role="switch"
@@ -258,7 +246,7 @@ export default function PhrasesPage({
                 )}
               </button>
               <button
-                onClick={() => onDelete(phrase.id)}
+                onClick={() => deletePhrase(phrase.id)}
                 className="a11y-target rounded-md p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                 aria-label={`删除「${phrase.text}」`}
               >

@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import type { UserVoice } from '@/types/auth';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 
 /** localStorage key for guest-mode voice data. */
 const LOCAL_KEY = 'resonance_user_voices';
@@ -70,9 +71,9 @@ export function useUserVoices() {
 
     let cancelled = false;
     setIsLoading(true);
-    fetch('/api/user/voices?limit=50', { credentials: 'include' })
-      .then((res) => res.json())
-      .then((data: { ok: boolean; voices: UserVoice[] }) => {
+    api.userVoices
+      .list(50)
+      .then((data) => {
         if (cancelled) return;
         if (data.ok && Array.isArray(data.voices)) {
           setUserVoices(data.voices);
@@ -100,14 +101,9 @@ export function useUserVoices() {
       return;
     }
 
-    fetch('/api/user/voices/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ voices: local }),
-      credentials: 'include',
-    })
-      .then((res) => res.json())
-      .then((data: { ok: boolean; voices: UserVoice[] }) => {
+    api.userVoices
+      .sync(local)
+      .then((data) => {
         if (data.ok && Array.isArray(data.voices)) {
           setUserVoices(data.voices);
           clearLocalVoices();
@@ -127,21 +123,10 @@ export function useUserVoices() {
     async (voiceId: string, label?: string) => {
       if (status === 'authenticated') {
         try {
-          const res = await fetch('/api/user/voices', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ voice_id: voiceId, label: label || null }),
-            credentials: 'include',
-          });
+          const res = await api.userVoices.create(voiceId, label || null);
           if (res.ok) {
             // Refresh the full list so the UI stays in sync.
-            const listRes = await fetch('/api/user/voices?limit=50', {
-              credentials: 'include',
-            });
-            const listData = (await listRes.json()) as {
-              ok: boolean;
-              voices: UserVoice[];
-            };
+            const listData = await api.userVoices.list(50);
             if (listData.ok) setUserVoices(listData.voices);
             return;
           }

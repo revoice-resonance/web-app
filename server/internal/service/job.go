@@ -27,7 +27,7 @@ type IdempotencyRecord struct {
 
 // JobService manages all job operations with idempotency support
 type JobService struct {
-	storage     *storage.MinioStorage
+	storage     storage.ObjectStore
 	idempotency map[string]*IdempotencyRecord
 	idempMu     sync.RWMutex
 	mu          sync.RWMutex
@@ -40,7 +40,7 @@ type JobService struct {
 }
 
 // NewJobService creates a new job service
-func NewJobService(storage *storage.MinioStorage) *JobService {
+func NewJobService(storage storage.ObjectStore) *JobService {
 	return &JobService{
 		storage:     storage,
 		idempotency: make(map[string]*IdempotencyRecord),

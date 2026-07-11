@@ -1,32 +1,26 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Upload, Trash2, AlertTriangle } from 'lucide-react';
+import { usePhrases } from '@/hooks/usePhrases';
+import { useRecordings } from '@/hooks/useRecordings';
+import { useSettings } from '@/hooks/useSettings';
 
-interface DataPageProps {
-  phraseCount: number;
-  recordingCount: number;
-  onExport: () => void;
-  onImport: (json: string) => boolean;
-  onClearTraining: () => void;
-  onClearAll: () => void;
-}
-
-export default function DataPage({
-  phraseCount,
-  recordingCount,
-  onExport,
-  onImport,
-  onClearTraining,
-  onClearAll,
-}: DataPageProps) {
+export default function DataPage() {
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
+
+  const { phrases } = usePhrases();
+  const { recordings } = useRecordings();
+  const { exportData, importData, clearTrainingData, clearAllData } = useSettings();
+
+  const phraseCount = phrases.length;
+  const recordingCount = recordings.length;
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      const success = onImport(reader.result as string);
+      const success = importData(reader.result as string);
       if (!success) alert('导入失败，请检查文件格式');
     };
     reader.readAsText(file);
@@ -57,7 +51,7 @@ export default function DataPage({
         <h3 className="font-semibold text-foreground">导入 / 导出</h3>
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={onExport}
+            onClick={exportData}
             className="a11y-target flex items-center justify-center gap-2 rounded-lg border border-border py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors"
             aria-label="导出词表为JSON文件"
           >
@@ -94,7 +88,7 @@ export default function DataPage({
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  onClearTraining();
+                  clearTrainingData();
                   setConfirmAction(null);
                 }}
                 className="a11y-target rounded-lg bg-destructive px-5 py-3 text-sm font-medium text-destructive-foreground hover:opacity-90"
@@ -134,7 +128,7 @@ export default function DataPage({
             <div className="flex gap-3">
               <button
                 onClick={() => {
-                  onClearAll();
+                  clearAllData();
                   setConfirmAction(null);
                 }}
                 className="a11y-target rounded-lg bg-destructive px-5 py-3 text-sm font-medium text-destructive-foreground hover:opacity-90"

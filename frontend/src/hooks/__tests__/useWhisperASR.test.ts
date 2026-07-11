@@ -218,8 +218,8 @@ describe('useWhisperASR', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, options] = fetchMock.mock.calls[0];
-    expect(url).toContain('/api/whisper-asr');
+    expect(url).toContain('/api/asr/recognize');
     expect(options.method).toBe('POST');
-    expect(options.body).toBeInstanceOf(FormData);
+    expect(options.body).not.toBeInstanceOf(FormData);
   });
 });

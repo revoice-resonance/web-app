@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { api } from '@/lib/api';
 
 /**
  * useVoiceClone — 录制参考音频 → 创建自定义音色 ID
@@ -40,16 +41,7 @@ export function useVoiceClone(): UseVoiceCloneReturn {
         formData.append('text', referenceText);
       }
 
-      const response = await fetch('/api/tts/voices/clone', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(data.error || `音色复刻失败 (${response.status})`);
-      }
+      const data = await api.tts.cloneVoice(formData);
 
       return data.data?.voice_id || data.voice_id || null;
     } catch (err) {

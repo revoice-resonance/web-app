@@ -108,12 +108,12 @@ describe('UsagePage', () => {
 
   it('shows selected voice name in header when voice is set', () => {
     const { getByText } = render(<UsagePage {...defaultProps} selectedVoice="wenrounvsheng" />);
-    expect(getByText('温柔女声')).toBeInTheDocument();
+    expect(getByText('wenrounvsheng')).toBeInTheDocument();
   });
 
   it('does not show voice name in header when no voice selected', () => {
     const { queryByText } = render(<UsagePage {...defaultProps} selectedVoice="" />);
-    expect(queryByText('温柔女声')).not.toBeInTheDocument();
+    expect(queryByText('wenrounvsheng')).not.toBeInTheDocument();
   });
 
   it('shows flow step labels: 录音, 识别, 朗读', () => {

@@ -16,6 +16,7 @@ import {
   statusToErrorCode,
   type ASRError,
 } from '@/types/asrError';
+import { api, ApiError, type ASRRequest } from '@/lib/api';
 
 /** Return interface — identical shape to useWhisperASR for drop-in replacement. */
 interface UseCloudASRReturn {
@@ -232,22 +233,16 @@ export function useCloudASR(): UseCloudASRReturn {
         );
 
         try {
-          const response = await fetch('/api/asr/recognize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controller.signal,
-          });
+          const result = await api.asr.recognize(payload as unknown as ASRRequest, controller.signal);
 
-          lastStatus = response.status;
-          lastStatusText = response.statusText;
-          lastRequestId =
-            response.headers.get('x-request-id') ??
-            response.headers.get('x-supabase-request-id');
+          lastStatus = result.status;
+          lastStatusText = result.statusText;
+          lastRequestId = result.requestId;
 
-          const data = await response.json().catch(() => ({}));
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const data = result.data as Record<string, any>;
 
-          if (response.ok && data.ok !== false) {
+          if (data.ok !== false) {
             const text =
               (data.data?.text?.trim() || data.text?.trim() || '') || null;
 
@@ -279,16 +274,14 @@ export function useCloudASR(): UseCloudASRReturn {
             return text;
           }
 
-          // Business error branch
+          // Business error branch (data.ok === false but HTTP 200)
           lastError = new Error(
-            data.error || `请求失败 (${response.status})`,
+            data.error || `请求失败 (${result.status})`,
           );
 
-          if (!isRetryable(response.status)) break;
+          if (!isRetryable(result.status)) break;
 
-          const retryAfter = parseRetryAfter(
-            response.headers.get('retry-after'),
-          );
+          const retryAfter = parseRetryAfter(null);
           lastRetryAfterMs = retryAfter;
           const delay = retryAfter ?? backoffWithJitter(attempt);
           const actualDelay = Math.min(delay, deadline - Date.now());
@@ -298,6 +291,12 @@ export function useCloudASR(): UseCloudASRReturn {
         } catch (e) {
           lastError =
             e instanceof Error ? e : new Error(String(e));
+
+          if (e instanceof ApiError) {
+            lastStatus = e.status;
+            lastRequestId = null;
+            if (!isRetryable(e.status)) break;
+          }
 
           // abort = timeout, name === 'AbortError'
           if (attempt < MAX_RETRIES && deadline - Date.now() > 0) {
